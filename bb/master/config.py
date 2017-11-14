@@ -46,7 +46,7 @@ PORT = "5000"
 WORKER_PORT = "9000"
 BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis info to buildbot.net
 BUILDBOT_TREE_STABLE_TIMER = None # Value "None" means that a separate build will be started immediately for each Change.
-BUILDBOT_TITLE = "Intel Media SDK Open Source"
+BUILDBOT_TITLE = "Intel® Media SDK"
 
 GITHUB_TOKEN = secrets.GITHUB_TOKEN
 GITHUB_WEBHOOK_SECRET = secrets.GITHUB_WEBHOOK_SECRET
