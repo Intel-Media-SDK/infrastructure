@@ -41,6 +41,7 @@ import pathlib
 import platform
 import shutil
 import subprocess
+from datetime import datetime
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
@@ -161,6 +162,9 @@ class Action(object):
             self.log.info('cmd: %s', self.cmd)
             self.log.info('work dir: %s', self.work_dir)
             self.log.info('environment: %s', self.env)
+
+            if self.work_dir:
+                self.work_dir.mkdir(parents=True, exist_ok=True)
 
             try:
                 completed_process = subprocess.run(self.cmd,
@@ -318,7 +322,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
-                 changed_repo=None):
+                 commit_time=None, changed_repo=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -335,6 +339,9 @@ class BuildGenerator(object):
         :param build_event: Event of build (pre_commit|commit|nightly|weekly)
         :type build_event: String
 
+        :param commit_time: Time for getting slice of commits of repositories
+        :type commit_time: datetime
+
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
         """
@@ -344,6 +351,7 @@ class BuildGenerator(object):
         self.product_repos = {}
         self.product_type = product_type
         self.build_event = build_event
+        self.commit_time = commit_time
         self.changed_repo = changed_repo
         self.build_state_file = root_dir / "build_state"
         self.default_options = {
@@ -383,7 +391,7 @@ class BuildGenerator(object):
         if 'PRODUCT_REPOS' in self.config_variables:
             for repo in self.config_variables['PRODUCT_REPOS']:
                 self.product_repos[repo['name']] = {
-                    'branch': repo.get('branch', 'refs/heads/master'),
+                    'branch': repo.get('branch', 'master'),
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
@@ -398,17 +406,13 @@ class BuildGenerator(object):
         """
 
         remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
-        create_dirs = {'ROOT_DIR', 'BUILD_DIR', 'REPOS_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.default_options.get(directory)
             if dir_path.exists():
                 shutil.rmtree(dir_path)
 
-        for directory in create_dirs:
-            dir_path = self.default_options.get(directory)
-            if dir_path:
-                dir_path.mkdir(parents=True, exist_ok=True)
+        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
         self.log.info('CLEANING')
         self.log.info('-' * 50)
@@ -419,8 +423,6 @@ class BuildGenerator(object):
 
         for dir_path in remove_dirs:
             self.log.info('remove directory %s', self.default_options.get(dir_path))
-        for dir_path in create_dirs:
-            self.log.info('create directory %s', self.default_options.get(dir_path))
 
         for action in self.actions[Stage.CLEAN]:
             action.run()
@@ -433,6 +435,9 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
+        self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+
         repo_name, branch, commit_id = self.changed_repo.split(':')
 
         if repo_name in self.product_repos:
@@ -442,7 +447,7 @@ class BuildGenerator(object):
             raise WrongTriggeredRepo('%s repository is not defined in the product '
                                      'configuration PRODUCT_REPOS', repo_name)
 
-        product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"])
+        product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
         product_state.extract_all_repos()
 
         product_state.save_repo_states(self.default_options["PACK_DIR"] / 'sources.json')
@@ -457,6 +462,8 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
+        self.default_options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
+
         for action in self.actions[Stage.BUILD]:
             action.run()
 
@@ -466,6 +473,8 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
+
+        self.default_options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
 
         for action in self.actions[Stage.INSTALL]:
             action.run()
@@ -484,6 +493,8 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
+
+        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         for action in self.actions[Stage.PACK]:
             action.run()
@@ -507,12 +518,13 @@ class BuildGenerator(object):
             }
         ]
 
-        if not os.listdir(self.default_options['INSTALL_DIR']):
-            self.log.info('%s is empty. Skip packing.', self.default_options['INSTALL_DIR'])
-        else:
-            if not make_archive(self.default_options["PACK_DIR"] / "install_pkg.tar",
+        if self.default_options['INSTALL_DIR'].exists() \
+                and os.listdir(self.default_options['INSTALL_DIR']):
+            if not make_archive(self.default_options["PACK_DIR"] / f"install_pkg.{extension}",
                                 install_data):
                 no_errors = False
+        else:
+            self.log.info('%s empty. Skip packing.', self.default_options['INSTALL_DIR'])
 
         # creating developer package
         if not make_archive(self.default_options["PACK_DIR"] / f"developer_pkg.{extension}",
@@ -563,7 +575,13 @@ class BuildGenerator(object):
 
             build_dir.rename(duplicate)
 
+        self.log.info('Copy to %s', build_dir)
+
+        # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
+        _orig_copystat = shutil.copystat
+        shutil.copystat = lambda x, y, follow_symlinks=True: x
         shutil.copytree(self.default_options['PACK_DIR'], build_dir)
+        shutil.copystat = _orig_copystat
 
         for action in self.actions[Stage.COPY]:
             action.run()
@@ -586,6 +604,8 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
+
+        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
         set_log_file(self.default_options["LOGS_DIR"] / (stage.value + '.log'))
         print('-' * 50)
@@ -701,7 +721,7 @@ def main():
     parser.add_argument('-r', "--changed-repo", metavar="String",
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
-(ex: MediaSDK:refs/heads/master:52199a19d7809a77e3a474b195592cc427226c61)''')
+(ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
@@ -713,7 +733,14 @@ in format: <repo_name>:<branch>:<commit_id>
                         help='Event of build')
     parser.add_argument("--stage", type=Stage, choices=Stage, default='build',
                         help="Current executable stage")
+    parser.add_argument('-t', "--commit-time", metavar='datetime',
+                        help="Time of commits (ex. 2017-11-02 07:36:40)")
     args = parser.parse_args()
+
+    if args.commit_time:
+        commit_time = datetime.strptime(args.commit_time, '%Y-%m-%d %H:%M:%S')
+    else:
+        commit_time = None
 
     build_config = BuildGenerator(
         pathlib.Path(args.build_config).absolute(),
@@ -721,6 +748,7 @@ in format: <repo_name>:<branch>:<commit_id>
         args.build_type,
         args.product_type,
         args.build_event,
+        commit_time,
         args.changed_repo
     )
 

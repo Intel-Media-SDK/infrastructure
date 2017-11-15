@@ -129,7 +129,7 @@ class GitRepo(object):
         self.repo.git.checkout(checkout_to, force=True)
 
         committed_date = self.repo.commit(self.commit_id).committed_date
-        self.log.info("Committed date: %s", datetime.utcfromtimestamp(committed_date))
+        self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clean(self):
@@ -183,14 +183,17 @@ class ProductState(object):
 
     repo_states = []
 
-    def __init__(self, sources_list, root_repo_dir):
+    def __init__(self, sources_list, root_repo_dir, commit_time):
         """
         :param sources_list: dictionary of repositories
         :param root_repo_dir: path to repositories directory
+        :param commit_time: Time for getting slice of commits of repositories
         """
 
+        self.commit_time = commit_time
+
         for repo_name, data in sources_list.items():
-            branch = data.get('branch', 'refs/heads/master')
+            branch = data.get('branch', 'master')
             commit_id = data.get('commit_id')
 
             self.repo_states.append(
@@ -203,17 +206,21 @@ class ProductState(object):
         :return: None
         """
 
-        repo_time = None
+        git_commit_date = None
         for repo in self.repo_states:
             if repo.commit_id:
                 repo.prepare_repo()
-                repo_time = repo.get_time()
+                git_commit_date = repo.get_time()
                 repo.checkout()
+
+        commit_timestamp = self.commit_time.timestamp() \
+            if self.commit_time \
+            else git_commit_date
 
         for repo in self.repo_states:
             if not repo.commit_id:
                 repo.prepare_repo()
-                repo.revert_commit_by_time(repo_time)
+                repo.revert_commit_by_time(commit_timestamp)
                 repo.checkout()
 
     def save_repo_states(self, sources_file):
