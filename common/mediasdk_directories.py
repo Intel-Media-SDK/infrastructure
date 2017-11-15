@@ -90,9 +90,7 @@ class MediaSdkDirectories(object):
         """
 
         # only for Gerrit
-        if branch.startswith('refs/heads/'):
-            branch = branch.replace('refs/heads/', '')
-        elif branch.startswith('refs/changes/'):
+        if branch.startswith('refs/changes/'):
             branch = branch.replace('refs/changes/', '')
 
         return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id / \

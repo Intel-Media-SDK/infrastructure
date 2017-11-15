@@ -34,6 +34,15 @@ from shutil import copystat, Error, copy2
 from .logger_conf import LOG_CONFIG
 
 
+class UnsupportedArchiveError(Exception):
+    """
+    Exception using for unsupported extension of archive
+    in function 'extract_archive'
+    """
+
+    pass
+
+
 def make_archive(path, data_to_archive):
     """
     Create archive with certain data
@@ -80,33 +89,35 @@ def make_archive(path, data_to_archive):
 
     log.info('-' * 50)
     log.info('create archive %s', path)
-    if path.suffix not in ('.tar', '.zip'):
-        log.error("Extension %s is not supported. Choose '.zip' or '.tar' format", path.suffix)
-        no_errors = False
+
+    if path.suffix == '.tar':
+        pkg = tarfile.open(path, "w")
+    elif path.suffix == '.gz':
+        pkg = tarfile.open(path, "w:gz")
+    elif path.suffix == '.zip':
+        pkg = ZipFile(path, 'w')
     else:
-        if path.suffix == '.tar':
-            pkg = tarfile.open(path, "w")
-        elif path.suffix == '.zip':
-            pkg = ZipFile(path, 'w')
+        log.error("Extension %s is not supported", path.suffix)
+        no_errors = False
 
-        for info in data_to_archive:
-            for relative in info['relative']:
-                path_to_archive = info['from_path'] / relative['path']
-                pack_as = pathlib.Path(relative.get('pack_as', relative['path']))
+    for info in data_to_archive:
+        for relative in info['relative']:
+            path_to_archive = info['from_path'] / relative['path']
+            pack_as = pathlib.Path(relative.get('pack_as', relative['path']))
 
-                log.info('add to archive %s, pack as "%s"', path_to_archive, pack_as)
-                try:
-                    if path.suffix == '.tar':
-                        pkg.add(path_to_archive, arcname=pack_as)
-                    elif path.suffix == '.zip':
-                        _zip_data(path_to_archive, pack_as, pkg)
-                except:
-                    set_output_stream('err')
-                    log.exception("Can not pack results")
-                    set_output_stream()
-                    no_errors = False
+            log.info('add to archive %s, pack as "%s"', path_to_archive, pack_as)
+            try:
+                if path.suffix in ('.tar', '.gz'):
+                    pkg.add(path_to_archive, arcname=pack_as)
+                elif path.suffix == '.zip':
+                    _zip_data(path_to_archive, pack_as, pkg)
+            except:
+                set_output_stream('err')
+                log.exception("Can not pack results")
+                set_output_stream()
+                no_errors = False
 
-        pkg.close()
+    pkg.close()
 
     return no_errors
 
@@ -171,6 +182,34 @@ def set_output_stream(stream='out'):
     else:
         pass
     dictConfig(LOG_CONFIG)
+
+
+def extract_archive(archive_path, extract_to):
+    """
+    Extract archive (.tar, .zip)
+
+    :param archive_path: Path to archive
+    :type archive_path: String|pathlib.Path
+
+    :param extract_to: Path to extraction
+    :type extract_to: String|pathlib.Path
+    """
+
+    archive_path = pathlib.Path(archive_path)
+    extract_to = pathlib.Path(extract_to)
+
+    if archive_path.suffix == '.tar':
+        package = tarfile.open(archive_path, 'r')
+    elif archive_path.suffix == '.gz':
+        package = tarfile.open(archive_path, 'r:gz')
+    elif archive_path.suffix == '.zip':
+        package = ZipFile(archive_path)
+    else:
+        raise UnsupportedArchiveError(
+            f"Unsupported archive extension {archive_path.suffix}")
+
+    package.extractall(extract_to)
+    package.close()
 
 
 # shutil.copytree function with extension
