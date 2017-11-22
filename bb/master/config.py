@@ -60,7 +60,7 @@ if CURRENT_MODE == Mode.PRODUCTION_MODE:
     BUILDBOT_TITLE_URL = "https://github.com/Intel-Media-SDK/flow_test"
     REPO_INFO = r"flow_test:%(prop:branch)s:%(prop:revision)s"
 
-    BUILDBOT_URL = "http://mediasdk.intel.com/"
+    BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
