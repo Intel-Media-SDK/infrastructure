@@ -50,6 +50,15 @@ Dependencies:
 - CentOS 7.3
 - python 3.6.x
 - Intel® Media Server Studio 2017 R3
+  - Minimal needed rpms:
+    - intel-opencl-xxx-xxx.x86_64.rpm
+    - intel-opencl-cpu-xxx-.x86_64.rpm
+    - intel-opencl-devel-xxx-xxx.x86_64.rpm
+    - libva-xxx-xxx.el7.centos.x86_64.rpm
+    - libva-devel-xxx-xxx.el7.centos.x86_64.rpm
+  
+libdrm-xxx-xxx.el7.centos.x86_64.rpm            # may be also from OS repositories but it is not recommended
+libdrm-devel-xxx-xxx.el7.centos.x86_64.rpm      # may be also from OS repositories but it is not recommended
 ```bash
 sudo pip3 install buildbot-worker==0.9.13
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
@@ -76,6 +85,9 @@ Dependencies:
 - CentOS 7.3
 - python 3.6.x
 - Intel® Media Server Studio 2017 R3
+  - Minimal needed rpms:
+    - intel-linux-media-xxx-xxx.el7.centos.x86_64.rpm  #Will install iHD_drv_video.so etc
+
 ```bash
 #Install git lfs
 sudo yum install curl epel-release
