@@ -14,8 +14,14 @@ Dependencies:
 - CentOS 7.3
 - python 3.6.x
 - postgresql
+
 ```bash
 sudo pip3 install buildbot==0.9.13 buildbot-console-view==0.9.13 buildbot-waterfall-view==0.9.13 buildbot-grid-view==0.9.13 buildbot-www==0.9.13
+```
+Hint:  
+It can work with default DB (sqlite) for that it needs to change next value in `bb/master/config.py`:
+```python
+DATABASE_URL = "sqlite:///state.sqlite"
 ```
 
 Deploy:
@@ -29,7 +35,7 @@ buildbot create-master master
 cp ./tmp_master/* ./master/
 rm -rf ./tmp_master/
 
-#Configure Github`s webhook in your repository in settings-webhooks and create Github`s token
+#Configure Github`s webhook in your repository in settings-webhooks and create Github`s token after that do:
 cd master
 cp ./secrets.py.example ./secrets.py
 nano secrets.py #add your real values
@@ -54,23 +60,15 @@ sudo yum groupinstall "Development Tools"
 Deploy:
 ```bash
 buildbot-worker create-worker "worker-build" "<your_IP>:9000" "worker-build" "pass"
-cd worker-build
-mkdir {build-master-branch,build-other-branches}
 
-cd build-master-branch
-git clone https://github.com/Intel-Media-SDK/infrastructure.git
-git clone https://github.com/Intel-Media-SDK/product-configs.git
-cd ..
-cd build-other-branches
-git clone https://github.com/Intel-Media-SDK/infrastructure.git
-git clone https://github.com/Intel-Media-SDK/product-configs.git
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-build/build-master-branch/infrastructure
+git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker-build/build-master-branch/product-configs
 
-cd ..
-cd ..
+mkdir ./worker-build/build-other-branches
+cp -r ./worker-build/build-master-branch/{infrastructure,product-configs} ./worker-build/build-other-branches/
 
 #Start Worker Buildbot
 buildbot-worker start worker-build
-
 ```
 
 ### Deploy test box Worker Buildbot
@@ -79,27 +77,20 @@ Dependencies:
 - python 3.6.x
 - Intel® Media Server Studio 2017 R3
 ```bash
-#Same steps as in "build box Worker" plus:
-
 #Install git lfs
-sudo yum install curl
-sudo yum install epel-release
+sudo yum install curl epel-release
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | sudo bash
 sudo yum install git-lfs
 git lfs install
+
+#After that do the same things as described in section "build box Worker"
 ```
 
 Deploy:
 ```bash
 buildbot-worker create-worker "worker-test" "<your_IP>:9000" "worker-test" "pass"
-cd worker-test
-mkdir {build-master-branch,build-other-branches}
 
-cd test
-git clone https://github.com/Intel-Media-SDK/infrastructure.git
-
-cd ..
-cd ..
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-test/test/infrastructure
 
 #Start Worker Buildbot
 buildbot-worker start worker-test
