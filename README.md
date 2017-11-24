@@ -106,6 +106,12 @@ git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-test/te
 #Start Worker Buildbot
 buildbot-worker start worker-test
 ```
+Hint:  
+To use graphical driver (from Media Server Studio) with tests as not root user do: 
+```bash
+usermod -a -G video <mediasdk_user>
+#And restart session!
+```
 
 ### Hint
 You can update all configurations by simple executing `git pull` command!
