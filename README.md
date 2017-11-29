@@ -55,10 +55,10 @@ Dependencies:
       intel-opencl-xxx-xxx.x86_64.rpm
       intel-opencl-cpu-xxx-.x86_64.rpm
       intel-opencl-devel-xxx-xxx.x86_64.rpm
+      libdrm-xxx-xxx.el7.centos.x86_64.rpm
+      libdrm-devel-xxx-xxx.el7.centos.x86_64.rpm
       libva-xxx-xxx.el7.centos.x86_64.rpm
-      libva-devel-xxx-xxx.el7.centos.x86_64.rpm   # For headers in /usr/include/va
-      libdrm-xxx-xxx.el7.centos.x86_64.rpm        # May be from OS repositories but it is not recommended
-      libdrm-devel-xxx-xxx.el7.centos.x86_64.rpm  # May be from OS repositories but it is not recommended
+      libva-devel-xxx-xxx.el7.centos.x86_64.rpm
       ```
 
 
@@ -71,7 +71,7 @@ sudo yum groupinstall "Development Tools"
 sudo yum install cmake git
 sudo yum install libX11 libXext libXfixes libGL libGL-devel libX11-devel 
 ```
-Read more about the packages [here](docs/packages.md).
+**Read more about the packages [here](docs/packages.md).**
 
 Deploy:
 ```bash
