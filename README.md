@@ -50,33 +50,41 @@ Dependencies:
 - CentOS 7.3
 - python 3.6.x
 - Intel® Media Server Studio 2017 R3
-  - Minimal needed rpms:
-    - intel-opencl-xxx-xxx.x86_64.rpm
-    - intel-opencl-cpu-xxx-.x86_64.rpm
-    - intel-opencl-devel-xxx-xxx.x86_64.rpm
-    - libva-xxx-xxx.el7.centos.x86_64.rpm
-    - libva-devel-xxx-xxx.el7.centos.x86_64.rpm   # For headers in /usr/include/va
-    - libdrm-xxx-xxx.el7.centos.x86_64.rpm        # May be from OS repositories but it is not recommended
-    - libdrm-devel-xxx-xxx.el7.centos.x86_64.rpm  # May be from OS repositories but it is not recommended
+  - Minimal needed rpms from MSS:
+      ```bash
+      intel-opencl-xxx-xxx.x86_64.rpm
+      intel-opencl-cpu-xxx-.x86_64.rpm
+      intel-opencl-devel-xxx-xxx.x86_64.rpm
+      libva-xxx-xxx.el7.centos.x86_64.rpm
+      libva-devel-xxx-xxx.el7.centos.x86_64.rpm   # For headers in /usr/include/va
+      libdrm-xxx-xxx.el7.centos.x86_64.rpm        # May be from OS repositories but it is not recommended
+      libdrm-devel-xxx-xxx.el7.centos.x86_64.rpm  # May be from OS repositories but it is not recommended
+      ```
+
+
 ```bash
 sudo pip3 install buildbot-worker==0.9.13
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
 
-sudo yum -y install cmake autogen autoconf automake libtool git libX11 libXext-devel libX11-devel libXext libXfixes libXfixes-devel libdrm-devel mesa-dri-drivers libGL libGL-devel numactl-devel numad
+#Recommended list of packages
 sudo yum groupinstall "Development Tools"
+sudo yum install cmake git
+sudo yum install libX11 libXext libXfixes libGL libGL-devel libX11-devel 
 ```
+Read more about the packages [here](docs/packages.md).
+
 Deploy:
 ```bash
-buildbot-worker create-worker "worker-build" "<your_IP>:9000" "worker-build" "pass"
+buildbot-worker create-worker "<your_worker_name>" "<your_IP>:9000" "<your_worker_name>" "pass"
 
 git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-build/build-master-branch/infrastructure
 git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker-build/build-master-branch/product-configs
 
-mkdir ./worker-build/build-other-branches
-cp -r ./worker-build/build-master-branch/{infrastructure,product-configs} ./worker-build/build-other-branches/
+mkdir ./<your_worker_name>/build-other-branches
+cp -r ./<your_worker_name>/build-master-branch/{infrastructure,product-configs} ./<your_worker_name>/build-other-branches/
 
 #Start Worker Buildbot
-buildbot-worker start worker-build
+buildbot-worker start <your_worker_name>
 ```
 
 ### Deploy test box Worker Buildbot
@@ -85,7 +93,9 @@ Dependencies:
 - python 3.6.x
 - Intel® Media Server Studio 2017 R3
   - Minimal needed rpms:
-    - intel-linux-media-xxx-xxx.el7.centos.x86_64.rpm  # Will install iHD_drv_video.so etc
+      ```bash
+      intel-linux-media-xxx-xxx.el7.centos.x86_64.rpm  # Will install iHD_drv_video.so etc
+      ```
 
 ```bash
 #Install git lfs
@@ -99,12 +109,12 @@ git lfs install
 
 Deploy:
 ```bash
-buildbot-worker create-worker "worker-test" "<your_IP>:9000" "worker-test" "pass"
+buildbot-worker create-worker "<your_worker_name>" "<your_IP>:9000" "<your_worker_name>" "pass"
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-test/test/infrastructure
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./<your_worker_name>/test/infrastructure
 
 #Start Worker Buildbot
-buildbot-worker start worker-test
+buildbot-worker start <your_worker_name>
 ```
 Hint:  
 To use graphical driver (from Media Server Studio) with tests as not root user do: 
