@@ -36,7 +36,8 @@ WORKER_PASS = secrets.WORKER_PASS
 DATABASE_PASSWORD = secrets.DATABASE_PASSWORD
 
 RUN_COMMAND = "python3.6"
-WORKERS = {BUILD: {"worker-build": {}},
+WORKERS = {BUILD: {"worker-build": {},
+                  "b-1-14": {}},
            TEST: {"worker-test": {}}}
 
 BUILD_TYPE = "release"
@@ -68,6 +69,6 @@ elif CURRENT_MODE == Mode.TEST_MODE:
     BUILDBOT_TITLE_URL = "https://github.com/adydychk/MediaSDK"
     REPO_INFO = r"MediaSDKTEST:%(prop:branch)s:%(prop:revision)s"
 
-    BUILDBOT_URL = "http://13.81.6.131/"
+    BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
     sys.exit("Mode %s is not defined" % CURRENT_MODE)
