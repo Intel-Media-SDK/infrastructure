@@ -1,5 +1,5 @@
 # Infrastructure of Intel® Media SDK
-Here located all things needed for deploying public infrastructure of Intel® Media SDK.  
+Repository has all things needed for deploying public infrastructure of Intel® Media SDK.  
   
 Repository contains:  
 - Buildbot configuration
