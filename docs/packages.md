@@ -2,14 +2,14 @@
 The prupose of this guide is to clarify why Intel® Media SDK need specific packages and the dependencies of packages.
 
 ### Packages from Intel® Media Server Studio
-OpenCL
+OpenCL™
 ```bash
 intel-opencl-xxx-xxx.x86_64.rpm
 intel-opencl-cpu-xxx-.x86_64.rpm
 intel-opencl-devel-xxx-xxx.x86_64.rpm
 ```
-Intel® Media SDK can be built without opencl packages but you will get the product without some features.  
-How to build without opencl? - Simply don`t install these packages on your system. Build scripts will automatically generate needed make files.
+Intel® Media SDK can be built without OpenCL™ packages but you will get the product without some features.  
+How to build without OpenCL™? - Simply don`t install these packages on your system. Build scripts will automatically generate needed make files.
 
 LibVA
 ```bash
