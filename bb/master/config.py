@@ -57,17 +57,17 @@ CURRENT_MODE = Mode.PRODUCTION_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
-    GITHUB_REPOSITORY = "Intel-Media-SDK/flow_test"
-    BUILDBOT_TITLE_URL = "https://github.com/Intel-Media-SDK/flow_test"
-    REPO_INFO = r"flow_test:%(prop:branch)s:%(prop:revision)s"
+    GITHUB_REPOSITORY = "Intel-Media-SDK/MediaSDK"
+    BUILDBOT_TITLE_URL = "https://github.com/Intel-Media-SDK/MediaSDK"
+    REPO_INFO = r"MediaSDK:%(prop:branch)s:%(prop:revision)s"
 
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
-    GITHUB_REPOSITORY = "adydychk/MediaSDK" #TODO: Should be faceless
-    BUILDBOT_TITLE_URL = "https://github.com/adydychk/MediaSDK"
-    REPO_INFO = r"MediaSDKTEST:%(prop:branch)s:%(prop:revision)s"
+    GITHUB_REPOSITORY = "Intel-Media-SDK/flow_test"
+    BUILDBOT_TITLE_URL = "https://github.com/Intel-Media-SDK/flow_test"
+    REPO_INFO = r"flow_test:%(prop:branch)s:%(prop:revision)s"
 
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
