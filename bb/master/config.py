@@ -22,7 +22,7 @@ import sys
 import os
 from enum import Enum
 
-import secrets
+import msdk_secrets
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
@@ -38,10 +38,10 @@ DATABASE_PASSWORD = secrets.DATABASE_PASSWORD
 RUN_COMMAND = "python3.6"
 WORKERS = {BUILD: {"worker-build": {},
                   "b-1-14": {}},
-           TEST: {"worker-test": {}}}
+           TEST: {"worker-test": {},
+                  "t-1-16": {}}}
 
 BUILD_TYPE = "release"
-
 
 PORT = "5000"
 WORKER_PORT = "9000"
