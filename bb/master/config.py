@@ -32,8 +32,8 @@ BUILD = "build"
 BUILD_MASTER = "build-master-branch"
 BUILD_NOT_MASTER = "build-other-branches"
 TEST = "test"
-WORKER_PASS = secrets.WORKER_PASS
-DATABASE_PASSWORD = secrets.DATABASE_PASSWORD
+WORKER_PASS = msdk_secrets.WORKER_PASS
+DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 
 RUN_COMMAND = "python3.6"
 WORKERS = {BUILD: {"worker-build": {},
@@ -49,8 +49,8 @@ BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis i
 BUILDBOT_TREE_STABLE_TIMER = None # Value "None" means that a separate build will be started immediately for each Change.
 BUILDBOT_TITLE = "Intel® Media SDK"
 
-GITHUB_TOKEN = secrets.GITHUB_TOKEN
-GITHUB_WEBHOOK_SECRET = secrets.GITHUB_WEBHOOK_SECRET
+GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
+GITHUB_WEBHOOK_SECRET = msdk_secrets.GITHUB_WEBHOOK_SECRET
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
 #CURRENT_MODE = Mode.TEST_MODE
