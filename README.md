@@ -75,16 +75,16 @@ sudo yum install libX11 libXext libXfixes libGL libGL-devel libX11-devel
 
 Deploy:
 ```bash
-buildbot-worker create-worker "worker-build" "<your_IP>:9000" "<your_worker_name>" "pass"
+buildbot-worker create-worker "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-build/build-master-branch/infrastructure
-git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker-build/build-master-branch/product-configs
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/build-master-branch/infrastructure
+git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker/build-master-branch/product-configs
 
-mkdir ./worker-build/build-other-branches
-cp -r ./worker-build/build-master-branch/{infrastructure,product-configs} ./worker-build/build-other-branches/
+mkdir ./worker/build-other-branches
+cp -r ./worker/build-master-branch/{infrastructure,product-configs} ./worker/build-other-branches/
 
 #Start Worker Buildbot
-buildbot-worker start worker-build
+buildbot-worker start worker
 ```
 
 ### Deploy test box Worker Buildbot
@@ -109,12 +109,12 @@ git lfs install
 
 Deploy:
 ```bash
-buildbot-worker create-worker "worker-test" "<your_IP>:9000" "<your_worker_name>" "pass"
+buildbot-worker create-worker "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker-test/test/infrastructure
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/test/infrastructure
 
 #Start Worker Buildbot
-buildbot-worker start worker-test
+buildbot-worker start worker
 ```
 Hint:  
 To use graphical driver (from Media Server Studio) with tests as not root user do: 
