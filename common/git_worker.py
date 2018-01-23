@@ -23,11 +23,13 @@ Module for working with Git
 """
 
 import json
-import shutil
 import logging
-import git
 from datetime import datetime
+
+import git
 from tenacity import retry, stop_after_attempt, wait_exponential
+
+from common.helper import remove_directory
 
 
 class GitRepo(object):
@@ -64,7 +66,9 @@ class GitRepo(object):
 
         self.clone()
         self.repo = git.Repo(str(self.local_repo_dir))
+        self.hard_reset()
         self.clean()
+        self.checkout("master", silent=True)
         self.fetch()
         self.hard_reset('FETCH_HEAD')
 
@@ -83,7 +87,7 @@ class GitRepo(object):
                 git.Repo(str(self.local_repo_dir))
             except git.InvalidGitRepositoryError:
                 self.log.info('Remove broken repo %s', self.local_repo_dir)
-                shutil.rmtree(self.local_repo_dir)
+                remove_directory(self.local_repo_dir)
 
         if not self.local_repo_dir.exists():
             self.log.info("Clone repo " + self.name)
@@ -116,11 +120,16 @@ class GitRepo(object):
             self.repo.git.reset('--hard')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
-    def checkout(self, branch=None):
+    def checkout(self, branch=None, silent=False):
         """
         Checkout to certain state
 
         :param branch: Branch of repo. If None - checkout to commit ID from class variable commit_id
+
+        :param silent: Flag for getting time of commit
+               (set to True only if commit_id does not exist)
+        :type silent: Boolean
+
         :return: None
         """
 
@@ -128,8 +137,12 @@ class GitRepo(object):
         self.log.info("Checkout repo %s to %s", self.name, checkout_to)
         self.repo.git.checkout(checkout_to, force=True)
 
-        committed_date = self.repo.commit(self.commit_id).committed_date
-        self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
+        if not silent:
+            # error raises after checkout to master if we try
+            # to get time of triggered commit_id before fetching repo
+            # (commit does not exist in local repository yet)
+            committed_date = self.repo.commit(self.commit_id).committed_date
+            self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clean(self):
