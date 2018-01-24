@@ -25,6 +25,30 @@ which uses in build runner
 import os
 import pathlib
 import platform
+from urllib.parse import quote
+
+LOGICAL_DRIVE = 3  # Drive type from MSDN
+
+
+def get_logical_drives():
+    """
+    Return list of logical drives in Windows only.
+    """
+    import wmi
+
+    drives = wmi.WMI().Win32_LogicalDisk(DriveType=LOGICAL_DRIVE)
+    return (drive.Caption for drive in drives)
+
+
+def find_folder_on_disks(folder):
+    """
+    Trying to find folder on all logical drives.
+    Works in Windows only.
+    """
+    for drive in get_logical_drives():
+        root_dir = os.path.join(drive, folder)
+        if os.path.isdir(root_dir):
+            return root_dir
 
 
 class MediaSdkDirectories(object):
@@ -89,12 +113,32 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
 
-        # only for Gerrit
-        if branch.startswith('refs/changes/'):
-            branch = branch.replace('refs/changes/', '')
+        return cls.get_commit_dir(branch, build_event, commit_id) / f'{product_type}_{build_type}'
 
-        return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id / \
-               f'{product_type}_{build_type}'
+    @classmethod
+    def get_commit_dir(cls, branch, build_event, commit_id):
+        """
+        Get path to artifacts of builds on all OSes
+
+        :param branch: Branch of repo
+        :type branch: String
+
+        :param build_event: Event of build (pre_commit|commit|nightly|weekly)
+        :type build_event: String
+
+        :param commit_id: SHA sum of commit
+        :type commit_id: String
+
+        :return: Path to artifacts of build
+        :rtype: String
+        """
+
+        # only for Gerrit
+        # ex: refs/changes/25/52345/1 -> 52345/1
+        if branch.startswith('refs/changes/'):
+            branch = branch.split('/', 3)[-1]
+
+        return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id
 
     @classmethod
     def get_repo_url_by_name(cls, name='MediaSDK'):
@@ -109,3 +153,36 @@ class MediaSdkDirectories(object):
         """
 
         return cls._repositories.get(name, None)
+
+    @classmethod
+    def get_mgen(cls):
+        return cls._mgen
+
+    @classmethod
+    def get_mediasdk_root(cls):
+        folder = cls._mediasdk_root
+        if not folder:
+            raise MediaSDKFolderNotFound(folder)
+        return folder
+
+    @classmethod
+    def get_mediasdk_streams(cls):
+        folder = cls._mediasdk_streams
+        if not folder:
+            raise MediaSDKFolderNotFound(folder)
+        return folder
+
+    @classmethod
+    def get_repo_url_by_name_w_credentials(cls, name, login, password):
+        creds = '//{}:{}@'.format(quote(login), quote(password))
+        return cls._repositories.get(name, '').replace('//', creds, 1)
+
+
+class MediaSDKException(Exception):
+    """Base class for all MediaSDK dirs errors"""
+    pass
+
+
+class MediaSDKFolderNotFound(MediaSDKException):
+    """Raise if MediaSDK folder not found"""
+    pass

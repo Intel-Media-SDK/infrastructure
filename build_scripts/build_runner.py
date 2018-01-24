@@ -31,7 +31,6 @@ It contains steps:
 
 During manual running, only the "build" step is performed if stage is not specified
 """
-import sys
 import argparse
 import json
 import logging
@@ -41,9 +40,10 @@ import pathlib
 import platform
 import shutil
 import subprocess
-from datetime import datetime
+import sys
 from collections import defaultdict
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from logging.config import dictConfig
 
@@ -294,7 +294,7 @@ class VsComponent(Action):
                         lines = infile.readlines()
                         for index, line in enumerate(lines):
                             outfile.write(line)
-                            if line.startswith('    <ClCompile>') and 'MultiProcessorCompilation'\
+                            if line.startswith('    <ClCompile>') and 'MultiProcessorCompilation' \
                                     not in lines[index + 1]:
                                 outfile.write(u'      '
                                               u'<MultiProcessorCompilation>'
@@ -563,17 +563,7 @@ class BuildGenerator(object):
             self.product_type, self.default_options["BUILD_TYPE"])
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
-        build_dir_parent = build_dir.parent
-        build_dir_name = build_dir.name
-
-        if build_dir.exists():
-            rebuilds = [rebuild.name for rebuild in build_dir_parent.iterdir()
-                        if rebuild.name.startswith(build_dir_name)]
-            duplicate = build_dir_parent / f'{build_dir_name}_{len(rebuilds)}'
-
-            self.log.info("Move previous artifacts to %s", duplicate)
-
-            build_dir.rename(duplicate)
+        rotate_dir(build_dir)
 
         self.log.info('Copy to %s', build_dir)
 
@@ -588,11 +578,15 @@ class BuildGenerator(object):
 
         if self.build_state_file.exists():
             with self.build_state_file.open() as state:
-                build_state = json.loads(state.read())
+                build_state = json.load(state)
+
+                with (build_dir.parent / f'{self.product_type}_status').open('w') as build_status:
+                    json.dump(build_state, build_status)
+
                 if build_state['status'] == "PASS":
                     last_build_path = build_dir.relative_to(build_root_dir)
                     # TODO write last build for all types of build (lin, win, emb, pre_si)
-                    with (build_dir_parent.parent / 'last_build').open('w') as last_build:
+                    with (build_dir.parent.parent / 'last_build').open('w') as last_build:
                         last_build.write(str(last_build_path))
 
     def run_stage(self, stage):
@@ -769,6 +763,7 @@ in format: <repo_name>:<branch>:<commit_id>
             status.write(json.dumps({'status': "FAIL"}))
         exit(Error.CRITICAL.value)
 
+
 if __name__ == '__main__':
     if platform.python_version_tuple() < ('3', '6'):
         print('\nERROR: Python 3.6 or higher required')
@@ -778,4 +773,6 @@ if __name__ == '__main__':
         from common import LOG_CONFIG
         from common import ProductState, MediaSdkDirectories
         from common import make_archive, set_output_stream, set_log_file, copy_win_files
+        from common.helper import rotate_dir
+
         main()

@@ -21,15 +21,17 @@
 """
 Common functions for build runner
 """
+import logging
 import os
+import pathlib
+import shutil
+import stat
 import sys
 import tarfile
-import pathlib
-import logging
 from logging.config import dictConfig
-from zipfile import ZipFile
-import shutil
 from shutil import copystat, Error, copy2
+from zipfile import ZipFile
+import json
 
 from .logger_conf import LOG_CONFIG
 
@@ -365,3 +367,122 @@ def copy_win_files(repos_dir, build_dir):
         copytree(mfts_samples_release_thm,
                  build_dir / 'win_Win32' / 'Release_THM',
                  ignore=ignore_files)
+
+
+def _remove_directory(path):
+    """
+    Removes directory: different from shutil.rmtree() in following aspects:
+    * if file or directory does not have write permission - tries to set this permission
+       before attempt to delete.
+    If there were exceptions during removing tree, first exception occured is raised again
+
+    @param path: directory to remove
+    @type path: C{string}
+
+    """
+    caught_exception = None
+    try:
+        this_dir, child_dirs, files = next(os.walk(path))
+    except StopIteration:
+        raise OSError(2, 'Path does not exist', path)
+    for childDir in child_dirs:
+        try:
+            path_to_remove = os.path.join(this_dir, childDir)
+            if os.path.islink(path_to_remove):
+                os.unlink(path_to_remove)
+            else:
+                remove_directory(path_to_remove)
+        except Exception as e:
+            if not caught_exception:
+                caught_exception = e
+    for f in files:
+        file_path = os.path.join(this_dir, f)
+        try:
+            os.unlink(file_path)
+        except:
+            try:
+                if not os.access(file_path, os.W_OK) and not os.path.islink(file_path):
+                    os.chmod(file_path, stat.S_IWRITE)
+                os.unlink(file_path)
+            except Exception as e:
+                if not caught_exception:
+                    caught_exception = e
+    try:
+        os.rmdir(this_dir)
+    except:
+        try:
+            if not os.access(this_dir, os.W_OK):
+                os.chmod(this_dir, stat.S_IWRITE)
+            os.rmdir(this_dir)
+        except Exception as e:
+            if not caught_exception:
+                caught_exception = e
+
+    if caught_exception:
+        raise caught_exception
+
+
+if os.name == 'nt':
+    def remove_directory(path):
+        try:
+            return _remove_directory(path)
+        except WindowsError as err:
+            # err == 206 - Path too long. Try unicode version of the function
+            # err == 123 - The filename, directory name, or volume label syntax is incorrect. Try unicode version of the function
+            # err == 3   - The system cannot find the path specified
+            if err in [3, 206, 123] and (not isinstance(path, str) or not path.startswith(u'\\\\?\\')):
+                return _remove_directory(u'\\\\?\\' + os.path.abspath(str(path, errors='ignore')))
+            raise
+else:
+    remove_directory = _remove_directory
+
+
+def rotate_dir(directory: pathlib.Path) -> bool:
+    """
+    Renames directory if exists:
+    dir -> dir_1
+    """
+    log = logging.getLogger()
+
+    dir_parent = directory.parent
+    dir_name = directory.name
+
+    if directory.exists():
+        redirs = [redir.name for redir in dir_parent.iterdir()
+                  if redir.name.startswith(dir_name)]
+        duplicate = dir_parent / f'{dir_name}_{len(redirs)}'
+
+        log.info("Move previous directory to %s", duplicate)
+
+        directory.rename(duplicate)
+        return True
+
+    return False
+
+
+def update_json(check_type, success, output, json_path):
+    new_data = {
+        check_type: {
+            "success" : success,
+            "message" : output
+        }
+    }
+
+    path = pathlib.Path(json_path)
+    # Create full path until the file (if not exist)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = None
+    if path.exists():
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            data.update(new_data)
+
+            with open(path, "w") as f:
+                json.dump(data, f)
+        except Exception:
+            return False
+    else:
+        with open(path, "w") as f:
+            json.dump(new_data, f)
+    return True
