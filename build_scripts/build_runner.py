@@ -580,7 +580,7 @@ class BuildGenerator(object):
             with self.build_state_file.open() as state:
                 build_state = json.load(state)
 
-                with (build_dir.parent / f'{self.product_type}_status').open('w') as build_status:
+                with (build_dir.parent / f'{self.product_type}_status.json').open('w') as build_status:
                     json.dump(build_state, build_status)
 
                 if build_state['status'] == "PASS":
@@ -720,7 +720,7 @@ in format: <repo_name>:<branch>:<commit_id>
                         choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'pre_si', 'windows'],
+                        choices=['linux', 'embedded', 'open_source', 'windows'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
