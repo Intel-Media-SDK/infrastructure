@@ -723,7 +723,7 @@ in format: <repo_name>:<branch>:<commit_id>
                         choices=['linux', 'embedded', 'pre_si', 'windows'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=['pre_commit', 'commit', 'nightly', 'weekly'],
+                        choices=['pre_commit', 'commit', 'nightly', 'weekly', 'open_source'],
                         help='Event of build')
     parser.add_argument("--stage", type=Stage, choices=Stage, default='build',
                         help="Current executable stage")
