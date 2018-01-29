@@ -580,7 +580,7 @@ class BuildGenerator(object):
             with self.build_state_file.open() as state:
                 build_state = json.load(state)
 
-                with (build_dir.parent / f'{self.product_type}_status').open('w') as build_status:
+                with (build_dir.parent / f'{self.product_type}_status.json').open('w') as build_status:
                     json.dump(build_state, build_status)
 
                 if build_state['status'] == "PASS":
