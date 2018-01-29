@@ -720,10 +720,10 @@ in format: <repo_name>:<branch>:<commit_id>
                         choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'pre_si', 'windows'],
+                        choices=['linux', 'embedded', 'open_source', 'windows'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=['pre_commit', 'commit', 'nightly', 'weekly', 'open_source'],
+                        choices=['pre_commit', 'commit', 'nightly', 'weekly'],
                         help='Event of build')
     parser.add_argument("--stage", type=Stage, choices=Stage, default='build',
                         help="Current executable stage")
