@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,11 @@ class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
     TEST_MODE = "test_mode"
 
+
 BUILD = "build"
 BUILD_MASTER = "build-master-branch"
 BUILD_NOT_MASTER = "build-other-branches"
+BUILD_API_LATEST = "build-api-latest"
 TEST = "test"
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
