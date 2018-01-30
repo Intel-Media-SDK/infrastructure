@@ -34,6 +34,7 @@ BUILD_MASTER = "build-master-branch"
 BUILD_NOT_MASTER = "build-other-branches"
 BUILD_API_LATEST = "build-api-latest"
 TEST = "test"
+TEST_API_LATEST = "test-api-latest"
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 
