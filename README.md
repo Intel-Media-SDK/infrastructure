@@ -37,8 +37,8 @@ rm -rf ./tmp_master/
 
 #Configure Github`s webhook in your repository in settings-webhooks and create Github`s token after that do:
 cd master
-cp ./secrets.py.example ./secrets.py
-nano secrets.py #add your real values
+cp ./msdk_secrets.py.example ./msdk_secrets.py
+nano msdk_secrets.py #add your real values
 
 #Start Master Buildbot
 cd ..
