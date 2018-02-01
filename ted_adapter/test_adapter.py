@@ -110,12 +110,12 @@ def main():
     parser.add_argument('-br', "--branch", metavar="String", required=True,
                         help="Branch of triggered repository")
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=['pre_commit', 'commit', 'nightly', 'weekly', 'other-branches', 'api_latest'],
+                        choices=['pre_commit', 'commit', 'nightly', 'weekly'],
                         help='Event of commit')
     parser.add_argument('-c', "--commit-id", metavar="String", required=True,
                         help="SHA of triggered commit")
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'pre_si', 'windows'],
+                        choices=['linux', 'embedded', 'pre_si', 'windows', 'api_latest'],
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
