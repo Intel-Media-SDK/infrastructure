@@ -40,7 +40,7 @@ class TestAdapter(object):
     Wrapper for 'ted'
     """
 
-    test_driver_dir = pathlib.Path('/localdisk/bb/worker/test/infrastructure') #TODO: hardcoded path
+    test_driver_dir = pathlib.Path('/localdisk/bb/worker/infrastructure') #TODO: hardcoded path
     tests_timeout = 300  # 5 minutes
 
     def __init__(self, build_artifacts_dir):
