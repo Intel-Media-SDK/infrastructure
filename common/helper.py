@@ -479,10 +479,10 @@ def update_json(check_type, success, output, json_path):
             data.update(new_data)
 
             with open(path, "w") as f:
-                json.dump(data, f)
+                json.dump(data, f, indent=4, sort_keys=True)
         except Exception:
             return False
     else:
         with open(path, "w") as f:
-            json.dump(new_data, f)
+            json.dump(new_data, f, indent=4, sort_keys=True)
     return True
