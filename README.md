@@ -16,7 +16,7 @@ Dependencies:
 - postgresql
 
 ```bash
-sudo pip3 install buildbot==0.9.13 buildbot-console-view==0.9.13 buildbot-waterfall-view==0.9.13 buildbot-grid-view==0.9.13 buildbot-www==0.9.13
+sudo pip3 install buildbot==0.9.15.post1 buildbot-console-view==0.9.15.post1 buildbot-waterfall-view==0.9.15.post1 buildbot-grid-view==0.9.15.post1 buildbot-www==0.9.15.post1
 ```
 Hint:  
 It can work with default DB (sqlite) for that it needs to change next value in `bb/master/config.py`:
@@ -37,8 +37,8 @@ rm -rf ./tmp_master/
 
 #Configure Github`s webhook in your repository in settings-webhooks and create Github`s token after that do:
 cd master
-cp ./secrets.py.example ./secrets.py
-nano secrets.py #add your real values
+cp ./msdk_secrets.py.example ./msdk_secrets.py
+nano msdk_secrets.py #add your real values
 
 #Start Master Buildbot
 cd ..
@@ -63,7 +63,7 @@ Dependencies:
 
 
 ```bash
-sudo pip3 install buildbot-worker==0.9.13
+sudo pip3 install buildbot-worker==0.9.15.post1
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
 
 #Recommended list of packages
@@ -77,11 +77,8 @@ Deploy:
 ```bash
 buildbot-worker create-worker "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/build-master-branch/infrastructure
-git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker/build-master-branch/product-configs
-
-mkdir ./worker/build-other-branches
-cp -r ./worker/build-master-branch/{infrastructure,product-configs} ./worker/build-other-branches/
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrastructure
+git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker/product-configs
 
 #Start Worker Buildbot
 buildbot-worker start worker
@@ -111,7 +108,7 @@ Deploy:
 ```bash
 buildbot-worker create-worker "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/test/infrastructure
+git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrastructure
 
 #Start Worker Buildbot
 buildbot-worker start worker
@@ -123,9 +120,9 @@ usermod -a -G video <mediasdk_user>
 #And restart session!
 ```
 
-### Hint
-You can update all configurations by simple executing `git pull` command!
-
+### Hints
+- You can update all configurations by simple executing `git pull` command!
+- Do not forget to add the line with `umask = 0o2` to the `buildbot.tac` file on all your masters and workers for the correct file permissions!
 
 # License
 This project is licensed under MIT license. See [LICENSE](./LICENSE) for details.
