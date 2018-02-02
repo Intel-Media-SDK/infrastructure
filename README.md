@@ -120,9 +120,9 @@ usermod -a -G video <mediasdk_user>
 #And restart session!
 ```
 
-### Hint
-You can update all configurations by simple executing `git pull` command!
-
+### Hints
+- You can update all configurations by simple executing `git pull` command!
+- Do not forget to add the line with `umask = 0o2` to the `buildbot.tac` file on all your masters and workers for the correct file permissions!
 
 # License
 This project is licensed under MIT license. See [LICENSE](./LICENSE) for details.
