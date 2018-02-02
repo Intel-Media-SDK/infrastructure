@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ class TestAdapter(object):
     Wrapper for 'ted'
     """
 
-    test_driver_dir = pathlib.Path('/localdisk/bb/worker/test/infrastructure') #TODO: hardcoded path
+    test_driver_dir = pathlib.Path('/localdisk/bb/worker/infrastructure') #TODO: hardcoded path
     tests_timeout = 300  # 5 minutes
 
     def __init__(self, build_artifacts_dir):
@@ -110,12 +110,12 @@ def main():
     parser.add_argument('-br', "--branch", metavar="String", required=True,
                         help="Branch of triggered repository")
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=['pre_commit', 'commit', 'nightly', 'weekly', 'other-branches'],
+                        choices=['pre_commit', 'commit', 'nightly', 'weekly'],
                         help='Event of commit')
     parser.add_argument('-c', "--commit-id", metavar="String", required=True,
                         help="SHA of triggered commit")
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'pre_si', 'windows'],
+                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest'],
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
