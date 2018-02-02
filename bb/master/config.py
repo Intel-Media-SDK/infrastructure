@@ -41,9 +41,9 @@ WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 
 RUN_COMMAND = "python3.6"
-WORKERS = {BUILD: {"worker-build": {},
+WORKERS = {BUILD: {"b-1-10": {},
                   "b-1-14": {}},
-           TEST: {"worker-test": {},
+           TEST: {"t-1-17": {},
                   "t-1-16": {}}}
 
 BUILD_TYPE = "release"
