@@ -30,7 +30,7 @@ git clone https://github.com/Intel-Media-SDK/infrastructure.git
 cd ./infrastructure/bb/
 mv ./master ./tmp_master
 
-buildbot create-master master
+buildbot create-master --umask=0o2 master
 
 cp ./tmp_master/* ./master/
 rm -rf ./tmp_master/
@@ -75,7 +75,7 @@ sudo yum install libX11 libXext libXfixes libGL libGL-devel libX11-devel
 
 Deploy:
 ```bash
-buildbot-worker create-worker "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
+buildbot-worker create-worker --umask=0o2 "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
 
 git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrastructure
 git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker/product-configs
@@ -106,7 +106,7 @@ git lfs install
 
 Deploy:
 ```bash
-buildbot-worker create-worker "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
+buildbot-worker create-worker --umask=0o2 "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
 
 git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrastructure
 
@@ -123,6 +123,7 @@ usermod -a -G video <mediasdk_user>
 ### Hints
 - You can update all configurations by simple executing `git pull` command!
 - Do not forget to add the line with `umask = 0o2` to the `buildbot.tac` file on all your masters and workers for the correct file permissions!
+- To have additional information about your worker in Buildbot\`s worker list add **ip-address** to the `worker/info/host` file.
 
 # License
 This project is licensed under MIT license. See [LICENSE](./LICENSE) for details.
