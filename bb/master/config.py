@@ -28,7 +28,6 @@ class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
     TEST_MODE = "test_mode"
 
-
 BUILD = "build"
 BUILD_MASTER = "build-master-branch"
 BUILD_NOT_MASTER = "build-other-branches"
@@ -36,9 +35,6 @@ BUILD_API_LATEST = "build-api-latest"
 
 TEST = "test"
 TEST_API_LATEST = "test-api-latest"
-
-WORKER_PASS = msdk_secrets.WORKER_PASS
-DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 
 RUN_COMMAND = "python3.6"
 WORKERS = {BUILD: {"b-1-10": {},
@@ -54,26 +50,29 @@ BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis i
 BUILDBOT_TREE_STABLE_TIMER = None # Value "None" means that a separate build will be started immediately for each Change.
 BUILDBOT_TITLE = "Intel® Media SDK"
 
+POLL_INTERVAL = 10 # Poll Github for new changes (in seconds)
+
+WORKER_PASS = msdk_secrets.WORKER_PASS
+DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
+DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 GITHUB_WEBHOOK_SECRET = msdk_secrets.GITHUB_WEBHOOK_SECRET
+GITHUB_OWNER = "Intel-Media-SDK"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
-    DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
-    GITHUB_REPOSITORY = "Intel-Media-SDK/MediaSDK"
-    BUILDBOT_TITLE_URL = "https://github.com/Intel-Media-SDK/MediaSDK"
-    REPO_INFO = r"MediaSDK:%(prop:branch)s:%(prop:revision)s"
-
+    GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
-    DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
-    GITHUB_REPOSITORY = "Intel-Media-SDK/flow_test"
-    BUILDBOT_TITLE_URL = "https://github.com/Intel-Media-SDK/flow_test"
-    REPO_INFO = r"flow_test:%(prop:branch)s:%(prop:revision)s"
-
+    DATABASE_URL = "sqlite:///state.sqlite" # Only for test mode
+    GITHUB_OWNERS_REPO = "flow_test"
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
     sys.exit("Mode %s is not defined" % CURRENT_MODE)
+
+GITHUB_REPOSITORY = "%s/%s" GITHUB_OWNER, GITHUB_OWNERS_REPO
+REPO_URL = "https://github.com/%s" % GITHUB_REPOSITORY
+REPO_INFO = "%s:%(prop:branch)s:%(prop:revision)s" % GITHUB_OWNERS_REPO
