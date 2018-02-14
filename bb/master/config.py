@@ -54,7 +54,7 @@ POLL_INTERVAL = 10 # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
-DATABASE_URL = "postgresql://buildbot:%s@localhost/buildbot" % DATABASE_PASSWORD
+DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 GITHUB_WEBHOOK_SECRET = msdk_secrets.GITHUB_WEBHOOK_SECRET
 GITHUB_OWNER = "Intel-Media-SDK"
@@ -71,8 +71,8 @@ elif CURRENT_MODE == Mode.TEST_MODE:
     GITHUB_OWNERS_REPO = "flow_test"
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
-    sys.exit("Mode %s is not defined" % CURRENT_MODE)
+    sys.exit(f"Mode {CURRENT_MODE} is not defined")
 
-GITHUB_REPOSITORY = "%s/%s" GITHUB_OWNER, GITHUB_OWNERS_REPO
-REPO_URL = "https://github.com/%s" % GITHUB_REPOSITORY
-REPO_INFO = "%s:%(prop:branch)s:%(prop:revision)s" % GITHUB_OWNERS_REPO
+GITHUB_REPOSITORY = f"{GITHUB_OWNER}/{GITHUB_OWNERS_REPO}"
+REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"
+REPO_INFO = f"{GITHUB_OWNERS_REPO}:%(prop:branch)s:%(prop:revision)s"
