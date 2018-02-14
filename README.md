@@ -14,7 +14,7 @@ Dependencies:
 - CentOS v7.3
 - python v3.6.x
 - postgresql
-- git v1.7.10+ (for the `credentials.helper`)
+- git
 
 ```bash
 sudo pip3 install buildbot==0.9.15.post1 buildbot-console-view==0.9.15.post1 buildbot-waterfall-view==0.9.15.post1 buildbot-grid-view==0.9.15.post1 buildbot-www==0.9.15.post1
@@ -50,7 +50,7 @@ buildbot start master
 Dependencies:
 - CentOS v7.3
 - python v3.6.x
-- git v1.7.10+
+- git
 - Intel® Media Server Studio 2017 R3
   - Minimal needed rpms from MSS:
       ```bash
@@ -90,7 +90,7 @@ buildbot-worker start worker
 Dependencies:
 - CentOS v7.3
 - python v3.6.x
-- git v1.7.10+
+- git
 - Intel® Media Server Studio 2017 R3
   - Minimal needed rpms:
       ```bash
