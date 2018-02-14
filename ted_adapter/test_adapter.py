@@ -102,6 +102,7 @@ class TestAdapter(object):
         return process.returncode
 
     def copy_logs_to_share(self):
+        rotate_dir(self.tests_artifacts_dir)
         print(f'Copy results to {self.tests_artifacts_dir}')
 
         # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
@@ -166,4 +167,5 @@ def main():
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from common import MediaSdkDirectories
+    from common.helper import rotate_dir
     main()
