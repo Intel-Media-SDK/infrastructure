@@ -11,9 +11,10 @@ Repository contains:
 # How to deploy
 ### Deploy master Buildbot
 Dependencies:
-- CentOS 7.3
-- python 3.6.x
+- CentOS v7.3
+- python v3.6.x
 - postgresql
+- git
 
 ```bash
 sudo pip3 install buildbot==0.9.15.post1 buildbot-console-view==0.9.15.post1 buildbot-waterfall-view==0.9.15.post1 buildbot-grid-view==0.9.15.post1 buildbot-www==0.9.15.post1
@@ -47,8 +48,9 @@ buildbot start master
 ```
 ### Deploy build box Worker Buildbot
 Dependencies:
-- CentOS 7.3
-- python 3.6.x
+- CentOS v7.3
+- python v3.6.x
+- git
 - Intel® Media Server Studio 2017 R3
   - Minimal needed rpms from MSS:
       ```bash
@@ -86,8 +88,9 @@ buildbot-worker start worker
 
 ### Deploy test box Worker Buildbot
 Dependencies:
-- CentOS 7.3
-- python 3.6.x
+- CentOS v7.3
+- python v3.6.x
+- git
 - Intel® Media Server Studio 2017 R3
   - Minimal needed rpms:
       ```bash
@@ -124,6 +127,7 @@ usermod -a -G video <mediasdk_user>
 - You can update all configurations by simple executing `git pull` command!
 - Do not forget to add the line with `umask = 0o2` to the `buildbot.tac` file on all your masters and workers for the correct file permissions!
 - To have additional information about your worker in Buildbot\`s worker list add **ip-address** to the `worker/info/host` file.
+- Our configuration of Buildbot uses `GitPoller` so in case of private repos you need to execute `git config --global credential.helper store` and login once with your infrastructure credentials (otherwise polling will NOT work).
 
 # License
 This project is licensed under MIT license. See [LICENSE](./LICENSE) for details.
