@@ -41,15 +41,20 @@ class TestAdapter(object):
     """
 
     test_driver_dir = pathlib.Path('/localdisk/bb/worker/infrastructure') #TODO: hardcoded path
+    test_results_dir = test_driver_dir / 'ted/results'
     tests_timeout = 300  # 5 minutes
 
-    def __init__(self, build_artifacts_dir):
+    def __init__(self, build_artifacts_dir, tests_artifacts_dir):
         """
         :param build_artifacts_dir: Path to build artifacts
         :type build_artifacts_dir: pathlib.Path
+        
+        :param tests_artifacts_dir: Path to tests artifacts
+        :type tests_artifacts_dir: pathlib.Path
         """
 
         self.build_artifacts_dir = build_artifacts_dir
+        self.tests_artifacts_dir = tests_artifacts_dir
 
     def _get_artifacts(self):
         """
@@ -96,6 +101,16 @@ class TestAdapter(object):
                                  errors='backslashreplace')
         return process.returncode
 
+    def copy_logs_to_share(self):
+        rotate_dir(self.tests_artifacts_dir)
+        print(f'Copy results to {self.tests_artifacts_dir}')
+
+        # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
+        _orig_copystat = shutil.copystat
+        shutil.copystat = lambda x, y, follow_symlinks=True: x
+        shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
+        shutil.copystat = _orig_copystat
+
 
 def main():
     """
@@ -122,15 +137,29 @@ def main():
                         help='Type of build')
     args = parser.parse_args()
 
-    build_artifacts_dir = MediaSdkDirectories.get_build_dir(
-        args.branch, args.build_event, args.commit_id, args.product_type, args.build_type)
+    directories_layout = [
+        args.branch,
+        args.build_event,
+        args.commit_id,
+        args.product_type,
+        args.build_type
+    ]
 
+    build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
+    tests_artifacts_dir = MediaSdkDirectories.get_tests_dir(*directories_layout)
+
+    adapter = TestAdapter(build_artifacts_dir, tests_artifacts_dir)
     try:
-        adapter = TestAdapter(build_artifacts_dir)
         failed_cases = adapter.run_test()
     except:
         print("Exception occurred:\n", traceback.format_exc())
         # TODO return json string
+        failed_cases = 1
+
+    try:
+        adapter.copy_logs_to_share()
+    except:
+        print("Exception occurred while copying results:\n", traceback.format_exc())
         failed_cases = 1
 
     exit(failed_cases)
@@ -138,4 +167,5 @@ def main():
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from common import MediaSdkDirectories
+    from common.helper import rotate_dir
     main()

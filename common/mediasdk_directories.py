@@ -90,6 +90,32 @@ class MediaSdkDirectories(object):
         return cls._builds_root_path
 
     @classmethod
+    def get_tests_dir(cls, branch, build_event, commit_id, product_type, build_type):
+        """
+        Get path to artifacts of tests results
+
+        :param branch: Branch of repo
+        :type branch: String
+
+        :param build_event: Event of build (pre_commit|commit|nightly|weekly)
+        :type build_event: String
+
+        :param commit_id: SHA sum of commit
+        :type commit_id: String
+
+        :param product_type: Type of product (linux|windows|embedded|pre_si)
+        :type product_type: String
+
+        :param build_type: Type of build (release|debug)
+        :type build_type: String
+
+        :return: Path to artifacts of build
+        :rtype: String
+        """
+
+        return pathlib.Path(cls._tests_root_path) / branch / build_event / commit_id / f'{product_type}_{build_type}'
+
+    @classmethod
     def get_build_dir(cls, branch, build_event, commit_id, product_type, build_type):
         """
         Get path to artifacts of build 
