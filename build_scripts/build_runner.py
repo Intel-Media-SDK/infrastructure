@@ -585,8 +585,7 @@ class BuildGenerator(object):
 
                 if build_state['status'] == "PASS":
                     last_build_path = build_dir.relative_to(build_root_dir)
-                    # TODO write last build for all types of build (lin, win, emb, pre_si)
-                    with (build_dir.parent.parent / 'last_build').open('w') as last_build:
+                    with (build_dir.parent.parent / f'last_build_{self.product_type}').open('w') as last_build:
                         last_build.write(str(last_build_path))
 
     def run_stage(self, stage):
@@ -720,7 +719,7 @@ in format: <repo_name>:<branch>:<commit_id>
                         choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest'],
+                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest', 'embedded_private'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
