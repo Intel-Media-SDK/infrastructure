@@ -45,6 +45,7 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
+from tenacity import retry, stop_after_attempt, wait_exponential
 from logging.config import dictConfig
 
 
@@ -423,6 +424,7 @@ class BuildGenerator(object):
 
         self.data_to_archive = self.config_variables.get('DATA_TO_ARCHIVE', [])
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
     def clean(self):
         """
         Clean build directories
