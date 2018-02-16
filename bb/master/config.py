@@ -60,11 +60,17 @@ GITHUB_WEBHOOK_SECRET = msdk_secrets.GITHUB_WEBHOOK_SECRET
 GITHUB_OWNER = "Intel-Media-SDK"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
+#CURRENT_MODE = Mode.PRODUCTION_MODE_EMBEDDED
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
+
+elif CURRENT_MODE == Mode.PRODUCTION_MODE_EMBEDDED:
+    WORKERS = {BUILD: {"b-50-41": {}}}
+    GITHUB_OWNERS_REPO = "Next-GEN"
+    BUILDBOT_URL = "http://10.125.50.41:5000/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     DATABASE_URL = "sqlite:///state.sqlite" # Only for test mode
