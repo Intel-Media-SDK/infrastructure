@@ -26,6 +26,7 @@ import msdk_secrets
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
+    PRODUCTION_MODE_EMBEDDED = "production_mode_embedded"
     TEST_MODE = "test_mode"
 
 BUILD = "build"
@@ -56,15 +57,20 @@ WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
-GITHUB_WEBHOOK_SECRET = msdk_secrets.GITHUB_WEBHOOK_SECRET
 GITHUB_OWNER = "Intel-Media-SDK"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
+#CURRENT_MODE = Mode.PRODUCTION_MODE_EMBEDDED
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
+
+elif CURRENT_MODE == Mode.PRODUCTION_MODE_EMBEDDED:
+    WORKERS = msdk_secrets.WORKERS
+    GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
+    BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     DATABASE_URL = "sqlite:///state.sqlite" # Only for test mode

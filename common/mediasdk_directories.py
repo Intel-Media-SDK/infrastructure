@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +64,6 @@ class MediaSdkDirectories(object):
         'MediaSDK': 'https://github.com/Intel-Media-SDK/MediaSDK',
         # test_repositories
         'flow_test': 'git@github.com:Intel-Media-SDK/flow_test.git',
-        'MediaSDKTEST': 'https://github.com/adydychk/MediaSDK'
     }
 
     @classmethod
