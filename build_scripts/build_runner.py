@@ -322,7 +322,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
-                 commit_time=None, changed_repo=None):
+                 commit_time=None, changed_repo=None, fork_url=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -344,6 +344,9 @@ class BuildGenerator(object):
 
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
+        
+        :param fork_url: Link to forked repository
+        :type fork_url: String
         """
 
         self.build_config_path = build_config_path
@@ -353,6 +356,7 @@ class BuildGenerator(object):
         self.build_event = build_event
         self.commit_time = commit_time
         self.changed_repo = changed_repo
+        self.fork_url = fork_url
         self.build_state_file = root_dir / "build_state"
         self.default_options = {
             "ROOT_DIR": root_dir,
@@ -443,6 +447,8 @@ class BuildGenerator(object):
         if repo_name in self.product_repos:
             self.product_repos[repo_name]['branch'] = branch
             self.product_repos[repo_name]['commit_id'] = commit_id
+            if self.fork_url:
+                self.product_repos[repo_name]['url'] = self.fork_url
         else:
             raise WrongTriggeredRepo('%s repository is not defined in the product '
                                      'configuration PRODUCT_REPOS', repo_name)
@@ -715,6 +721,7 @@ def main():
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
+    parser.add_argument('-fu', "--fork-url", metavar="URL", help='Link to forked repository')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
@@ -742,7 +749,8 @@ in format: <repo_name>:<branch>:<commit_id>
         args.product_type,
         args.build_event,
         commit_time,
-        args.changed_repo
+        args.changed_repo,
+        args.fork_url
     )
 
     # We must create BuildGenerator anyway.
