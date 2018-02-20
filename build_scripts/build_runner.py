@@ -721,7 +721,7 @@ def main():
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
-    parser.add_argument('-fu', "--fork-url", metavar="URL", help='Link to forked repository')
+    parser.add_argument('-f', "--fork-url", metavar="URL", help='Link to forked repository')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
