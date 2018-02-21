@@ -44,6 +44,7 @@ WORKERS = {BUILD: {"b-1-10": {},
                   "t-1-16": {}}}
 
 BUILD_TYPE = "release"
+MASTER_PRODUCT_TYPE = "linux" # Product type of master (branch) build
 
 PORT = "5000"
 WORKER_PORT = "9000"
@@ -68,9 +69,11 @@ if CURRENT_MODE == Mode.PRODUCTION_MODE:
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.PRODUCTION_MODE_EMBEDDED:
+    BUILDBOT_TITLE = "Intel® MSDK-private"
     WORKERS = msdk_secrets.WORKERS
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
+    MASTER_PRODUCT_TYPE = "embedded_private"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     DATABASE_URL = "sqlite:///state.sqlite" # Only for test mode
