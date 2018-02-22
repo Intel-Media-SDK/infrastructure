@@ -39,7 +39,7 @@ TEST_API_LATEST = "test-api-latest"
 
 RUN_COMMAND = "python3.6"
 WORKERS = {BUILD: {"b-1-10": {},
-                  "b-1-14": {}},
+                   "b-1-14": {}},
            TEST: {"t-1-17": {},
                   "t-1-16": {}}}
 
@@ -69,8 +69,10 @@ if CURRENT_MODE == Mode.PRODUCTION_MODE:
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
-    BUILDBOT_TITLE = "Intel® MSDK-private"
-    WORKERS = msdk_secrets.WORKERS
+    BUILDBOT_TITLE = "MediaSDK Private"
+    WORKERS = {BUILD: {"b-50-41": {},
+                       "b-50-61": {}},
+               TEST: {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
     MASTER_PRODUCT_TYPE = "embedded_private"
