@@ -62,6 +62,16 @@ Dependencies:
       libva-xxx-xxx.el7.centos.x86_64.rpm
       libva-devel-xxx-xxx.el7.centos.x86_64.rpm
       ```
+>Hint:  
+>```bash
+>#To install packages use
+>sudo yum install -ihv intel-opencl-*
+>sudo yum install -ihv drm-*
+>sudo yum install -ihv libva-*
+>
+>#To remove previous installed packages
+>sudo yum install -e intel-opencl-*
+>```
 
 
 ```bash
@@ -116,12 +126,12 @@ git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrast
 #Start Worker Buildbot
 buildbot-worker start worker
 ```
-Hint:  
-To use graphical driver (from Media Server Studio) with tests as not root user do: 
-```bash
-usermod -a -G video <mediasdk_user>
-#And restart session!
-```
+>Hint:  
+>To use graphical driver (from Media Server Studio) with tests as not root user do: 
+>```bash
+>usermod -a -G video <mediasdk_user>
+>#And restart session!
+>```
 
 ### Hints
 - You can update all configurations by simple executing `git pull` command!
