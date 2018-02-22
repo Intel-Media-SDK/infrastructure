@@ -26,7 +26,7 @@ import msdk_secrets
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
-    PRODUCTION_MODE_EMBEDDED = "production_mode_embedded"
+    PRODUCTION_MODE_PRIVATE = "production_mode_private"
     TEST_MODE = "test_mode"
 
 BUILD = "build"
@@ -61,14 +61,14 @@ GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 GITHUB_OWNER = "Intel-Media-SDK"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
-#CURRENT_MODE = Mode.PRODUCTION_MODE_EMBEDDED
+#CURRENT_MODE = Mode.PRODUCTION_MODE_PRIVATE
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
-elif CURRENT_MODE == Mode.PRODUCTION_MODE_EMBEDDED:
+elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     BUILDBOT_TITLE = "Intel® MSDK-private"
     WORKERS = msdk_secrets.WORKERS
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
