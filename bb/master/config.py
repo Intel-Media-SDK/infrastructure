@@ -26,7 +26,7 @@ import msdk_secrets
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
-    PRODUCTION_MODE_EMBEDDED = "production_mode_embedded"
+    PRODUCTION_MODE_PRIVATE = "production_mode_private"
     TEST_MODE = "test_mode"
 
 BUILD = "build"
@@ -39,11 +39,12 @@ TEST_API_LATEST = "test-api-latest"
 
 RUN_COMMAND = "python3.6"
 WORKERS = {BUILD: {"b-1-10": {},
-                  "b-1-14": {}},
+                   "b-1-14": {}},
            TEST: {"t-1-17": {},
                   "t-1-16": {}}}
 
 BUILD_TYPE = "release"
+MASTER_PRODUCT_TYPE = "linux" # Product type of master (branch) build
 
 PORT = "5000"
 WORKER_PORT = "9000"
@@ -60,17 +61,21 @@ GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 GITHUB_OWNER = "Intel-Media-SDK"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
-#CURRENT_MODE = Mode.PRODUCTION_MODE_EMBEDDED
+#CURRENT_MODE = Mode.PRODUCTION_MODE_PRIVATE
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
-elif CURRENT_MODE == Mode.PRODUCTION_MODE_EMBEDDED:
-    WORKERS = msdk_secrets.WORKERS
+elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
+    BUILDBOT_TITLE = "MediaSDK Private"
+    WORKERS = {BUILD: {"b-50-41": {},
+                       "b-50-61": {}},
+               TEST: {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
+    MASTER_PRODUCT_TYPE = "embedded_private"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     DATABASE_URL = "sqlite:///state.sqlite" # Only for test mode
