@@ -17,7 +17,7 @@ Dependencies:
 - git
 
 ```bash
-sudo pip3 install buildbot==0.9.15.post1 buildbot-console-view==0.9.15.post1 buildbot-waterfall-view==0.9.15.post1 buildbot-grid-view==0.9.15.post1 buildbot-www==0.9.15.post1
+sudo pip3 install buildbot==0.9.15.post1 buildbot-console-view==0.9.15.post1 buildbot-www==0.9.15.post1
 ```
 Hint:  
 It can work with default DB (sqlite) for that it needs to change next value in `bb/master/config.py`:
