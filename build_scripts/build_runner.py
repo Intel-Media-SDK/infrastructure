@@ -361,6 +361,7 @@ class BuildGenerator(object):
         self.default_options = {
             "ROOT_DIR": root_dir,
             "REPOS_DIR": root_dir / "repos",
+            "REPOS_FORKED_DIR": root_dir / "repos_forked",
             "BUILD_DIR": root_dir / "build",
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
@@ -409,7 +410,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.default_options.get(directory)
@@ -438,8 +439,10 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
+        official_repo = True
 
         self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+        self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
         self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         repo_name, branch, commit_id = self.changed_repo.split(':')
@@ -448,12 +451,18 @@ class BuildGenerator(object):
             self.product_repos[repo_name]['branch'] = branch
             self.product_repos[repo_name]['commit_id'] = commit_id
             if self.fork_url:
+                if self.product_repos[repo_name]['url'] != self.fork_url:
+                    official_repo = False
                 self.product_repos[repo_name]['url'] = self.fork_url
         else:
             raise WrongTriggeredRepo('%s repository is not defined in the product '
                                      'configuration PRODUCT_REPOS', repo_name)
 
-        product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
+        product_state = None
+        if official_repo:
+            product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
+        else:
+            product_state = ProductState(self.product_repos, self.default_options["REPOS_FORKED_DIR"], self.commit_time)
         product_state.extract_all_repos()
 
         product_state.save_repo_states(self.default_options["PACK_DIR"] / 'sources.json')
