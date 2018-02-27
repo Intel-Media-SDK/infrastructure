@@ -78,7 +78,6 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     MASTER_PRODUCT_TYPE = "embedded_private"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
-    DATABASE_URL = "sqlite:///state.sqlite" # Only for test mode
     GITHUB_OWNERS_REPO = "flow_test"
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
