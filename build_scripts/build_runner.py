@@ -376,6 +376,10 @@ class BuildGenerator(object):
 
         self.log = logging.getLogger()
 
+        # Build and extract in directory for forked repositories in case of commit from forked repository
+        if fork_url:
+            self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
+
     def generate_build_config(self):
         """
         Build configuration file parser
@@ -439,7 +443,6 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
-        official_repo = True
 
         self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
         self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
@@ -451,18 +454,13 @@ class BuildGenerator(object):
             self.product_repos[repo_name]['branch'] = branch
             self.product_repos[repo_name]['commit_id'] = commit_id
             if self.fork_url:
-                if self.product_repos[repo_name]['url'] != self.fork_url:
-                    official_repo = False
                 self.product_repos[repo_name]['url'] = self.fork_url
         else:
             raise WrongTriggeredRepo('%s repository is not defined in the product '
                                      'configuration PRODUCT_REPOS', repo_name)
 
-        product_state = None
-        if official_repo:
-            product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
-        else:
-            product_state = ProductState(self.product_repos, self.default_options["REPOS_FORKED_DIR"], self.commit_time)
+        product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
+
         product_state.extract_all_repos()
 
         product_state.save_repo_states(self.default_options["PACK_DIR"] / 'sources.json')
