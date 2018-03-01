@@ -377,7 +377,7 @@ class BuildGenerator(object):
         self.log = logging.getLogger()
 
         # Build and extract in directory for forked repositories in case of commit from forked repository
-        if fork_url == f"{MediaSdkDirectories.get_repo_url_by_name(self.default_options["REPO_NAME"])}.git":
+        if fork_url != f"{MediaSdkDirectories.get_repo_url_by_name(self.default_options['REPO_NAME'])}.git":
             self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
 
     def generate_build_config(self):

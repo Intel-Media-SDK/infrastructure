@@ -63,7 +63,7 @@ class MediaSdkDirectories(object):
         # linux_open_source
         'MediaSDK': 'https://github.com/Intel-Media-SDK/MediaSDK',
         # test_repositories
-        'flow_test': 'git@github.com:Intel-Media-SDK/flow_test.git',
+        'flow_test': 'https://github.com/Intel-Media-SDK/flow_test',
     }
 
     @classmethod
