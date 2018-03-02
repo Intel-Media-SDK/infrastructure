@@ -322,7 +322,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
-                 commit_time=None, changed_repo=None, fork_url=None):
+                 commit_time=None, changed_repo=None, repo_url=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -345,8 +345,8 @@ class BuildGenerator(object):
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
         
-        :param fork_url: Link to forked repository
-        :type fork_url: String
+        :param repo_url: Link to the external repository (repository which is not in mediasdk_directories)
+        :type repo_url: String
         """
 
         self.build_config_path = build_config_path
@@ -356,11 +356,12 @@ class BuildGenerator(object):
         self.build_event = build_event
         self.commit_time = commit_time
         self.changed_repo = changed_repo
-        self.fork_url = fork_url
+        self.repo_url = repo_url
         self.build_state_file = root_dir / "build_state"
         self.default_options = {
             "ROOT_DIR": root_dir,
             "REPOS_DIR": root_dir / "repos",
+            "REPOS_FORKED_DIR": root_dir / "repos_forked",
             "BUILD_DIR": root_dir / "build",
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
@@ -374,6 +375,10 @@ class BuildGenerator(object):
         self.config_variables = {}
 
         self.log = logging.getLogger()
+
+        # Build and extract in directory for forked repositories in case of commit from forked repository
+        if repo_url != f"{MediaSdkDirectories.get_repo_url_by_name(self.default_options['REPO_NAME'])}.git":
+            self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
 
     def generate_build_config(self):
         """
@@ -409,7 +414,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.default_options.get(directory)
@@ -440,6 +445,7 @@ class BuildGenerator(object):
         """
 
         self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+        self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
         self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         repo_name, branch, commit_id = self.changed_repo.split(':')
@@ -447,13 +453,14 @@ class BuildGenerator(object):
         if repo_name in self.product_repos:
             self.product_repos[repo_name]['branch'] = branch
             self.product_repos[repo_name]['commit_id'] = commit_id
-            if self.fork_url:
-                self.product_repos[repo_name]['url'] = self.fork_url
+            if self.repo_url:
+                self.product_repos[repo_name]['url'] = self.repo_url
         else:
             raise WrongTriggeredRepo('%s repository is not defined in the product '
                                      'configuration PRODUCT_REPOS', repo_name)
 
         product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
+
         product_state.extract_all_repos()
 
         product_state.save_repo_states(self.default_options["PACK_DIR"] / 'sources.json')
@@ -721,7 +728,9 @@ def main():
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
-    parser.add_argument('-f', "--fork-url", metavar="URL", help='Link to forked repository')
+    parser.add_argument('-f', "--repo-url", metavar="URL", help='''Link to the repository.
+In most cases used to specify link to the forked repositories.
+Use this argument if you want to specify repository which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
@@ -750,7 +759,7 @@ in format: <repo_name>:<branch>:<commit_id>
         args.build_event,
         commit_time,
         args.changed_repo,
-        args.fork_url
+        args.repo_url
     )
 
     # We must create BuildGenerator anyway.
