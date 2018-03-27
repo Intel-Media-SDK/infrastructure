@@ -179,8 +179,22 @@ class Action(object):
 
                 self.log.debug(completed_process.stdout)
             except subprocess.CalledProcessError as process_error:
-                self.log.error(process_error.stdout)
+                if self.stage == Stage.BUILD:
+                    self._parse_logs(process_error.stdout)
+                else:
+                    self.log.error(process_error.stdout)
                 raise
+
+    def _parse_logs(self, stdout):
+        self.log.debug(stdout)
+        output = ""
+
+        substring = ' error ' if platform.system() == 'Windows' else ' error:'
+        for string in stdout.split('\n'):
+            if substring in string:
+                output += '\n' + string
+        set_output_stream('err')
+        self.log.error(output)
 
 
 class VsComponent(Action):
@@ -771,9 +785,10 @@ Use this argument if you want to specify repository which is not present in medi
     try:
         build_config.generate_build_config()
         build_config.run_stage(args.stage)
-    except Exception:
+    except Exception as exc:
         set_output_stream('err')
-        log.exception("Exception occurred")
+        if not isinstance(exc, subprocess.CalledProcessError):
+            log.exception("Exception occurred")
         log.error("%sING FAILED", args.stage.name)
         with open(pathlib.Path(args.root_dir) / 'build_state', 'w') as status:
             status.write(json.dumps({'status': "FAIL"}))
