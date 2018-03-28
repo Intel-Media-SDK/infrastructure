@@ -187,14 +187,19 @@ class Action(object):
 
     def _parse_logs(self, stdout):
         self.log.debug(stdout)
-        output = ""
+        output = [""]
 
+        # linux error example:
+        # .../graphbuilder.h:19:9: error: ‘class YAML::GraphBuilderInterface’ has virtual ...
+        # windows error example:
+        # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file generated ...
+        # LINK : fatal error LNK1257: code generation failed ...
         substring = ' error ' if platform.system() == 'Windows' else ' error:'
-        for string in stdout.split('\n'):
+        for string in stdout.splitlines():
             if substring in string:
-                output += '\n' + string
+                output.append(string)
         set_output_stream('err')
-        self.log.error(output)
+        self.log.error('\n'.join(output))
 
 
 class VsComponent(Action):
@@ -612,8 +617,8 @@ class BuildGenerator(object):
 
                 if build_state['status'] == "PASS":
                     last_build_path = build_dir.relative_to(build_root_dir)
-                    with (build_dir.parent.parent / f'last_build_{self.product_type}').open('w') as last_build:
-                        last_build.write(str(last_build_path))
+                    last_build_file = (build_dir.parent.parent / f'last_build_{self.product_type}')
+                    last_build_file.write_text(str(last_build_path))
 
     def run_stage(self, stage):
         """
@@ -653,8 +658,7 @@ class BuildGenerator(object):
         self.log.info("%sING COMPLETED", stage.name)
 
         if not self.build_state_file.exists():
-            with self.build_state_file.open('w') as state:
-                state.write(json.dumps({'status': "PASS"}))
+            self.build_state_file.write_text(json.dumps({'status': "PASS"}))
 
     def _action(self, name, stage=Stage.BUILD, cmd=None, work_dir=None, env=None, callfunc=None):
         """
@@ -790,8 +794,8 @@ Use this argument if you want to specify repository which is not present in medi
         if not isinstance(exc, subprocess.CalledProcessError):
             log.exception("Exception occurred")
         log.error("%sING FAILED", args.stage.name)
-        with open(pathlib.Path(args.root_dir) / 'build_state', 'w') as status:
-            status.write(json.dumps({'status': "FAIL"}))
+        build_state_file = pathlib.Path(args.root_dir) / 'build_state'
+        build_state_file.write_text(json.dumps({'status': "FAIL"}))
         exit(Error.CRITICAL.value)
 
 
