@@ -186,7 +186,7 @@ class Action(object):
                 raise
 
     def _parse_logs(self, stdout):
-        self.log.debug(stdout)
+        self.log.info(stdout)
         output = [""]
 
         # linux error example:
