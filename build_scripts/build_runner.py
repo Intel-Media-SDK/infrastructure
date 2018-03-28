@@ -617,7 +617,7 @@ class BuildGenerator(object):
 
                 if build_state['status'] == "PASS":
                     last_build_path = build_dir.relative_to(build_root_dir)
-                    last_build_file = (build_dir.parent.parent / f'last_build_{self.product_type}')
+                    last_build_file = build_dir.parent.parent / f'last_build_{self.product_type}'
                     last_build_file.write_text(str(last_build_path))
 
     def run_stage(self, stage):
