@@ -195,7 +195,6 @@ class Action(object):
         for string in stdout.splitlines():
             if substring in string:
                 output.append(string)
-
         output.append("The errors above were found in the output. See full log for details.")
         self.log.error('\n'.join(output))
 
