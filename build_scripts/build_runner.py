@@ -179,15 +179,12 @@ class Action(object):
 
                 self.log.debug(completed_process.stdout)
             except subprocess.CalledProcessError as process_error:
-                if self.stage == Stage.BUILD:
-                    self._parse_logs(process_error.stdout)
-                else:
-                    self.log.error(process_error.stdout)
+                self._parse_logs(process_error.stdout)
                 raise
 
     def _parse_logs(self, stdout):
         self.log.info(stdout)
-        output = [""]
+        output = ["The errors below were found in the output. See full log for details."]
 
         # linux error example:
         # .../graphbuilder.h:19:9: error: ‘class YAML::GraphBuilderInterface’ has virtual ...
