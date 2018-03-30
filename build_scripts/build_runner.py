@@ -184,7 +184,7 @@ class Action(object):
 
     def _parse_logs(self, stdout):
         self.log.info(stdout)
-        output = ["The errors below were found in the output. See full log for details."]
+        output = [""]
 
         # linux error example:
         # .../graphbuilder.h:19:9: error: ‘class YAML::GraphBuilderInterface’ has virtual ...
@@ -195,7 +195,7 @@ class Action(object):
         for string in stdout.splitlines():
             if substring in string:
                 output.append(string)
-        set_output_stream('err')
+        output.append("The errors above were found in the output. See full log for details.")
         self.log.error('\n'.join(output))
 
 
