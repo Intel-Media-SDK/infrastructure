@@ -144,6 +144,9 @@ class GitRepo(object):
             committed_date = self.repo.commit(self.commit_id).committed_date
             self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
+        # if self.commit_id == 'HEAD' set SHA to variable self.commit_id
+        self.commit_id = str(self.repo.commit())
+
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clean(self):
         """
@@ -236,11 +239,15 @@ class ProductState(object):
                 repo.revert_commit_by_time(commit_timestamp)
                 repo.checkout()
 
-    def save_repo_states(self, sources_file):
+    def save_repo_states(self, sources_file, trigger):
         """
         Write repositories states to json file
 
         :param sources_file: path to json file
+        :type sources_file: pathlib.Path
+
+        :param trigger: Triggered repository
+        :type trigger: String
         """
 
         with sources_file.open('a') as sources_state:
@@ -248,6 +255,11 @@ class ProductState(object):
             for state in self.repo_states:
                 states[state.name] = {
                     'branch': state.branch,
-                    'commit_id': state.commit_id
+                    'commit_id': state.commit_id,
+                    'url': state.url
                 }
-            sources_state.write(json.dumps(states))
+
+                if trigger == state.name:
+                    states[state.name]['trigger'] = True
+
+            sources_state.write(json.dumps(states, indent=4))
