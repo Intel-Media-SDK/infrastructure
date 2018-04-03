@@ -253,10 +253,8 @@ class ProductState(object):
                 states[state.name] = {
                     'branch': state.branch,
                     'commit_id': state.commit_id,
-                    'url': state.url
+                    'url': state.url,
+                    'trigger': True if trigger == state.name else False
                 }
 
-                if trigger == state.name:
-                    states[state.name]['trigger'] = True
-
-            sources_state.write(json.dumps(states, indent=4))
+            sources_state.write(json.dumps(states, indent=4, sort_keys=True))

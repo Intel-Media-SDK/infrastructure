@@ -338,7 +338,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
-                 commit_time=None, changed_repo=None, sources_file_path=None, repo_url=None):
+                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -361,8 +361,8 @@ class BuildGenerator(object):
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
         
-        :param sources_file_path: Path to sources file with repositories
-        :type sources_file_path: String
+        :param repo_states_file_path: Path to sources file with revisions of repositories to reproduce the same build
+        :type repo_states_file_path: String
         
         :param repo_url: Link to the external repository (repository which is not in mediasdk_directories)
         :type repo_url: String
@@ -398,14 +398,14 @@ class BuildGenerator(object):
             if self.repo_url and self.repo_url != f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo.split(':')[0])}.git":
                 self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
 
-        self.sources = None
-        if sources_file_path:
-            sources_file = pathlib.Path(sources_file_path)
-            if sources_file.exists():
-                with sources_file.open() as sources_json:
-                    self.sources = json.load(sources_json)
+        self.repo_states = None
+        if repo_states_file_path:
+            repo_states_file = pathlib.Path(repo_states_file_path)
+            if repo_states_file.exists():
+                with repo_states_file.open() as repo_states_json:
+                    self.repo_states = json.load(repo_states_json)
             else:
-                raise Exception(f'{sources_file} does not exist')
+                raise Exception(f'{repo_states_file} does not exist')
 
     def generate_build_config(self):
         """
@@ -486,8 +486,8 @@ class BuildGenerator(object):
             else:
                 raise WrongTriggeredRepo('%s repository is not defined in the product '
                                          'configuration PRODUCT_REPOS', repo_name)
-        elif self.sources:
-            for repo_name, values in self.sources.items():
+        elif self.repo_states:
+            for repo_name, values in self.repo_states.items():
                 self.product_repos[repo_name]['branch'] = values['branch']
                 self.product_repos[repo_name]['commit_id'] = values['commit_id']
                 self.product_repos[repo_name]['url'] = values['url']
@@ -497,7 +497,7 @@ class BuildGenerator(object):
         product_state.extract_all_repos()
 
         if self.changed_repo:
-            product_state.save_repo_states(self.default_options["PACK_DIR"] / 'sources.json', trigger=repo_name)
+            product_state.save_repo_states(self.default_options["PACK_DIR"] / 'repo_states.json', trigger=repo_name)
             shutil.copyfile(self.build_config_path, self.default_options["PACK_DIR"] / self.build_config_path.name)
 
         for action in self.actions[Stage.EXTRACT]:
@@ -537,7 +537,7 @@ class BuildGenerator(object):
                 install_pkg.tar.gz (store 'install' stage results)
                 developer_pkg.tar.gz (store 'build' stage results)
                 logs.tar.gz
-                sources.json
+                repo_states.json
 
         :return: None | Exception
         """
@@ -609,9 +609,9 @@ class BuildGenerator(object):
 
         if self.changed_repo:
             _, branch, commit_id = self.changed_repo.split(':')
-        elif self.sources:
-            for repo in self.sources:
-                if 'trigger' in repo:
+        elif self.repo_states:
+            for repo in self.repo_states:
+                if repo['trigger']:
                     branch = repo['branch']
                     commit_id = repo['commit_id']
 
@@ -771,7 +771,7 @@ def main():
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
-    parser.add_argument('-s', "--sources", metavar="PATH", help="Path to sources.json file")
+    parser.add_argument('-s', "--repo-states", metavar="PATH", help="Path to repo_states.json file")
     parser.add_argument('-f', "--repo-url", metavar="URL", help='''Link to the repository.
 In most cases used to specify link to the forked repositories.
 Use this argument if you want to specify repository which is not present in mediasdk_directories.''')
@@ -803,7 +803,7 @@ Use this argument if you want to specify repository which is not present in medi
         build_event=args.build_event,
         commit_time=commit_time,
         changed_repo=args.changed_repo,
-        sources_file_path=args.sources,
+        repo_states_file_path=args.repo_states,
         repo_url=args.repo_url
     )
 
@@ -814,11 +814,11 @@ Use this argument if you want to specify repository which is not present in medi
     dictConfig(LOG_CONFIG)
 
     try:
-        if not args.changed_repo and not args.sources:
-            log.error('"--changed-repo" or "--sources" argument bust be added')
+        if not args.changed_repo and not args.repo_states:
+            log.error('"--changed-repo" or "--repo-states" argument bust be added')
             exit(Error.CRITICAL.value)
-        elif args.changed_repo and args.sources:
-            log.info('Priority for --changed-repo, not for --sources')
+        elif args.changed_repo and args.repo_states:
+            log.info('Priority for --changed-repo, not for --repo-states')
 
         build_config.generate_build_config()
         build_config.run_stage(args.stage)
