@@ -144,9 +144,6 @@ class GitRepo(object):
             committed_date = self.repo.commit(self.commit_id).committed_date
             self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
-        # if self.commit_id == 'HEAD' set SHA to variable self.commit_id
-        self.commit_id = str(self.repo.commit())
-
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clean(self):
         """
