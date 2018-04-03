@@ -820,7 +820,7 @@ Use this argument if you want to specify repository which is not present in medi
             log.error('"--changed-repo" or "--repo-states" argument bust be added')
             exit(Error.CRITICAL.value)
         elif args.changed_repo and args.repo_states:
-            log.info('Priority for --changed-repo, not for --repo-states')
+            log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
         build_config.generate_build_config()
         build_config.run_stage(args.stage)
