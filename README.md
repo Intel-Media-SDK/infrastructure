@@ -108,11 +108,16 @@ Dependencies:
       ```
 
 ```bash
-#Install git lfs
+# Install git lfs:
+# For CentOS do:
 sudo yum install curl epel-release
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | sudo bash
 sudo yum install git-lfs
 git lfs install
+
+# For Ubuntu do:
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt-get install git-lfs
 
 #After that do the same things as described in section "build box Worker"
 ```
