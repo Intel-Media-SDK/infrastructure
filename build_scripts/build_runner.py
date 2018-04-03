@@ -474,10 +474,11 @@ class BuildGenerator(object):
         self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
         self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
         self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+        triggered_repo = 'unknown'
 
         if self.changed_repo:
             repo_name, branch, commit_id = self.changed_repo.split(':')
-
+            triggered_repo = repo_name
             if repo_name in self.product_repos:
                 self.product_repos[repo_name]['branch'] = branch
                 self.product_repos[repo_name]['commit_id'] = commit_id
@@ -488,6 +489,8 @@ class BuildGenerator(object):
                                          'configuration PRODUCT_REPOS', repo_name)
         elif self.repo_states:
             for repo_name, values in self.repo_states.items():
+                if values['trigger']:
+                    triggered_repo = repo_name
                 self.product_repos[repo_name]['branch'] = values['branch']
                 self.product_repos[repo_name]['commit_id'] = values['commit_id']
                 self.product_repos[repo_name]['url'] = values['url']
@@ -496,9 +499,8 @@ class BuildGenerator(object):
 
         product_state.extract_all_repos()
 
-        if self.changed_repo:
-            product_state.save_repo_states(self.default_options["PACK_DIR"] / 'repo_states.json', trigger=repo_name)
-            shutil.copyfile(self.build_config_path, self.default_options["PACK_DIR"] / self.build_config_path.name)
+        product_state.save_repo_states(self.default_options["PACK_DIR"] / 'repo_states.json', trigger=triggered_repo)
+        shutil.copyfile(self.build_config_path, self.default_options["PACK_DIR"] / self.build_config_path.name)
 
         for action in self.actions[Stage.EXTRACT]:
             action.run()
