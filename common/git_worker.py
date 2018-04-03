@@ -236,11 +236,15 @@ class ProductState(object):
                 repo.revert_commit_by_time(commit_timestamp)
                 repo.checkout()
 
-    def save_repo_states(self, sources_file):
+    def save_repo_states(self, sources_file, trigger):
         """
         Write repositories states to json file
 
         :param sources_file: path to json file
+        :type sources_file: pathlib.Path
+
+        :param trigger: Triggered repository
+        :type trigger: String
         """
 
         with sources_file.open('a') as sources_state:
@@ -248,6 +252,9 @@ class ProductState(object):
             for state in self.repo_states:
                 states[state.name] = {
                     'branch': state.branch,
-                    'commit_id': state.commit_id
+                    'commit_id': state.commit_id,
+                    'url': state.url,
+                    'trigger': True if trigger == state.name else False
                 }
-            sources_state.write(json.dumps(states))
+
+            sources_state.write(json.dumps(states, indent=4, sort_keys=True))
