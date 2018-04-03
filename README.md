@@ -139,5 +139,28 @@ buildbot-worker start worker
 - To have additional information about your worker in Buildbot\`s worker list add **ip-address** to the `worker/info/host` file.
 - Our configuration of Buildbot uses `GitPoller` so in case of private repos you need to execute `git config --global credential.helper store` and login once with your infrastructure credentials (otherwise polling will NOT work).
 
+# How to reproduce build manually 
+Our infrastructure was built on the principle of total reproducibility. You can reproduce certain `build step` from our Buildbot CI on your local machine. For that you have to:  
+- Install all necessary packages on your OS (see packages above if you want to reproduce open source linux build)
+- Clone repositories:
+```
+git clone https://github.com/Intel-Media-SDK/infrastructure.git
+git clone https://github.com/Intel-Media-SDK/product-configs.git
+cd infrastructure/build_scripts
+```
+- You can copy the build string from Buildbot ([example](http://mediasdk.intel.com/buildbot/#/builders/3/builds/122/steps/3/logs/stdio)) or write with your own and execute it. Note to change parameters: 
+    - `build-config` - how to build product (you can specify your own config)
+    - `root-dir` - where should be stored binaries after the build and logs
+    - `stage` - specifies which stage will be executed now (available stages `clean`, `extract`, `build`, `install`, `pack`, `copy`)
+Example:
+```
+python3.6 build_runner.py --build-config /localdisk/bb/worker/build-master-branch/../product-configs/conf_open_source.py --root-dir /localdisk/bb/worker/build-master-branch/build_dir --changed-repo MediaSDK:master:3b368450b49cde7be325988275ea8684d159df61 --build-type release --build-event commit --product-type linux --repo-url https://github.com/Intel-Media-SDK/MediaSDK.git --stage install
+```
+
+# How Buildbot knows about new commits (mechanism of Polling)
+Our Buildbot configuration uses `GitPoller` and `GitHubPullrequestPoller` to know about new commits.  
+- `GitPoller` - uses simple git. During first run Buildbot creates special directory in the root directory of Buildbot with cache of git. With help of this cache it calculates the *delta* (from which commit should be started CI builds).
+- `GitHubPullrequestPoller` - uses Github API. In this case Github "makes a decision" which commits should be built
+
 # License
 This project is licensed under MIT license. See [LICENSE](./LICENSE) for details.
