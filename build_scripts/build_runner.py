@@ -789,7 +789,6 @@ Use this argument if you want to specify repository which is not present in medi
         build_config.generate_build_config()
         build_config.run_stage(args.stage)
     except Exception as exc:
-        set_output_stream('err')
         if not isinstance(exc, subprocess.CalledProcessError):
             log.exception("Exception occurred")
         log.error("%sING FAILED", args.stage.name)
@@ -806,7 +805,7 @@ if __name__ == '__main__':
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         from common import LOG_CONFIG
         from common import ProductState, MediaSdkDirectories
-        from common import make_archive, set_output_stream, set_log_file, copy_win_files
+        from common import make_archive, set_log_file, copy_win_files
         from common.helper import rotate_dir
 
         main()
