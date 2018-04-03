@@ -375,6 +375,7 @@ class BuildGenerator(object):
         self.build_event = build_event
         self.commit_time = commit_time
         self.changed_repo = changed_repo
+        self.repo_states = None
         self.repo_url = repo_url
         self.build_state_file = root_dir / "build_state"
         self.default_options = {
@@ -397,9 +398,7 @@ class BuildGenerator(object):
         if changed_repo:
             if self.repo_url and self.repo_url != f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo.split(':')[0])}.git":
                 self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
-
-        self.repo_states = None
-        if repo_states_file_path:
+        elif repo_states_file_path:
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
                 with repo_states_file.open() as repo_states_json:
