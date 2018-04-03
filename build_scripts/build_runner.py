@@ -817,9 +817,6 @@ Use this argument if you want to specify repository which is not present in medi
         if not args.changed_repo and not args.sources:
             log.error('"--changed-repo" or "--sources" argument bust be added')
             exit(Error.CRITICAL.value)
-        elif not args.changed_repo and args.sources and args.stage in [Stage.COPY, Stage.PACK, Stage.INSTALL]:
-            log.error('Only "clean", "extract" and "build" stages available for running with "--sources" argument')
-            exit(Error.CRITICAL.value)
         elif args.changed_repo and args.sources:
             log.info('Priority for --changed-repo, not for --sources')
 
