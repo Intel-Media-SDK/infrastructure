@@ -490,11 +490,12 @@ class BuildGenerator(object):
                                          'configuration PRODUCT_REPOS', repo_name)
         elif self.repo_states:
             for repo_name, values in self.repo_states.items():
-                if values['trigger']:
-                    triggered_repo = repo_name
-                self.product_repos[repo_name]['branch'] = values['branch']
-                self.product_repos[repo_name]['commit_id'] = values['commit_id']
-                self.product_repos[repo_name]['url'] = values['url']
+                if repo_name in self.product_repos:
+                    if values['trigger']:
+                        triggered_repo = repo_name
+                    self.product_repos[repo_name]['branch'] = values['branch']
+                    self.product_repos[repo_name]['commit_id'] = values['commit_id']
+                    self.product_repos[repo_name]['url'] = values['url']
 
         product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
 
