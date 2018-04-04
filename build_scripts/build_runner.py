@@ -192,7 +192,7 @@ class Action(object):
         # windows error example:
         # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file generated ...
         # LINK : fatal error LNK1257: code generation failed ...
-        substring = ' error ' if platform.system() == 'Windows' else ' error:'
+        substring = ' error ' if platform.system() == 'Windows' else ': error'
         for string in stdout.splitlines():
             if substring in string:
                 output.append(string)
