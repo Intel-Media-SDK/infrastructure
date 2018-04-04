@@ -660,13 +660,13 @@ class BuildGenerator(object):
 
         self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
-        set_log_file(self.default_options["LOGS_DIR"] / (stage.value + '.log'))
         print('-' * 50)
 
         # CLEAN stage has it's own log strings inside.
-        # This stage remove all log files at first,
-        # and then writes results of it's own execution
+        # This stage remove all log files,
+        # but it does not create own log file
         if stage != Stage.CLEAN:
+            set_log_file(self.default_options["LOGS_DIR"] / (stage.value + '.log'))
             self.log.info("%sING", stage.name)
 
         if stage == Stage.CLEAN:
