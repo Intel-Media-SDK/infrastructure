@@ -783,7 +783,7 @@ Use this argument if you want to specify repository which is not present in medi
                         choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest', 'embedded_private'],
+                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest', 'embedded_private', 'android'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
