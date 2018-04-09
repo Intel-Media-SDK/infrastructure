@@ -390,7 +390,8 @@ class BuildGenerator(object):
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count()  # count of logical CPU cores
         }
-        self.data_to_archive = None
+        self.dev_pkg_data_to_archive = None
+        self.install_pkg_data_to_archive = None
         self.config_variables = {}
 
         self.log = logging.getLogger()
@@ -432,7 +433,8 @@ class BuildGenerator(object):
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
 
-        self.data_to_archive = self.config_variables.get('DATA_TO_ARCHIVE', [])
+        self.dev_pkg_data_to_archive = self.config_variables.get('DEV_PKG_DATA_TO_ARCHIVE', [])
+        self.install_pkg_data_to_archive = self.config_variables.get('INSTALL_PKG_DATA_TO_ARCHIVE', [])
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
     def clean(self):
@@ -559,28 +561,16 @@ class BuildGenerator(object):
         no_errors = True
 
         # creating install package
-        install_data = [
-            {
-                'from_path': self.default_options['INSTALL_DIR'],
-                'relative': [
-                    {
-                        'path': 'opt'
-                    }
-                ]
-            }
-        ]
-
-        if self.default_options['INSTALL_DIR'].exists() \
-                and os.listdir(self.default_options['INSTALL_DIR']):
+        if self.install_pkg_data_to_archive:
             if not make_archive(self.default_options["PACK_DIR"] / f"install_pkg.{extension}",
-                                install_data):
+                                self.install_pkg_data_to_archive):
                 no_errors = False
         else:
-            self.log.info('%s empty. Skip packing.', self.default_options['INSTALL_DIR'])
+            self.log.info('Install package empty. Skip packing.')
 
         # creating developer package
         if not make_archive(self.default_options["PACK_DIR"] / f"developer_pkg.{extension}",
-                            self.data_to_archive):
+                            self.dev_pkg_data_to_archive):
             no_errors = False
 
         # creating logs package
