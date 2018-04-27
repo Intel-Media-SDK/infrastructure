@@ -41,7 +41,7 @@ cd master
 cp ./msdk_secrets.py.example ./msdk_secrets.py
 nano msdk_secrets.py #add your real values
 
-nano buildbot.tac #edit `umask` with the value`umask=0o2`
+nano buildbot.tac #edit `umask` with the value `umask=0o2`
 
 #Start Master Buildbot
 cd ..
