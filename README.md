@@ -31,7 +31,7 @@ git clone https://github.com/Intel-Media-SDK/infrastructure.git
 cd ./infrastructure/bb/
 mv ./master ./tmp_master
 
-buildbot create-master --umask=0o2 master
+buildbot create-master master
 
 cp ./tmp_master/* ./master/
 rm -rf ./tmp_master/
