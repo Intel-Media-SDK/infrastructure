@@ -31,7 +31,7 @@ git clone https://github.com/Intel-Media-SDK/infrastructure.git
 cd ./infrastructure/bb/
 mv ./master ./tmp_master
 
-buildbot create-master --umask=0o2 master
+buildbot create-master master
 
 cp ./tmp_master/* ./master/
 rm -rf ./tmp_master/
@@ -40,6 +40,8 @@ rm -rf ./tmp_master/
 cd master
 cp ./msdk_secrets.py.example ./msdk_secrets.py
 nano msdk_secrets.py #add your real values
+
+nano buildbot.tac #edit `umask` with the value `umask=0o2`
 
 #Start Master Buildbot
 cd ..
