@@ -31,11 +31,11 @@ class Mode(Enum):
 
 BUILD = "build"
 BUILD_MASTER = "build-master-branch"
-BUILD_NOT_MASTER = "build-other-branches"
-BUILD_API_LATEST = "build-api-latest"
+BUILD_NOT_MASTER = "build"
+BUILD_API_LATEST = "build-api-next"
 
 TEST = "test"
-TEST_API_LATEST = "test-api-latest"
+TEST_API_LATEST = "test-api-next"
 
 RUN_COMMAND = "python3.6"
 WORKERS = {BUILD: {"b-1-10": {},
