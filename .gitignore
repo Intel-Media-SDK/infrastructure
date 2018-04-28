@@ -1,8 +1,11 @@
 # Specific files
 secrets.py
 msdk_secrets.py
-*.log
+*.log*
 *.pid
+
+# Specific folders
+gitpoller-workdir/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
