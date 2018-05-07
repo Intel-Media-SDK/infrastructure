@@ -196,7 +196,7 @@ class Action(object):
         if platform.system() == 'Windows':
             error_substring = [' error ']
         else:
-            error_substring = [': error', 'error:', 'fatal error:']
+            error_substring = [': error', 'error:']
 
         for string in stdout.splitlines():
             if any(substring in string for substring in error_substring):
