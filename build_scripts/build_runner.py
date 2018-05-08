@@ -567,7 +567,7 @@ class BuildGenerator(object):
         elif platform.system() == 'Linux':
             extension = "tar"
         else:
-            self.log.info('Unsupported OS')
+            self.log.warning('Unsupported OS')
             raise PartialPackError(f'Can not pack data on this OS: {platform.system()}')
 
         no_errors = True
