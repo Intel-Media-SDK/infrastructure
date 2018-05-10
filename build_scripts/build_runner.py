@@ -192,12 +192,21 @@ class Action(object):
         # windows error example:
         # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file generated ...
         # LINK : fatal error LNK1257: code generation failed ...
-        error_substring = ' error ' if platform.system() == 'Windows' else ': error'
-        for string in stdout.splitlines():
-            if error_substring in string:
-                output.append(string)
-        output.append("The errors above were found in the output. See full log for details.")
-        self.log.error('\n'.join(output))
+
+        if platform.system() == 'Windows':
+            error_substrings = [' error ']
+        elif platform.system() == 'Linux':
+            error_substrings = [': error', 'error:']
+        else:
+            error_substrings = None
+            self.log.warning(f'Unsupported OS for parsing errors: {platform.system()}')
+
+        if error_substrings:
+            for line in stdout.splitlines():
+                if any(error_substring in line for error_substring in error_substrings):
+                    output.append(line)
+            output.append("The errors above were found in the output. See full log for details.")
+            self.log.error('\n'.join(output))
 
 
 class VsComponent(Action):
@@ -555,8 +564,11 @@ class BuildGenerator(object):
 
         if platform.system() == 'Windows':
             extension = "zip"
-        else:
+        elif platform.system() == 'Linux':
             extension = "tar"
+        else:
+            self.log.warning('Unsupported OS')
+            raise PartialPackError(f'Can not pack data on this OS: {platform.system()}')
 
         no_errors = True
 
