@@ -39,7 +39,6 @@ import os
 import pathlib
 import platform
 import shutil
-import subprocess
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -72,6 +71,15 @@ class UnsupportedVSError(Exception):
     """
     Error, which need to be raised
     if Visual Studio version not supported
+    """
+
+    pass
+
+
+class ActionError(Exception):
+    """
+    Error, which need to be raised
+    if some action will be failed
     """
 
     pass
@@ -167,21 +175,13 @@ class Action(object):
             if self.work_dir:
                 self.work_dir.mkdir(parents=True, exist_ok=True)
 
-            try:
-                completed_process = subprocess.run(self.cmd,
-                                                   shell=True,
-                                                   env=env,
-                                                   cwd=self.work_dir,
-                                                   check=True,
-                                                   stdout=subprocess.PIPE,
-                                                   stderr=subprocess.STDOUT,
-                                                   encoding='utf-8',
-                                                   errors='backslashreplace')
+            error_code, out = call_subprocess(self.cmd, env=env, cwd=self.work_dir)
 
-                self.log.debug(completed_process.stdout)
-            except subprocess.CalledProcessError as process_error:
-                self._parse_logs(process_error.stdout)
-                raise
+            if error_code:
+                self._parse_logs(out)
+                raise ActionError()
+            else:
+                self.log.debug(out)
 
     def _parse_logs(self, stdout):
         self.log.info(stdout)
@@ -829,8 +829,8 @@ Use this argument if you want to specify repository which is not present in medi
         build_config.generate_build_config()
         build_config.run_stage(args.stage)
     except Exception as exc:
-        if not isinstance(exc, subprocess.CalledProcessError):
-            log.exception("Exception occurred")
+        if not isinstance(exc, ActionError):
+            log.exception('Exception occurred')
         log.error("%sING FAILED", args.stage.name)
         build_state_file = pathlib.Path(args.root_dir) / 'build_state'
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
@@ -846,6 +846,6 @@ if __name__ == '__main__':
         from common import LOG_CONFIG
         from common import ProductState, MediaSdkDirectories
         from common import make_archive, set_log_file, copy_win_files
-        from common.helper import rotate_dir
+        from common.helper import rotate_dir, call_subprocess
 
         main()

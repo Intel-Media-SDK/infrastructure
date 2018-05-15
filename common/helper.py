@@ -28,6 +28,7 @@ import shutil
 import stat
 import sys
 import tarfile
+import subprocess
 from logging.config import dictConfig
 from shutil import copystat, Error, copy2
 from zipfile import ZipFile
@@ -486,3 +487,21 @@ def update_json(check_type, success, output, json_path):
         with open(path, "w") as f:
             json.dump(new_data, f, indent=4, sort_keys=True)
     return True
+
+
+def call_subprocess(cmd_list, shell=True, env=None, cwd=None, check=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT):
+    try:
+        completed_process = subprocess.run(cmd_list,
+                                           shell=shell,
+                                           env=env,
+                                           cwd=cwd,
+                                           check=check,
+                                           stdout=stdout,
+                                           stderr=stderr,
+                                           encoding='utf-8',
+                                           errors='backslashreplace')
+
+        return completed_process.returncode, completed_process.stdout
+    except subprocess.CalledProcessError as failed_process:
+        return failed_process.returncode, failed_process.stdout
