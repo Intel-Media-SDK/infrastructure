@@ -29,6 +29,7 @@ import stat
 import sys
 import tarfile
 import subprocess
+from enum import Enum
 from logging.config import dictConfig
 from shutil import copystat, Error, copy2
 from zipfile import ZipFile
@@ -44,6 +45,27 @@ class UnsupportedArchiveError(Exception):
     """
 
     pass
+
+
+class ErrorCode(Enum):
+    """
+    Container for custom error codes
+    """
+
+    CRITICAL = 1
+
+
+class Stage(Enum):
+    """
+    Constants for defining stage of build
+    """
+
+    CLEAN = "clean"
+    EXTRACT = "extract"
+    BUILD = "build"
+    INSTALL = "install"
+    PACK = "pack"
+    COPY = "copy"
 
 
 def make_archive(path, data_to_archive):
@@ -464,15 +486,15 @@ def rotate_dir(directory: pathlib.Path) -> bool:
 def update_json(check_type, success, output, json_path):
     new_data = {
         check_type: {
-            "success" : success,
-            "message" : output
+            "success": success,
+            "message": output
         }
     }
 
     path = pathlib.Path(json_path)
     # Create full path until the file (if not exist)
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = None
+
     if path.exists():
         try:
             with open(path) as f:

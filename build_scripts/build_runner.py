@@ -44,7 +44,6 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from enum import Enum
 from tenacity import retry, stop_after_attempt, wait_exponential
 from logging.config import dictConfig
 
@@ -56,27 +55,6 @@ class UnsupportedVSError(Exception):
     """
 
     pass
-
-
-class Error(Enum):
-    """
-    Container for custom error codes
-    """
-
-    CRITICAL = 1
-
-
-class Stage(Enum):
-    """
-    Constants for defining stage of build
-    """
-
-    CLEAN = "clean"
-    EXTRACT = "extract"
-    BUILD = "build"
-    INSTALL = "install"
-    PACK = "pack"
-    COPY = "copy"
 
 
 class Action(object):
@@ -432,7 +410,7 @@ class BuildGenerator(object):
             self.log.error(f'Stage {stage.value} does not support')
             return False
 
-    def _action(self, name, stage=Stage.BUILD, cmd=None, work_dir=None, env=None, callfunc=None):
+    def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None):
         """
         Handler for 'action' from build config file
 
@@ -456,6 +434,9 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
+
+        if not stage:
+            stage = Stage.BUILD
 
         if not work_dir:
             work_dir = self.default_options["ROOT_DIR"]
@@ -817,7 +798,7 @@ Use this argument if you want to specify repository which is not present in medi
     try:
         if not args.changed_repo and not args.repo_states:
             log.error('"--changed-repo" or "--repo-states" argument bust be added')
-            exit(Error.CRITICAL.value)
+            exit(ErrorCode.CRITICAL.value)
         elif args.changed_repo and args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
@@ -843,17 +824,18 @@ Use this argument if you want to specify repository which is not present in medi
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
         log.error('-' * 50)
         log.error("%sING FAILED", args.stage.name)
-        exit(Error.CRITICAL.value)
+        exit(ErrorCode.CRITICAL.value)
 
 if __name__ == '__main__':
     if platform.python_version_tuple() < ('3', '6'):
         print('\nERROR: Python 3.6 or higher required')
-        exit(Error.CRITICAL.value)
+        exit(1)
     else:
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        from common import LOG_CONFIG
-        from common import ProductState, MediaSdkDirectories
-        from common import make_archive, set_log_file, copy_win_files
-        from common.helper import rotate_dir, call_subprocess
+        from common.helper import Stage, ErrorCode, make_archive, set_log_file, \
+            copy_win_files, rotate_dir, call_subprocess
+        from common.logger_conf import LOG_CONFIG
+        from common.git_worker import ProductState
+        from common.mediasdk_directories import MediaSdkDirectories
 
         main()
