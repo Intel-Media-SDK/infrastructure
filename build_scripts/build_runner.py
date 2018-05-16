@@ -34,18 +34,18 @@ During manual running, only the "build" step is performed if stage is not specif
 
 import argparse
 import json
-import logging
 import multiprocessing
 import os
 import pathlib
 import platform
 import shutil
 import sys
+import logging
+from logging.config import dictConfig
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
-from logging.config import dictConfig
 
 
 class UnsupportedVSError(Exception):
@@ -148,7 +148,7 @@ class Action(object):
         # linux error example:
         # .../graphbuilder.h:19:9: error: ‘class YAML::GraphBuilderInterface’ has virtual ...
         # windows error example:
-        # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file generated ...
+        # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file ...
         # LINK : fatal error LNK1257: code generation failed ...
 
         if platform.system() == 'Windows':
@@ -164,7 +164,8 @@ class Action(object):
                 if any(error_substring in line for error_substring in error_substrings):
                     output.append(line)
             if len(output) > 1:
-                output.append("The errors above were found in the output. See full log for details.")
+                output.append("The errors above were found in the output. "
+                              "See full log for details.")
                 self.log.error('\n'.join(output))
 
 
@@ -250,7 +251,6 @@ class VsComponent(Action):
 
         self.cmd = ['call vcvarsall.bat', ms_build]
 
-    # TODO check setting property using msbuild
     def _enable_vs_multi_processor_compilation(self):
         """
         Set multiprocessor compilation for solution projects
@@ -329,11 +329,13 @@ class BuildGenerator(object):
 
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
-        
-        :param repo_states_file_path: Path to sources file with revisions of repositories to reproduce the same build
+
+        :param repo_states_file_path: Path to sources file with revisions
+                                      of repositories to reproduce the same build
         :type repo_states_file_path: String
-        
-        :param repo_url: Link to the external repository (repository which is not in mediasdk_directories)
+
+        :param repo_url: Link to the external repository
+                         (repository which is not in mediasdk_directories)
         :type repo_url: String
         """
 
@@ -367,10 +369,14 @@ class BuildGenerator(object):
 
         self.log = logging.getLogger()
 
-        # Build and extract in directory for forked repositories in case of commit from forked repository
+        # Build and extract in directory for forked repositories
+        # in case of commit from forked repository
         if changed_repo:
-            if self.repo_url and self.repo_url != f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo.split(':')[0])}.git":
+            changed_repo_name = changed_repo.split(':')[0]
+            changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_name)}.git"
+            if self.repo_url and self.repo_url != changed_repo_url:
                 self.options["REPOS_DIR"] = self.options["REPOS_FORKED_DIR"]
+
         elif repo_states_file_path:
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
@@ -405,18 +411,26 @@ class BuildGenerator(object):
                 }
 
         self.dev_pkg_data_to_archive = self.config_variables.get('DEV_PKG_DATA_TO_ARCHIVE', [])
-        self.install_pkg_data_to_archive = self.config_variables.get('INSTALL_PKG_DATA_TO_ARCHIVE', [])
+        self.install_pkg_data_to_archive = self.config_variables.get(
+            'INSTALL_PKG_DATA_TO_ARCHIVE', [])
 
         return True
 
     def run_stage(self, stage):
+        """
+        Run method "_<stage>" of the class
+
+        :param stage: Stage of build
+        :type stage: Stage
+        """
+
         stage_value = f'_{stage.value}'
 
         if hasattr(self, stage_value):
             return self.__getattribute__(stage_value)()
-        else:
-            self.log.error(f'Stage {stage.value} does not support')
-            return False
+
+        self.log.error(f'Stage {stage.value} does not support')
+        return False
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None):
         """
@@ -570,12 +584,16 @@ class BuildGenerator(object):
                     self.product_repos[repo_name]['commit_id'] = values['commit_id']
                     self.product_repos[repo_name]['url'] = values['url']
 
-        product_state = ProductState(self.product_repos, self.options["REPOS_DIR"], self.commit_time)
+        product_state = ProductState(self.product_repos,
+                                     self.options["REPOS_DIR"],
+                                     self.commit_time)
 
         product_state.extract_all_repos()
 
-        product_state.save_repo_states(self.options["PACK_DIR"] / 'repo_states.json', trigger=triggered_repo)
-        shutil.copyfile(self.build_config_path, self.options["PACK_DIR"] / self.build_config_path.name)
+        product_state.save_repo_states(self.options["PACK_DIR"] / 'repo_states.json',
+                                       trigger=triggered_repo)
+        shutil.copyfile(self.build_config_path,
+                        self.options["PACK_DIR"] / self.build_config_path.name)
 
         if not self._run_build_config_actions(Stage.EXTRACT):
             return False
@@ -724,7 +742,8 @@ class BuildGenerator(object):
 
         self.log.info('Copy to %s', build_dir)
 
-        # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
+        # Workaround for copying to samba share on Linux
+        # to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
         shutil.copystat = lambda x, y, follow_symlinks=True: x
         shutil.copytree(self.options['PACK_DIR'], build_dir)
@@ -762,15 +781,18 @@ def main():
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
-    parser.add_argument('-s', "--repo-states", metavar="PATH", help="Path to repo_states.json file")
+    parser.add_argument('-s', "--repo-states", metavar="PATH",
+                        help="Path to repo_states.json file")
     parser.add_argument('-f', "--repo-url", metavar="URL", help='''Link to the repository.
 In most cases used to specify link to the forked repositories.
-Use this argument if you want to specify repository which is not present in mediasdk_directories.''')
+Use this argument if you want to specify repository
+which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest', 'embedded_private', 'android'],
+                        choices=['linux', 'embedded', 'open_source', 'windows',
+                                 'api_latest', 'embedded_private', 'android'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
