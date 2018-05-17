@@ -125,14 +125,10 @@ class Action(object):
             if self.env:
                 env.update(self.env)
 
-            self.log.info('cmd: %s', self.cmd)
-            self.log.info('work dir: %s', self.work_dir)
-            self.log.info('environment: %s', self.env)
-
             if self.work_dir:
                 self.work_dir.mkdir(parents=True, exist_ok=True)
 
-            error_code, out = call_subprocess(self.cmd, env=env, cwd=self.work_dir)
+            error_code, out = cmd_exec(self.cmd, env=env, cwd=self.work_dir, log=self.log)
 
             if error_code:
                 self._parse_logs(out)
@@ -838,7 +834,7 @@ which is not present in mediasdk_directories.''')
             # run stage of build
             no_errors = build_config.run_stage(args.stage)
         else:
-            log.critical('Can not generate build configuration')
+            log.critical('Failed to process the product configuration')
             no_errors = False
 
     except Exception:
@@ -858,13 +854,15 @@ which is not present in mediasdk_directories.''')
         exit(ErrorCode.CRITICAL.value)
 
 if __name__ == '__main__':
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from common.helper import ErrorCode
+
     if platform.python_version_tuple() < ('3', '6'):
         print('\nERROR: Python 3.6 or higher required')
-        exit(1)
+        exit(ErrorCode.CRITICAL)
     else:
-        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        from common.helper import Stage, ErrorCode, make_archive, set_log_file, \
-            copy_win_files, rotate_dir, call_subprocess
+        from common.helper import Stage, make_archive, set_log_file, \
+            copy_win_files, rotate_dir, cmd_exec
         from common.logger_conf import LOG_CONFIG
         from common.git_worker import ProductState
         from common.mediasdk_directories import MediaSdkDirectories
