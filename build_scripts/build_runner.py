@@ -161,7 +161,7 @@ class Action(object):
             if options:
                 self.cmd = self.cmd.format(**options)
                 if options['ENV']:
-                    env.update(**options['ENV'])
+                    env.update(options['ENV'])
 
             if self.env:
                 env.update(self.env)
