@@ -31,41 +31,21 @@ It contains steps:
 
 During manual running, only the "build" step is performed if stage is not specified
 """
+
 import argparse
 import json
-import logging
 import multiprocessing
 import os
 import pathlib
 import platform
 import shutil
-import subprocess
 import sys
+import logging
+from logging.config import dictConfig
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from enum import Enum
 from tenacity import retry, stop_after_attempt, wait_exponential
-from logging.config import dictConfig
-
-
-class PartialPackError(Exception):
-    """
-    Error, which need to be raised
-    if stage "pack" have some troubles
-    """
-
-    pass
-
-
-class WrongTriggeredRepo(Exception):
-    """
-    Error, which need to be raised
-    if triggered repo name does not exist
-    in PRODUCT_REPOS list of config file
-    """
-
-    pass
 
 
 class UnsupportedVSError(Exception):
@@ -75,27 +55,6 @@ class UnsupportedVSError(Exception):
     """
 
     pass
-
-
-class Error(Enum):
-    """
-    Container for custom error codes
-    """
-
-    CRITICAL = 1
-
-
-class Stage(Enum):
-    """
-    Constants for defining stage of build
-    """
-
-    CLEAN = "clean"
-    EXTRACT = "extract"
-    BUILD = "build"
-    INSTALL = "install"
-    PACK = "pack"
-    COPY = "copy"
 
 
 class Action(object):
@@ -160,37 +119,26 @@ class Action(object):
             if self.env:
                 env.update(self.env)
 
-            self.log.info('cmd: %s', self.cmd)
-            self.log.info('work dir: %s', self.work_dir)
-            self.log.info('environment: %s', self.env)
-
             if self.work_dir:
                 self.work_dir.mkdir(parents=True, exist_ok=True)
 
-            try:
-                completed_process = subprocess.run(self.cmd,
-                                                   shell=True,
-                                                   env=env,
-                                                   cwd=self.work_dir,
-                                                   check=True,
-                                                   stdout=subprocess.PIPE,
-                                                   stderr=subprocess.STDOUT,
-                                                   encoding='utf-8',
-                                                   errors='backslashreplace')
+            error_code, out = cmd_exec(self.cmd, env=env, cwd=self.work_dir, log=self.log)
 
-                self.log.debug(completed_process.stdout)
-            except subprocess.CalledProcessError as process_error:
-                self._parse_logs(process_error.stdout)
-                raise
+            if error_code:
+                self._parse_logs(out)
+            else:
+                self.log.debug(out)
+
+            return error_code
 
     def _parse_logs(self, stdout):
-        self.log.info(stdout)
+        self.log.error(stdout)
         output = [""]
 
         # linux error example:
         # .../graphbuilder.h:19:9: error: ‘class YAML::GraphBuilderInterface’ has virtual ...
         # windows error example:
-        # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file generated ...
+        # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file ...
         # LINK : fatal error LNK1257: code generation failed ...
 
         if platform.system() == 'Windows':
@@ -205,8 +153,10 @@ class Action(object):
             for line in stdout.splitlines():
                 if any(error_substring in line for error_substring in error_substrings):
                     output.append(line)
-            output.append("The errors above were found in the output. See full log for details.")
-            self.log.error('\n'.join(output))
+            if len(output) > 1:
+                output.append("The errors above were found in the output. "
+                              "See full log for details.")
+                self.log.error('\n'.join(output))
 
 
 class VsComponent(Action):
@@ -291,7 +241,6 @@ class VsComponent(Action):
 
         self.cmd = ['call vcvarsall.bat', ms_build]
 
-    # TODO check setting property using msbuild
     def _enable_vs_multi_processor_compilation(self):
         """
         Set multiprocessor compilation for solution projects
@@ -338,7 +287,8 @@ class VsComponent(Action):
 
         self._generate_cmd()
         self._enable_vs_multi_processor_compilation()
-        super().run()
+
+        return super().run()
 
 
 class BuildGenerator(object):
@@ -370,11 +320,13 @@ class BuildGenerator(object):
 
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
-        
-        :param repo_states_file_path: Path to sources file with revisions of repositories to reproduce the same build
+
+        :param repo_states_file_path: Path to sources file with revisions
+                                      of repositories to reproduce the same build
         :type repo_states_file_path: String
-        
-        :param repo_url: Link to the external repository (repository which is not in mediasdk_directories)
+
+        :param repo_url: Link to the external repository
+                         (repository which is not in mediasdk_directories)
         :type repo_url: String
         """
 
@@ -405,9 +357,12 @@ class BuildGenerator(object):
 
         self.log = logging.getLogger()
 
-        # Build and extract in directory for forked repositories in case of commit from forked repository
+        # Build and extract in directory for forked repositories
+        # in case of commit from forked repository
         if changed_repo:
-            if self.repo_url and self.repo_url != f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo.split(':')[0])}.git":
+            changed_repo_name = changed_repo.split(':')[0]
+            changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_name)}.git"
+            if self.repo_url and self.repo_url != changed_repo_url:
                 self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
         elif repo_states_file_path:
             repo_states_file = pathlib.Path(repo_states_file_path)
@@ -443,255 +398,28 @@ class BuildGenerator(object):
                 }
 
         self.dev_pkg_data_to_archive = self.config_variables.get('DEV_PKG_DATA_TO_ARCHIVE', [])
-        self.install_pkg_data_to_archive = self.config_variables.get('INSTALL_PKG_DATA_TO_ARCHIVE', [])
+        self.install_pkg_data_to_archive = self.config_variables.get(
+            'INSTALL_PKG_DATA_TO_ARCHIVE', [])
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
-    def clean(self):
-        """
-        Clean build directories
-
-        :return: None | Exception
-        """
-
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
-
-        for directory in remove_dirs:
-            dir_path = self.default_options.get(directory)
-            if dir_path.exists():
-                shutil.rmtree(dir_path)
-
-        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
-
-        self.log.info('CLEANING')
-        self.log.info('-' * 50)
-
-        if self.build_state_file.exists():
-            self.log.info('remove build state file %s', self.build_state_file)
-            self.build_state_file.unlink()
-
-        for dir_path in remove_dirs:
-            self.log.info('remove directory %s', self.default_options.get(dir_path))
-
-        for action in self.actions[Stage.CLEAN]:
-            action.run()
-
-    def extract(self):
-        """
-        Get and prepare build repositories
-        Uses git_worker.py module
-
-        :return: None | Exception
-        """
-
-        self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
-        self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
-        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
-        triggered_repo = 'unknown'
-
-        if self.changed_repo:
-            repo_name, branch, commit_id = self.changed_repo.split(':')
-            triggered_repo = repo_name
-            if repo_name in self.product_repos:
-                self.product_repos[repo_name]['branch'] = branch
-                self.product_repos[repo_name]['commit_id'] = commit_id
-                if self.repo_url:
-                    self.product_repos[repo_name]['url'] = self.repo_url
-            else:
-                raise WrongTriggeredRepo('%s repository is not defined in the product '
-                                         'configuration PRODUCT_REPOS', repo_name)
-        elif self.repo_states:
-            for repo_name, values in self.repo_states.items():
-                if repo_name in self.product_repos:
-                    if values['trigger']:
-                        triggered_repo = repo_name
-                    self.product_repos[repo_name]['branch'] = values['branch']
-                    self.product_repos[repo_name]['commit_id'] = values['commit_id']
-                    self.product_repos[repo_name]['url'] = values['url']
-
-        product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
-
-        product_state.extract_all_repos()
-
-        product_state.save_repo_states(self.default_options["PACK_DIR"] / 'repo_states.json', trigger=triggered_repo)
-        shutil.copyfile(self.build_config_path, self.default_options["PACK_DIR"] / self.build_config_path.name)
-
-        for action in self.actions[Stage.EXTRACT]:
-            action.run()
-
-    def build(self):
-        """
-        Execute 'build' stage
-
-        :return: None | Exception
-        """
-
-        self.default_options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
-
-        for action in self.actions[Stage.BUILD]:
-            action.run()
-
-    def install(self):
-        """
-        Execute 'install' stage
-
-        :return: None | Exception
-        """
-
-        self.default_options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
-
-        for action in self.actions[Stage.INSTALL]:
-            action.run()
-
-    def pack(self):
-        """
-        Pack build results
-        creates *.tar.gz archives
-
-        Layout:
-            pack_root_dir
-                install_pkg.tar.gz (store 'install' stage results)
-                developer_pkg.tar.gz (store 'build' stage results)
-                logs.tar.gz
-                repo_states.json
-
-        :return: None | Exception
-        """
-
-        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
-
-        for action in self.actions[Stage.PACK]:
-            action.run()
-
-        if platform.system() == 'Windows':
-            extension = "zip"
-        elif platform.system() == 'Linux':
-            extension = "tar"
-        else:
-            self.log.warning('Unsupported OS')
-            raise PartialPackError(f'Can not pack data on this OS: {platform.system()}')
-
-        no_errors = True
-
-        # creating install package
-        if self.install_pkg_data_to_archive:
-            if not make_archive(self.default_options["PACK_DIR"] / f"install_pkg.{extension}",
-                                self.install_pkg_data_to_archive):
-                no_errors = False
-        else:
-            self.log.info('Install package empty. Skip packing.')
-
-        # creating developer package
-        if not make_archive(self.default_options["PACK_DIR"] / f"developer_pkg.{extension}",
-                            self.dev_pkg_data_to_archive):
-            no_errors = False
-
-        # creating logs package
-        logs_data = [
-            {
-                'from_path': self.default_options['ROOT_DIR'],
-                'relative': [
-                    {
-                        'path': 'logs'
-                    },
-                ]
-            },
-        ]
-        if not make_archive(self.default_options["PACK_DIR"] / f"logs.{extension}",
-                            logs_data):
-            no_errors = False
-
-        if not no_errors:
-            raise PartialPackError('Not all data was packed')
-
-    def copy(self):
-        """
-        Copy 'pack' stage results to share folder
-
-        :return: None | Exception
-        """
-
-        branch = 'unknown'
-        commit_id = 'unknown'
-
-        if self.changed_repo:
-            _, branch, commit_id = self.changed_repo.split(':')
-        elif self.repo_states:
-            for repo in self.repo_states:
-                if repo['trigger']:
-                    branch = repo['branch']
-                    commit_id = repo['commit_id']
-
-        build_dir = MediaSdkDirectories.get_build_dir(
-            branch, self.build_event, commit_id,
-            self.product_type, self.default_options["BUILD_TYPE"])
-
-        build_root_dir = MediaSdkDirectories.get_root_builds_dir()
-        rotate_dir(build_dir)
-
-        self.log.info('Copy to %s', build_dir)
-
-        # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
-        _orig_copystat = shutil.copystat
-        shutil.copystat = lambda x, y, follow_symlinks=True: x
-        shutil.copytree(self.default_options['PACK_DIR'], build_dir)
-        shutil.copystat = _orig_copystat
-
-        for action in self.actions[Stage.COPY]:
-            action.run()
-
-        if self.build_state_file.exists():
-            with self.build_state_file.open() as state:
-                build_state = json.load(state)
-
-                with (build_dir.parent / f'{self.product_type}_status.json').open('w') as build_status:
-                    json.dump(build_state, build_status)
-
-                if build_state['status'] == "PASS":
-                    last_build_path = build_dir.relative_to(build_root_dir)
-                    last_build_file = build_dir.parent.parent / f'last_build_{self.product_type}'
-                    last_build_file.write_text(str(last_build_path))
+        return True
 
     def run_stage(self, stage):
         """
-        Run certain stage
+        Run method "_<stage>" of the class
 
         :param stage: Stage of build
         :type stage: Stage
-
-        :return: None | Exception
         """
 
-        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
+        stage_value = f'_{stage.value}'
 
-        print('-' * 50)
+        if hasattr(self, stage_value):
+            return self.__getattribute__(stage_value)()
 
-        # CLEAN stage has it's own log strings inside.
-        # This stage remove all log files,
-        # but it does not create own log file
-        if stage != Stage.CLEAN:
-            set_log_file(self.default_options["LOGS_DIR"] / (stage.value + '.log'))
-            self.log.info("%sING", stage.name)
+        self.log.error(f'Stage {stage.value} does not support')
+        return False
 
-        if stage == Stage.CLEAN:
-            self.clean()
-        elif stage == Stage.EXTRACT:
-            self.extract()
-        elif stage == Stage.BUILD:
-            self.build()
-        elif stage == Stage.INSTALL:
-            self.install()
-        elif stage == Stage.PACK:
-            self.pack()
-        elif stage == Stage.COPY:
-            self.copy()
-
-        self.log.info('-' * 50)
-        self.log.info("%sING COMPLETED", stage.name)
-
-        if not self.build_state_file.exists():
-            self.build_state_file.write_text(json.dumps({'status': "PASS"}))
-
-    def _action(self, name, stage=Stage.BUILD, cmd=None, work_dir=None, env=None, callfunc=None):
+    def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None):
         """
         Handler for 'action' from build config file
 
@@ -715,6 +443,9 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
+
+        if not stage:
+            stage = Stage.BUILD
 
         if not work_dir:
             work_dir = self.default_options["ROOT_DIR"]
@@ -759,6 +490,265 @@ class BuildGenerator(object):
         self.actions[Stage.BUILD].append(VsComponent(name, solution_path, ms_arguments, vs_version,
                                                      dependencies, env))
 
+    def _run_build_config_actions(self, stage):
+        for action in self.actions[stage]:
+            error_code = action.run()
+            if error_code:
+                return False
+
+        return True
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
+    def _clean(self):
+        """
+        Clean build directories
+
+        :return: None | Exception
+        """
+
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
+
+        for directory in remove_dirs:
+            dir_path = self.default_options.get(directory)
+            if dir_path.exists():
+                shutil.rmtree(dir_path)
+
+        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
+
+        self.log.info('-' * 50)
+        self.log.info('CLEANING')
+
+        if self.build_state_file.exists():
+            self.log.info('remove build state file %s', self.build_state_file)
+            self.build_state_file.unlink()
+
+        for dir_path in remove_dirs:
+            self.log.info('remove directory %s', self.default_options.get(dir_path))
+
+        if not self._run_build_config_actions(Stage.CLEAN):
+            return False
+
+        return True
+
+    def _extract(self):
+        """
+        Get and prepare build repositories
+        Uses git_worker.py module
+
+        :return: None | Exception
+        """
+
+        set_log_file(self.default_options["LOGS_DIR"] / 'extract.log')
+
+        print('-' * 50)
+        self.log.info("EXTRACTING")
+
+        self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+        self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
+        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+        triggered_repo = 'unknown'
+
+        if self.changed_repo:
+            repo_name, branch, commit_id = self.changed_repo.split(':')
+            triggered_repo = repo_name
+            if repo_name in self.product_repos:
+                self.product_repos[repo_name]['branch'] = branch
+                self.product_repos[repo_name]['commit_id'] = commit_id
+                if self.repo_url:
+                    self.product_repos[repo_name]['url'] = self.repo_url
+            else:
+                self.log.critical(f'{repo_name} repository is not defined in the product '
+                                  'configuration PRODUCT_REPOS')
+                return False
+
+        elif self.repo_states:
+            for repo_name, values in self.repo_states.items():
+                if repo_name in self.product_repos:
+                    if values['trigger']:
+                        triggered_repo = repo_name
+                    self.product_repos[repo_name]['branch'] = values['branch']
+                    self.product_repos[repo_name]['commit_id'] = values['commit_id']
+                    self.product_repos[repo_name]['url'] = values['url']
+
+        product_state = ProductState(self.product_repos,
+                                     self.default_options["REPOS_DIR"],
+                                     self.commit_time)
+
+        product_state.extract_all_repos()
+
+        product_state.save_repo_states(self.default_options["PACK_DIR"] / 'repo_states.json',
+                                       trigger=triggered_repo)
+        shutil.copyfile(self.build_config_path,
+                        self.default_options["PACK_DIR"] / self.build_config_path.name)
+
+        if not self._run_build_config_actions(Stage.EXTRACT):
+            return False
+
+        return True
+
+    def _build(self):
+        """
+        Execute 'build' stage
+
+        :return: None | Exception
+        """
+
+        set_log_file(self.default_options["LOGS_DIR"] / 'build.log')
+
+        print('-' * 50)
+        self.log.info("BUILDING")
+
+        self.default_options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
+
+        if not self._run_build_config_actions(Stage.BUILD):
+            return False
+
+        return True
+
+    def _install(self):
+        """
+        Execute 'install' stage
+
+        :return: None | Exception
+        """
+
+        set_log_file(self.default_options["LOGS_DIR"] / 'install.log')
+
+        print('-' * 50)
+        self.log.info("INSTALLING")
+
+        self.default_options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
+
+        if not self._run_build_config_actions(Stage.EXTRACT):
+            return False
+
+        return True
+
+    def _pack(self):
+        """
+        Pack build results
+        creates *.tar.gz archives
+
+        Layout:
+            pack_root_dir
+                install_pkg.tar.gz (store 'install' stage results)
+                developer_pkg.tar.gz (store 'build' stage results)
+                logs.tar.gz
+                repo_states.json
+
+        :return: None | Exception
+        """
+
+        set_log_file(self.default_options["LOGS_DIR"] / 'pack.log')
+
+        print('-' * 50)
+        self.log.info("PACKING")
+
+        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+
+        if not self._run_build_config_actions(Stage.PACK):
+            return False
+
+        if platform.system() == 'Windows':
+            extension = "zip"
+        elif platform.system() == 'Linux':
+            extension = "tar"
+        else:
+            self.log.critical(f'Can not pack data on this OS: {platform.system()}')
+            return False
+
+        no_errors = True
+
+        # creating install package
+        if self.install_pkg_data_to_archive:
+            if not make_archive(self.default_options["PACK_DIR"] / f"install_pkg.{extension}",
+                                self.install_pkg_data_to_archive):
+                no_errors = False
+        else:
+            self.log.info('Install package empty. Skip packing.')
+
+        # creating developer package
+        if self.dev_pkg_data_to_archive:
+            if not make_archive(self.default_options["PACK_DIR"] / f"developer_pkg.{extension}",
+                                self.dev_pkg_data_to_archive):
+                no_errors = False
+        else:
+            self.log.info('Developer package empty. Skip packing.')
+
+        # creating logs package
+        logs_data = [
+            {
+                'from_path': self.default_options['ROOT_DIR'],
+                'relative': [
+                    {
+                        'path': 'logs'
+                    },
+                ]
+            },
+        ]
+        if not make_archive(self.default_options["PACK_DIR"] / f"logs.{extension}",
+                            logs_data):
+            no_errors = False
+
+        if not no_errors:
+            self.log.error('Not all data was packed')
+            return False
+
+        return True
+
+    def _copy(self):
+        """
+        Copy 'pack' stage results to share folder
+
+        :return: None | Exception
+        """
+
+        print('-' * 50)
+        self.log.info("COPYING")
+
+        set_log_file(self.default_options["LOGS_DIR"] / 'copy.log')
+
+        branch = 'unknown'
+        commit_id = 'unknown'
+
+        if self.changed_repo:
+            _, branch, commit_id = self.changed_repo.split(':')
+        elif self.repo_states:
+            for repo in self.repo_states:
+                if repo['trigger']:
+                    branch = repo['branch']
+                    commit_id = repo['commit_id']
+
+        build_dir = MediaSdkDirectories.get_build_dir(
+            branch, self.build_event, commit_id,
+            self.product_type, self.default_options["BUILD_TYPE"])
+
+        build_root_dir = MediaSdkDirectories.get_root_builds_dir()
+        rotate_dir(build_dir)
+
+        self.log.info('Copy to %s', build_dir)
+
+        # Workaround for copying to samba share on Linux
+        # to avoid exceptions while setting Linux permissions.
+        _orig_copystat = shutil.copystat
+        shutil.copystat = lambda x, y, follow_symlinks=True: x
+        shutil.copytree(self.default_options['PACK_DIR'], build_dir)
+        shutil.copystat = _orig_copystat
+
+        if not self._run_build_config_actions(Stage.COPY):
+            return False
+
+        if self.build_state_file.exists():
+            with self.build_state_file.open() as state:
+                build_state = json.load(state)
+
+                if build_state['status'] == "PASS":
+                    last_build_path = build_dir.relative_to(build_root_dir)
+                    last_build_file = build_dir.parent.parent / f'last_build_{self.product_type}'
+                    last_build_file.write_text(str(last_build_path))
+
+        return True
+
 
 def main():
     """
@@ -777,15 +767,18 @@ def main():
                         help='''Changed repository information
 in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
-    parser.add_argument('-s', "--repo-states", metavar="PATH", help="Path to repo_states.json file")
+    parser.add_argument('-s', "--repo-states", metavar="PATH",
+                        help="Path to repo_states.json file")
     parser.add_argument('-f', "--repo-url", metavar="URL", help='''Link to the repository.
 In most cases used to specify link to the forked repositories.
-Use this argument if you want to specify repository which is not present in mediasdk_directories.''')
+Use this argument if you want to specify repository
+which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest', 'embedded_private', 'android'],
+                        choices=['linux', 'embedded', 'open_source', 'windows',
+                                 'api_latest', 'embedded_private', 'android'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
@@ -822,30 +815,44 @@ Use this argument if you want to specify repository which is not present in medi
     try:
         if not args.changed_repo and not args.repo_states:
             log.error('"--changed-repo" or "--repo-states" argument bust be added')
-            exit(Error.CRITICAL.value)
+            exit(ErrorCode.CRITICAL.value)
         elif args.changed_repo and args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
-        build_config.generate_build_config()
-        build_config.run_stage(args.stage)
-    except Exception as exc:
-        if not isinstance(exc, subprocess.CalledProcessError):
-            log.exception("Exception occurred")
-        log.error("%sING FAILED", args.stage.name)
-        build_state_file = pathlib.Path(args.root_dir) / 'build_state'
-        build_state_file.write_text(json.dumps({'status': "FAIL"}))
-        exit(Error.CRITICAL.value)
+        # prepare build configuration
+        if build_config.generate_build_config():
+            # run stage of build
+            no_errors = build_config.run_stage(args.stage)
+        else:
+            log.critical('Failed to process the product configuration')
+            no_errors = False
 
+    except Exception:
+        no_errors = False
+        log.exception('Exception occurred')
+
+    build_state_file = pathlib.Path(args.root_dir) / 'build_state'
+    if no_errors:
+        if not build_state_file.exists():
+            build_state_file.write_text(json.dumps({'status': "PASS"}))
+        log.info('-' * 50)
+        log.info("%sING COMPLETED", args.stage.name)
+    else:
+        build_state_file.write_text(json.dumps({'status': "FAIL"}))
+        log.error('-' * 50)
+        log.error("%sING FAILED", args.stage.name)
+        exit(ErrorCode.CRITICAL.value)
 
 if __name__ == '__main__':
     if platform.python_version_tuple() < ('3', '6'):
         print('\nERROR: Python 3.6 or higher required')
-        exit(Error.CRITICAL.value)
+        exit(1)
     else:
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        from common import LOG_CONFIG
-        from common import ProductState, MediaSdkDirectories
-        from common import make_archive, set_log_file, copy_win_files
-        from common.helper import rotate_dir
+        from common.helper import Stage, ErrorCode, make_archive, set_log_file, \
+            copy_win_files, rotate_dir, cmd_exec
+        from common.logger_conf import LOG_CONFIG
+        from common.git_worker import ProductState
+        from common.mediasdk_directories import MediaSdkDirectories
 
         main()
