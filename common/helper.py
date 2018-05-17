@@ -511,16 +511,24 @@ def update_json(check_type, success, output, json_path):
     return True
 
 
-def call_subprocess(cmd_list, shell=True, env=None, cwd=None, check=True,
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT):
+def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None):
+
+    if log:
+        if isinstance(cmd, list):
+            log.info(f'cmd: {subprocess.list2cmdline(cmd)}')
+        else:
+            log.info(f'cmd: {cmd}')
+        log.info(f'working directory: {cwd}')
+        log.info(f'environment: {env}')
+
     try:
-        completed_process = subprocess.run(cmd_list,
+        completed_process = subprocess.run(cmd,
                                            shell=shell,
                                            env=env,
                                            cwd=cwd,
-                                           check=check,
-                                           stdout=stdout,
-                                           stderr=stderr,
+                                           check=True,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.STDOUT,
                                            encoding='utf-8',
                                            errors='backslashreplace')
 
