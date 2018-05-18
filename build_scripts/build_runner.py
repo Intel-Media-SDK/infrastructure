@@ -118,8 +118,8 @@ class Action(object):
             env = os.environ.copy()
 
             if options:
-                self.cmd = self.cmd.format(**options)
-                if options['ENV']:
+                self.cmd = self.cmd.format_map(options)
+                if options.get('ENV'):
                     env.update(options['ENV'])
 
             if self.env:
@@ -354,10 +354,9 @@ class BuildGenerator(object):
             "PACK_DIR": root_dir / "pack",
             "LOGS_DIR": root_dir / "logs",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
-            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores,
-            "VARS": {},
-            "ENV": {}
-
+            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
+            "VARS": {},  # Dictionary of dynamical variables for action() steps
+            "ENV": {}  # Dictionary of dynamical environment variables
         }
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
@@ -858,7 +857,7 @@ if __name__ == '__main__':
     from common.helper import ErrorCode
 
     if platform.python_version_tuple() < ('3', '6'):
-        print('\nERROR: Python 3.6 or higher required')
+        print('\nERROR: Python 3.6 or higher is required')
         exit(ErrorCode.CRITICAL)
     else:
         from common.helper import Stage, make_archive, set_log_file, \
