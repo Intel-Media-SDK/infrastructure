@@ -159,7 +159,7 @@ class Action(object):
             env = os.environ.copy()
 
             if options:
-                self.cmd = self.cmd.format(**options)
+                self.cmd = self.cmd.format_map(options)
                 if options['ENV']:
                     env.update(options['ENV'])
 
@@ -403,7 +403,7 @@ class BuildGenerator(object):
             "PACK_DIR": root_dir / "pack",
             "LOGS_DIR": root_dir / "logs",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
-            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores,
+            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},
             "ENV": {}
 
