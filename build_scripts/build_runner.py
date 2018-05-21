@@ -133,7 +133,7 @@ class Action(object):
 
         self.log = logging.getLogger()
 
-    def run(self):
+    def run(self, options=None):
         """
         Script runner
 
@@ -157,6 +157,12 @@ class Action(object):
                 self.cmd = ' && '.join(self.cmd)
 
             env = os.environ.copy()
+
+            if options:
+                self.cmd = self.cmd.format_map(options)
+                if options['ENV']:
+                    env.update(options['ENV'])
+
             if self.env:
                 env.update(self.env)
 
@@ -329,7 +335,7 @@ class VsComponent(Action):
                 project_path.unlink()
                 new_project_path.rename(project_path)
 
-    def run(self):
+    def run(self, options=None):
         """
         Script runner
 
@@ -338,7 +344,7 @@ class VsComponent(Action):
 
         self._generate_cmd()
         self._enable_vs_multi_processor_compilation()
-        super().run()
+        super().run(options)
 
 
 class BuildGenerator(object):
@@ -388,7 +394,7 @@ class BuildGenerator(object):
         self.repo_states = None
         self.repo_url = repo_url
         self.build_state_file = root_dir / "build_state"
-        self.default_options = {
+        self.options = {
             "ROOT_DIR": root_dir,
             "REPOS_DIR": root_dir / "repos",
             "REPOS_FORKED_DIR": root_dir / "repos_forked",
@@ -397,7 +403,10 @@ class BuildGenerator(object):
             "PACK_DIR": root_dir / "pack",
             "LOGS_DIR": root_dir / "logs",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
-            "CPU_CORES": multiprocessing.cpu_count()  # count of logical CPU cores
+            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
+            "VARS": {},
+            "ENV": {}
+
         }
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
@@ -408,7 +417,7 @@ class BuildGenerator(object):
         # Build and extract in directory for forked repositories in case of commit from forked repository
         if changed_repo:
             if self.repo_url and self.repo_url != f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo.split(':')[0])}.git":
-                self.default_options["REPOS_DIR"] = self.default_options["REPOS_FORKED_DIR"]
+                self.options["REPOS_DIR"] = self.options["REPOS_FORKED_DIR"]
         elif repo_states_file_path:
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
@@ -427,7 +436,7 @@ class BuildGenerator(object):
         global_vars = {
             'action': self._action,
             'vs_component': self._vs_component,
-            'DEFAULT_OPTIONS': self.default_options,
+            'DEFAULT_OPTIONS': self.options,
             'Stage': Stage,
             'copy_win_files': copy_win_files
         }
@@ -456,11 +465,11 @@ class BuildGenerator(object):
         remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
 
         for directory in remove_dirs:
-            dir_path = self.default_options.get(directory)
+            dir_path = self.options.get(directory)
             if dir_path.exists():
                 shutil.rmtree(dir_path)
 
-        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
+        self.options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
         self.log.info('CLEANING')
         self.log.info('-' * 50)
@@ -470,7 +479,7 @@ class BuildGenerator(object):
             self.build_state_file.unlink()
 
         for dir_path in remove_dirs:
-            self.log.info('remove directory %s', self.default_options.get(dir_path))
+            self.log.info('remove directory %s', self.options.get(dir_path))
 
         for action in self.actions[Stage.CLEAN]:
             action.run()
@@ -483,9 +492,9 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        self.default_options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
-        self.default_options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
-        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+        self.options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+        self.options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
+        self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
         triggered_repo = 'unknown'
 
         if self.changed_repo:
@@ -508,12 +517,12 @@ class BuildGenerator(object):
                     self.product_repos[repo_name]['commit_id'] = values['commit_id']
                     self.product_repos[repo_name]['url'] = values['url']
 
-        product_state = ProductState(self.product_repos, self.default_options["REPOS_DIR"], self.commit_time)
+        product_state = ProductState(self.product_repos, self.options["REPOS_DIR"], self.commit_time)
 
         product_state.extract_all_repos()
 
-        product_state.save_repo_states(self.default_options["PACK_DIR"] / 'repo_states.json', trigger=triggered_repo)
-        shutil.copyfile(self.build_config_path, self.default_options["PACK_DIR"] / self.build_config_path.name)
+        product_state.save_repo_states(self.options["PACK_DIR"] / 'repo_states.json', trigger=triggered_repo)
+        shutil.copyfile(self.build_config_path, self.options["PACK_DIR"] / self.build_config_path.name)
 
         for action in self.actions[Stage.EXTRACT]:
             action.run()
@@ -525,10 +534,10 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        self.default_options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
+        self.options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
 
         for action in self.actions[Stage.BUILD]:
-            action.run()
+            action.run(self.options)
 
     def install(self):
         """
@@ -537,7 +546,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        self.default_options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
+        self.options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
 
         for action in self.actions[Stage.INSTALL]:
             action.run()
@@ -557,7 +566,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        self.default_options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+        self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         for action in self.actions[Stage.PACK]:
             action.run()
@@ -574,21 +583,21 @@ class BuildGenerator(object):
 
         # creating install package
         if self.install_pkg_data_to_archive:
-            if not make_archive(self.default_options["PACK_DIR"] / f"install_pkg.{extension}",
+            if not make_archive(self.options["PACK_DIR"] / f"install_pkg.{extension}",
                                 self.install_pkg_data_to_archive):
                 no_errors = False
         else:
             self.log.info('Install package empty. Skip packing.')
 
         # creating developer package
-        if not make_archive(self.default_options["PACK_DIR"] / f"developer_pkg.{extension}",
+        if not make_archive(self.options["PACK_DIR"] / f"developer_pkg.{extension}",
                             self.dev_pkg_data_to_archive):
             no_errors = False
 
         # creating logs package
         logs_data = [
             {
-                'from_path': self.default_options['ROOT_DIR'],
+                'from_path': self.options['ROOT_DIR'],
                 'relative': [
                     {
                         'path': 'logs'
@@ -596,7 +605,7 @@ class BuildGenerator(object):
                 ]
             },
         ]
-        if not make_archive(self.default_options["PACK_DIR"] / f"logs.{extension}",
+        if not make_archive(self.options["PACK_DIR"] / f"logs.{extension}",
                             logs_data):
             no_errors = False
 
@@ -623,7 +632,7 @@ class BuildGenerator(object):
 
         build_dir = MediaSdkDirectories.get_build_dir(
             branch, self.build_event, commit_id,
-            self.product_type, self.default_options["BUILD_TYPE"])
+            self.product_type, self.options["BUILD_TYPE"])
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)
@@ -633,7 +642,7 @@ class BuildGenerator(object):
         # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
         shutil.copystat = lambda x, y, follow_symlinks=True: x
-        shutil.copytree(self.default_options['PACK_DIR'], build_dir)
+        shutil.copytree(self.options['PACK_DIR'], build_dir)
         shutil.copystat = _orig_copystat
 
         for action in self.actions[Stage.COPY]:
@@ -661,7 +670,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        self.default_options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
+        self.options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
         print('-' * 50)
 
@@ -669,7 +678,7 @@ class BuildGenerator(object):
         # This stage remove all log files,
         # but it does not create own log file
         if stage != Stage.CLEAN:
-            set_log_file(self.default_options["LOGS_DIR"] / (stage.value + '.log'))
+            set_log_file(self.options["LOGS_DIR"] / (stage.value + '.log'))
             self.log.info("%sING", stage.name)
 
         if stage == Stage.CLEAN:
@@ -717,9 +726,9 @@ class BuildGenerator(object):
         """
 
         if not work_dir:
-            work_dir = self.default_options["ROOT_DIR"]
+            work_dir = self.options["ROOT_DIR"]
             if stage in [Stage.BUILD, Stage.INSTALL]:
-                work_dir = self.default_options["BUILD_DIR"]
+                work_dir = self.options["BUILD_DIR"]
         self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc))
 
     def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2015",
