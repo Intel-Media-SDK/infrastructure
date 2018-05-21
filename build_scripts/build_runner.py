@@ -293,6 +293,7 @@ class VsComponent(Action):
 
         self._generate_cmd()
         self._enable_vs_multi_processor_compilation()
+
         return super().run(options)
 
 
@@ -371,7 +372,6 @@ class BuildGenerator(object):
             changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_name)}.git"
             if self.repo_url and self.repo_url != changed_repo_url:
                 self.options["REPOS_DIR"] = self.options["REPOS_FORKED_DIR"]
-
         elif repo_states_file_path:
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
