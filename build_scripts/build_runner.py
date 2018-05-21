@@ -612,6 +612,8 @@ class BuildGenerator(object):
         if not self._run_build_config_actions(Stage.BUILD):
             return False
 
+        self._strip_bins()
+
         return True
 
     def _install(self):
@@ -757,6 +759,16 @@ class BuildGenerator(object):
                     last_build_file.write_text(str(last_build_path))
 
         return True
+
+    def _strip_bins(self):
+        system_os = platform.system()
+
+        if system_os == 'Linux':
+            pass
+        elif system_os == 'Windows':
+            pass
+        else:
+            self.log.warning(f'Can not strip binaries on {system_os}')
 
 
 def main():
