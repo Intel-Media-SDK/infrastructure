@@ -40,9 +40,10 @@ import pathlib
 import platform
 import shutil
 import sys
+import itertools
 import logging
 from logging.config import dictConfig
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -764,7 +765,43 @@ class BuildGenerator(object):
         system_os = platform.system()
 
         if system_os == 'Linux':
-            pass
+            search_bin_results = self.options['ROOT_DIR'].glob('**/__bin/**/*')
+            search_lib_results = self.options['ROOT_DIR'].glob('**/__lib/**/*')
+
+            search_results = itertools.chain(search_bin_results, search_lib_results)
+
+            for result in search_results:
+                if result.is_file():
+                    orig_file = str(result.absolute())
+                    debug_file = str((result.parent / f'{result.stem}.sym').absolute())
+
+                    self.log.info('-' * 80)
+                    self.log.info(f'Stripping {orig_file}')
+
+                    strip_commands = OrderedDict([
+                        ('copy_debug', ['objcopy',
+                                        '--only-keep-debug',
+                                        orig_file,
+                                        debug_file]),
+                        ('strip', ['strip',
+                                   '--strip-debug',
+                                   '--strip-unneeded',
+                                   '--remove-section=.comment',
+                                   orig_file]),
+                        ('add_debug_link', ['objcopy',
+                                            f'--add-gnu-debuglink={debug_file}',
+                                            orig_file]),
+                        ('set_chmod', ['chmod',
+                                       '-x',
+                                       debug_file])
+                    ])
+
+                    for command in strip_commands.values():
+                        err, out = cmd_exec(command, shell=False, log=self.log)
+                        if err:
+                            self.log.error(out)
+                            continue
+
         elif system_os == 'Windows':
             pass
         else:
