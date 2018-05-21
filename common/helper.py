@@ -28,6 +28,8 @@ import shutil
 import stat
 import sys
 import tarfile
+import subprocess
+from enum import Enum
 from logging.config import dictConfig
 from shutil import copystat, Error, copy2
 from zipfile import ZipFile
@@ -43,6 +45,27 @@ class UnsupportedArchiveError(Exception):
     """
 
     pass
+
+
+class ErrorCode(Enum):
+    """
+    Container for custom error codes
+    """
+
+    CRITICAL = 1
+
+
+class Stage(Enum):
+    """
+    Constants for defining stage of build
+    """
+
+    CLEAN = "clean"
+    EXTRACT = "extract"
+    BUILD = "build"
+    INSTALL = "install"
+    PACK = "pack"
+    COPY = "copy"
 
 
 def make_archive(path, data_to_archive):
@@ -463,15 +486,15 @@ def rotate_dir(directory: pathlib.Path) -> bool:
 def update_json(check_type, success, output, json_path):
     new_data = {
         check_type: {
-            "success" : success,
-            "message" : output
+            "success": success,
+            "message": output
         }
     }
 
     path = pathlib.Path(json_path)
     # Create full path until the file (if not exist)
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = None
+
     if path.exists():
         try:
             with open(path) as f:
@@ -486,3 +509,29 @@ def update_json(check_type, success, output, json_path):
         with open(path, "w") as f:
             json.dump(new_data, f, indent=4, sort_keys=True)
     return True
+
+
+def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None):
+
+    if log:
+        if isinstance(cmd, list):
+            log.info(f'cmd: {subprocess.list2cmdline(cmd)}')
+        else:
+            log.info(f'cmd: {cmd}')
+        log.info(f'working directory: {cwd}')
+        log.info(f'environment: {env}')
+
+    try:
+        completed_process = subprocess.run(cmd,
+                                           shell=shell,
+                                           env=env,
+                                           cwd=cwd,
+                                           check=True,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.STDOUT,
+                                           encoding='utf-8',
+                                           errors='backslashreplace')
+
+        return completed_process.returncode, completed_process.stdout
+    except subprocess.CalledProcessError as failed_process:
+        return failed_process.returncode, failed_process.stdout
