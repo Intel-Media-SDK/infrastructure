@@ -60,8 +60,22 @@ sudo yum install libpciaccess libpciaccess-devel opencl-headers
 #Enable epel repository
 sudo yum install gtest gtest-devel ocl-icd ocl-icd-devel
 
-#Install opencl package like this:
-sudo rpm -ihv intel-opencl-1.0-0.x86_64-igdrcl.rpm (same as https://github.com/intel/compute-runtime/releases/tag/2018ww18-010782)
+#Compile OpenCL from these cources: https://github.com/intel/compute-runtime/releases/tag/2018ww18-010782
+#By using these instructions: https://github.com/intel/compute-runtime/blob/master/documentation/BUILD_Centos.md
+sudo rpm -ihv intel-opencl-1.0-0.x86_64-igdrcl.rpm
+```
+Current package versions used in Media SDK CI:
+```bash
+libpciaccess-0.14-1.el7.x86_64
+libpciaccess-devel-0.14-1.el7.x86_64
+
+gtest-1.6.0-2.el7.x86_64
+gtest-devel-1.6.0-2.el7.x86_64
+
+ocl-icd-2.2.12-1.el7.x86_64
+ocl-icd-devel-2.2.12-1.el7.x86_64
+
+opencl-headers-2.2-1.20180306gite986688.el7.noarch
 ```
 
 ```bash
