@@ -765,8 +765,8 @@ class BuildGenerator(object):
         system_os = platform.system()
 
         if system_os == 'Linux':
-            search_bin_results = self.options['ROOT_DIR'].glob('**/__bin/**/*')
-            search_lib_results = self.options['ROOT_DIR'].glob('**/__lib/**/*')
+            search_bin_results = self.options['ROOT_DIR'].glob('**/__cmake/**/__bin/**/*')
+            search_lib_results = self.options['ROOT_DIR'].glob('**/__cmake/**/__lib/**/*')
 
             search_results = itertools.chain(search_bin_results, search_lib_results)
 
