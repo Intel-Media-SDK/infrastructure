@@ -500,7 +500,7 @@ class BuildGenerator(object):
 
     def _run_build_config_actions(self, stage):
         for action in self.actions[stage]:
-            error_code = action.run()
+            error_code = action.run(self.options)
             if error_code:
                 return False
 
