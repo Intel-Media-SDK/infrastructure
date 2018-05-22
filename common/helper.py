@@ -518,12 +518,8 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None):
             log.info(f'cmd: {subprocess.list2cmdline(cmd)}')
         else:
             log.info(f'cmd: {cmd}')
-
-        if cwd:
-            log.info(f'working directory: {cwd}')
-
-        if env:
-            log.info(f'environment: {env}')
+        log.info(f'working directory: {cwd}')
+        log.info(f'environment: {env}')
 
     try:
         completed_process = subprocess.run(cmd,

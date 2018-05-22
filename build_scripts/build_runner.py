@@ -40,10 +40,9 @@ import pathlib
 import platform
 import shutil
 import sys
-import itertools
 import logging
 from logging.config import dictConfig
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -613,8 +612,6 @@ class BuildGenerator(object):
         if not self._run_build_config_actions(Stage.BUILD):
             return False
 
-        self._strip_bins()
-
         return True
 
     def _install(self):
@@ -760,65 +757,6 @@ class BuildGenerator(object):
                     last_build_file.write_text(str(last_build_path))
 
         return True
-
-    def _strip_bins(self):
-        """
-        Strip binaries and save debug information
-
-        :return: None | Exception
-        """
-
-        system_os = platform.system()
-
-        if system_os == 'Linux':
-            search_bin_results = self.options['ROOT_DIR'].glob('**/__cmake/**/__bin/**/*')
-            search_lib_results = self.options['ROOT_DIR'].glob('**/__cmake/**/__lib/**/*')
-
-            search_results = itertools.chain(search_bin_results, search_lib_results)
-
-            binaries_with_error = []
-
-            for result in search_results:
-                if result.is_file():
-                    orig_file = str(result.absolute())
-                    debug_file = str((result.parent / f'{result.stem}.sym').absolute())
-
-                    self.log.info('-' * 80)
-                    self.log.info(f'Stripping {orig_file}')
-
-                    strip_commands = OrderedDict([
-                        ('copy_debug', ['objcopy',
-                                        '--only-keep-debug',
-                                        orig_file,
-                                        debug_file]),
-                        ('strip', ['strip',
-                                   '--strip-debug',
-                                   '--strip-unneeded',
-                                   '--remove-section=.comment',
-                                   orig_file]),
-                        ('add_debug_link', ['objcopy',
-                                            f'--add-gnu-debuglink={debug_file}',
-                                            orig_file]),
-                        ('set_chmod', ['chmod',
-                                       '-x',
-                                       debug_file])
-                    ])
-
-                    for command in strip_commands.values():
-                        err, out = cmd_exec(command, shell=False, log=self.log)
-                        if err:
-                            if orig_file not in binaries_with_error:
-                                binaries_with_error.append(orig_file)
-                            self.log.error(out)
-                            continue
-
-            if binaries_with_error:
-                self.log.warning('Stripping for next binaries was failed:\n%s',
-                                 '\n'.join(binaries_with_error))
-        elif system_os == 'Windows':
-            pass
-        else:
-            self.log.warning(f'Can not strip binaries on {system_os}')
 
 
 def main():
