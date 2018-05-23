@@ -519,8 +519,9 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None):
         else:
             log.info(f'cmd: {cmd}')
 
-        if cwd:
-            log.info(f'working directory: {cwd}')
+        if not cwd:
+            cwd = str(pathlib.Path.cwd())
+        log.info(f'working directory: {cwd}')
 
         if env:
             log.info(f'environment: {env}')

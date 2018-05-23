@@ -40,7 +40,6 @@ import pathlib
 import platform
 import shutil
 import sys
-import itertools
 import logging
 from logging.config import dictConfig
 from collections import defaultdict, OrderedDict
@@ -213,7 +212,7 @@ class VsComponent(Action):
         if vs_version not in self._vs_paths:
             raise UnsupportedVSError(f"{vs_version} is not supported")
 
-        super().__init__(name, Stage.BUILD, None, None, env, None)
+        super().__init__(name, Stage.BUILD, None, pathlib.Path.cwd(), env, None)
         self.solution_path = solution_path
         self.vs_version = vs_version
         self.msbuild_args = msbuild_args
@@ -771,46 +770,49 @@ class BuildGenerator(object):
         system_os = platform.system()
 
         if system_os == 'Linux':
-            search_bin_results = self.options['ROOT_DIR'].glob('**/__cmake/**/__bin/**/*')
-            search_lib_results = self.options['ROOT_DIR'].glob('**/__cmake/**/__lib/**/*')
-
-            search_results = itertools.chain(search_bin_results, search_lib_results)
-
+            bins_to_strip = []
             binaries_with_error = []
+            excluded_extensions = ['.bin', '.out', '.pc']
+            search_results = self.options['ROOT_DIR'].rglob('__cmake/**/*')
 
-            for result in search_results:
-                if result.is_file():
-                    orig_file = str(result.absolute())
-                    debug_file = str((result.parent / f'{result.stem}.sym').absolute())
+            for path in search_results:
+                if path.is_file():
+                    if os.access(path, os.X_OK) and path.suffix not in excluded_extensions:
+                        bins_to_strip.append(path)
+                    elif path.suffix == '.a':
+                        bins_to_strip.append(path)
 
-                    self.log.info('-' * 80)
-                    self.log.info(f'Stripping {orig_file}')
+            for result in bins_to_strip:
+                orig_file = str(result.absolute())
+                debug_file = str((result.parent / f'{result.stem}.sym').absolute())
+                self.log.info('-' * 80)
+                self.log.info(f'Stripping {orig_file}')
 
-                    strip_commands = OrderedDict([
-                        ('copy_debug', ['objcopy',
-                                        '--only-keep-debug',
-                                        orig_file,
-                                        debug_file]),
-                        ('strip', ['strip',
-                                   '--strip-debug',
-                                   '--strip-unneeded',
-                                   '--remove-section=.comment',
-                                   orig_file]),
-                        ('add_debug_link', ['objcopy',
-                                            f'--add-gnu-debuglink={debug_file}',
-                                            orig_file]),
-                        ('set_chmod', ['chmod',
-                                       '-x',
-                                       debug_file])
-                    ])
+                strip_commands = OrderedDict([
+                    ('copy_debug', ['objcopy',
+                                    '--only-keep-debug',
+                                    orig_file,
+                                    debug_file]),
+                    ('strip', ['strip',
+                               '--strip-debug',
+                               '--strip-unneeded',
+                               '--remove-section=.comment',
+                               orig_file]),
+                    ('add_debug_link', ['objcopy',
+                                        f'--add-gnu-debuglink={debug_file}',
+                                        orig_file]),
+                    ('set_chmod', ['chmod',
+                                   '-x',
+                                   debug_file])
+                ])
 
-                    for command in strip_commands.values():
-                        err, out = cmd_exec(command, shell=False, log=self.log)
-                        if err:
-                            if orig_file not in binaries_with_error:
-                                binaries_with_error.append(orig_file)
-                            self.log.error(out)
-                            continue
+                for command in strip_commands.values():
+                    err, out = cmd_exec(command, shell=False, log=self.log)
+                    if err:
+                        if orig_file not in binaries_with_error:
+                            binaries_with_error.append(orig_file)
+                        self.log.error(out)
+                        continue
 
             if binaries_with_error:
                 self.log.warning('Stripping for next binaries was failed:\n%s',
