@@ -12,7 +12,7 @@ Repository contains:
 ### Deploy master Buildbot
 Dependencies:
 - CentOS v7.3
-- python v3.6.x
+- Python v3.6.x
 - postgresql
 - git
 
@@ -49,32 +49,34 @@ buildbot start master
 
 ```
 ### Deploy build box Worker Buildbot
-Dependencies:
+Prerequisites:
 - CentOS v7.3
-- python v3.6.x
-- git
-- Intel® Media Server Studio 2017 R3
-  - Minimal needed rpms from MSS:
-      ```bash
-      intel-opencl-xxx-xxx.x86_64.rpm
-      intel-opencl-cpu-xxx-.x86_64.rpm
-      intel-opencl-devel-xxx-xxx.x86_64.rpm
-      libdrm-xxx-xxx.el7.centos.x86_64.rpm
-      libdrm-devel-xxx-xxx.el7.centos.x86_64.rpm
-      libva-xxx-xxx.el7.centos.x86_64.rpm
-      libva-devel-xxx-xxx.el7.centos.x86_64.rpm
-      ```
->Hint:  
->```bash
->#To install packages use
->sudo yum install -ihv intel-opencl-*
->sudo yum install -ihv drm-*
->sudo yum install -ihv libva-*
->
->#To remove previous installed packages
->sudo yum install -e intel-opencl-*
->```
+- Python v3.6.x
 
+Needed packages (dependencies):
+```bash
+sudo yum install libpciaccess libpciaccess-devel opencl-headers
+
+#Enable epel repository
+sudo yum install gtest gtest-devel ocl-icd ocl-icd-devel
+
+#Compile OpenCL from these cources: https://github.com/intel/compute-runtime/releases/tag/2018ww18-010782
+#By using these instructions: https://github.com/intel/compute-runtime/blob/master/documentation/BUILD_Centos.md
+sudo rpm -ihv intel-opencl-1.0-0.x86_64-igdrcl.rpm
+```
+Current package versions used in Media SDK CI:
+```bash
+libpciaccess-0.14-1.el7.x86_64
+libpciaccess-devel-0.14-1.el7.x86_64
+
+gtest-1.6.0-2.el7.x86_64
+gtest-devel-1.6.0-2.el7.x86_64
+
+ocl-icd-2.2.12-1.el7.x86_64
+ocl-icd-devel-2.2.12-1.el7.x86_64
+
+opencl-headers-2.2-1.20180306gite986688.el7.noarch
+```
 
 ```bash
 sudo pip3 install buildbot-worker==1.1.1
