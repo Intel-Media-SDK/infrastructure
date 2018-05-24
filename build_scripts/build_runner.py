@@ -612,7 +612,8 @@ class BuildGenerator(object):
         if not self._run_build_config_actions(Stage.BUILD):
             return False
 
-        self._strip_bins()
+        if not self._strip_bins():
+            return False
 
         return True
 
@@ -764,7 +765,7 @@ class BuildGenerator(object):
         """
         Strip binaries and save debug information
 
-        :return: None | Exception
+        :return: Boolean
         """
 
         system_os = platform.system()
@@ -772,14 +773,14 @@ class BuildGenerator(object):
         if system_os == 'Linux':
             bins_to_strip = []
             binaries_with_error = []
-            excluded_extensions = ['.bin', '.out', '.pc']
-            search_results = self.options['ROOT_DIR'].rglob('__cmake/**/*')
+            executable_bin_filter = ['', '.so']
+            executable_lib_filter = ['.a']
+            search_results = self.options['BUILD_DIR'].rglob('*')
 
             for path in search_results:
                 if path.is_file():
-                    if os.access(path, os.X_OK) and path.suffix not in excluded_extensions:
-                        bins_to_strip.append(path)
-                    elif path.suffix == '.a':
+                    if os.access(path, os.X_OK) and path.suffix in executable_bin_filter\
+                            or path.suffix in executable_lib_filter:
                         bins_to_strip.append(path)
 
             for result in bins_to_strip:
@@ -815,12 +816,16 @@ class BuildGenerator(object):
                         continue
 
             if binaries_with_error:
-                self.log.warning('Stripping for next binaries was failed:\n%s',
-                                 '\n'.join(binaries_with_error))
+                self.log.error('Stripping for next binaries was failed. See full log for details:\n%s',
+                               '\n'.join(binaries_with_error))
+                return False
         elif system_os == 'Windows':
             pass
         else:
-            self.log.warning(f'Can not strip binaries on {system_os}')
+            self.log.error(f'Can not strip binaries on {system_os}')
+            return False
+
+        return True
 
 
 def main():
