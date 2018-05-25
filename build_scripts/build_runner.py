@@ -62,7 +62,7 @@ class Action(object):
     Command line script runner
     """
 
-    def __init__(self, name, stage, cmd, work_dir, env, callfunc):
+    def __init__(self, name, stage, cmd, work_dir, env, callfunc, verbose):
         """
         :param name: Name of action
         :type name: String
@@ -81,6 +81,9 @@ class Action(object):
 
         :param callfunc: python function, which need to execute
         :type callfunc: tuple (function_name, args, kwargs)
+
+        :param verbose: Flag for output all logs
+        :type verbose: Boolean
         """
 
         self.name = name
@@ -89,6 +92,7 @@ class Action(object):
         self.work_dir = work_dir
         self.env = env
         self.callfunc = callfunc
+        self.verbose = verbose
 
         self.log = logging.getLogger()
 
@@ -133,7 +137,10 @@ class Action(object):
             if error_code:
                 self._parse_logs(out)
             else:
-                self.log.debug(out)
+                if self.verbose:
+                    self.log.info(out)
+                else:
+                    self.log.debug(out)
 
             return error_code
 
@@ -186,7 +193,7 @@ class VsComponent(Action):
     }
 
     def __init__(self, name, solution_path, msbuild_args, vs_version,
-                 dependencies, env):
+                 dependencies, env, verbose):
         """
         :param name: Name of action
         :type name: String
@@ -206,13 +213,16 @@ class VsComponent(Action):
         :param env: Environment variables for script
         :type env: None | Dict
 
+        :param verbose: Flag for output all logs
+        :type verbose: Boolean
+
         :return: None | Exception
         """
 
         if vs_version not in self._vs_paths:
             raise UnsupportedVSError(f"{vs_version} is not supported")
 
-        super().__init__(name, Stage.BUILD, None, None, env, None)
+        super().__init__(name, Stage.BUILD, None, None, env, None, verbose)
         self.solution_path = solution_path
         self.vs_version = vs_version
         self.msbuild_args = msbuild_args
@@ -392,7 +402,8 @@ class BuildGenerator(object):
             'vs_component': self._vs_component,
             'DEFAULT_OPTIONS': self.options,
             'Stage': Stage,
-            'copy_win_files': copy_win_files
+            'copy_win_files': copy_win_files,
+            'log': self.log
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -427,7 +438,7 @@ class BuildGenerator(object):
         self.log.error(f'Stage {stage.value} does not support')
         return False
 
-    def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None):
+    def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
         Handler for 'action' from build config file
 
@@ -459,10 +470,10 @@ class BuildGenerator(object):
             work_dir = self.options["ROOT_DIR"]
             if stage in [Stage.BUILD, Stage.INSTALL]:
                 work_dir = self.options["BUILD_DIR"]
-        self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc))
+        self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
     def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2015",
-                      dependencies=None, env=None):
+                      dependencies=None, env=None, verbose=False):
         """
         Handler for VS components
 
@@ -496,7 +507,7 @@ class BuildGenerator(object):
                     ms_arguments[key] = msbuild_args[key]
 
         self.actions[Stage.BUILD].append(VsComponent(name, solution_path, ms_arguments, vs_version,
-                                                     dependencies, env))
+                                                     dependencies, env, verbose))
 
     def _run_build_config_actions(self, stage):
         for action in self.actions[stage]:
