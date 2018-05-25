@@ -304,7 +304,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
-                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None):
+                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, config_args=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -334,6 +334,9 @@ class BuildGenerator(object):
         :param repo_url: Link to the external repository
                          (repository which is not in mediasdk_directories)
         :type repo_url: String
+
+        :param config_args: List of custom command line arguments (ex. arg=value)
+        :type config_args: List
         """
 
         self.build_config_path = build_config_path
@@ -362,8 +365,14 @@ class BuildGenerator(object):
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
         self.config_variables = {}
+        self.config_args = {}
 
         self.log = logging.getLogger()
+
+        if config_args:
+            for arg in config_args:
+                arg = arg.split('=')
+                self.config_args[arg[0]] = arg[1]
 
         # Build and extract in directory for forked repositories
         # in case of commit from forked repository
@@ -392,7 +401,8 @@ class BuildGenerator(object):
             'vs_component': self._vs_component,
             'DEFAULT_OPTIONS': self.options,
             'Stage': Stage,
-            'copy_win_files': copy_win_files
+            'copy_win_files': copy_win_files,
+            'args': self.config_args
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -796,6 +806,16 @@ which is not present in mediasdk_directories.''')
                         help="Current executable stage")
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
+
+    # Catch arguments undefined in argparser
+    config_args = []
+    for sys_arg in sys.argv:
+        if not sys_arg.startswith('-') and '=' in sys_arg:
+            config_args.append(sys_arg)
+
+    for arg in config_args:
+        sys.argv.remove(arg)
+
     args = parser.parse_args()
 
     if args.commit_time:
@@ -812,7 +832,8 @@ which is not present in mediasdk_directories.''')
         commit_time=commit_time,
         changed_repo=args.changed_repo,
         repo_states_file_path=args.repo_states,
-        repo_url=args.repo_url
+        repo_url=args.repo_url,
+        config_args=config_args
     )
 
     # We must create BuildGenerator anyway.
