@@ -357,7 +357,8 @@ class BuildGenerator(object):
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
-            "ENV": {}  # Dictionary of dynamical environment variables
+            "ENV": {},  # Dictionary of dynamical environment variables
+            "STRIP_BINARIES": False  # Flag for stripping binaries of build
         }
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
@@ -612,8 +613,9 @@ class BuildGenerator(object):
         if not self._run_build_config_actions(Stage.BUILD):
             return False
 
-        if not self._strip_bins():
-            return False
+        if self.options['STRIP_BINARIES']:
+            if not self._strip_bins():
+                return False
 
         return True
 
