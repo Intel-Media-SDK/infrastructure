@@ -42,7 +42,7 @@ import shutil
 import sys
 import logging
 from logging.config import dictConfig
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -223,6 +223,7 @@ class VsComponent(Action):
             raise UnsupportedVSError(f"{vs_version} is not supported")
 
         super().__init__(name, Stage.BUILD, None, None, env, None, verbose)
+
         self.solution_path = solution_path
         self.vs_version = vs_version
         self.msbuild_args = msbuild_args
@@ -367,7 +368,8 @@ class BuildGenerator(object):
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
-            "ENV": {}  # Dictionary of dynamical environment variables
+            "ENV": {},  # Dictionary of dynamical environment variables
+            "STRIP_BINARIES": False  # Flag for stripping binaries of build
         }
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
@@ -623,6 +625,10 @@ class BuildGenerator(object):
         if not self._run_build_config_actions(Stage.BUILD):
             return False
 
+        if self.options['STRIP_BINARIES']:
+            if not self._strip_bins():
+                return False
+
         return True
 
     def _install(self):
@@ -766,6 +772,72 @@ class BuildGenerator(object):
                     last_build_path = build_dir.relative_to(build_root_dir)
                     last_build_file = build_dir.parent.parent / f'last_build_{self.product_type}'
                     last_build_file.write_text(str(last_build_path))
+
+        return True
+
+    def _strip_bins(self):
+        """
+        Strip binaries and save debug information
+
+        :return: Boolean
+        """
+
+        system_os = platform.system()
+
+        if system_os == 'Linux':
+            bins_to_strip = []
+            binaries_with_error = []
+            executable_bin_filter = ['', '.so']
+            executable_lib_filter = ['.a']
+            search_results = self.options['BUILD_DIR'].rglob('*')
+
+            for path in search_results:
+                if path.is_file():
+                    if os.access(path, os.X_OK) and path.suffix in executable_bin_filter\
+                            or path.suffix in executable_lib_filter:
+                        bins_to_strip.append(path)
+
+            for result in bins_to_strip:
+                orig_file = str(result.absolute())
+                debug_file = str((result.parent / f'{result.stem}.sym').absolute())
+                self.log.info('-' * 80)
+                self.log.info(f'Stripping {orig_file}')
+
+                strip_commands = OrderedDict([
+                    ('copy_debug', ['objcopy',
+                                    '--only-keep-debug',
+                                    orig_file,
+                                    debug_file]),
+                    ('strip', ['strip',
+                               '--strip-debug',
+                               '--strip-unneeded',
+                               '--remove-section=.comment',
+                               orig_file]),
+                    ('add_debug_link', ['objcopy',
+                                        f'--add-gnu-debuglink={debug_file}',
+                                        orig_file]),
+                    ('set_chmod', ['chmod',
+                                   '-x',
+                                   debug_file])
+                ])
+
+                for command in strip_commands.values():
+                    err, out = cmd_exec(command, shell=False, log=self.log)
+                    if err:
+                        if orig_file not in binaries_with_error:
+                            binaries_with_error.append(orig_file)
+                        self.log.error(out)
+                        continue
+
+            if binaries_with_error:
+                self.log.error('Stripping for next binaries was failed. See full log for details:\n%s',
+                               '\n'.join(binaries_with_error))
+                return False
+        elif system_os == 'Windows':
+            pass
+        else:
+            self.log.error(f'Can not strip binaries on {system_os}')
+            return False
 
         return True
 
