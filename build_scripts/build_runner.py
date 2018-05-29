@@ -42,7 +42,7 @@ import shutil
 import sys
 import logging
 from logging.config import dictConfig
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -62,7 +62,7 @@ class Action(object):
     Command line script runner
     """
 
-    def __init__(self, name, stage, cmd, work_dir, env, callfunc):
+    def __init__(self, name, stage, cmd, work_dir, env, callfunc, verbose):
         """
         :param name: Name of action
         :type name: String
@@ -81,6 +81,9 @@ class Action(object):
 
         :param callfunc: python function, which need to execute
         :type callfunc: tuple (function_name, args, kwargs)
+
+        :param verbose: Flag for output all logs
+        :type verbose: Boolean
         """
 
         self.name = name
@@ -89,6 +92,7 @@ class Action(object):
         self.work_dir = work_dir
         self.env = env
         self.callfunc = callfunc
+        self.verbose = verbose
 
         self.log = logging.getLogger()
 
@@ -133,7 +137,10 @@ class Action(object):
             if error_code:
                 self._parse_logs(out)
             else:
-                self.log.debug(out)
+                if self.verbose:
+                    self.log.info(out)
+                else:
+                    self.log.debug(out)
 
             return error_code
 
@@ -186,7 +193,7 @@ class VsComponent(Action):
     }
 
     def __init__(self, name, solution_path, msbuild_args, vs_version,
-                 dependencies, env):
+                 dependencies, env, verbose):
         """
         :param name: Name of action
         :type name: String
@@ -206,13 +213,17 @@ class VsComponent(Action):
         :param env: Environment variables for script
         :type env: None | Dict
 
+        :param verbose: Flag for output all logs
+        :type verbose: Boolean
+
         :return: None | Exception
         """
 
         if vs_version not in self._vs_paths:
             raise UnsupportedVSError(f"{vs_version} is not supported")
 
-        super().__init__(name, Stage.BUILD, None, None, env, None)
+        super().__init__(name, Stage.BUILD, None, None, env, None, verbose)
+
         self.solution_path = solution_path
         self.vs_version = vs_version
         self.msbuild_args = msbuild_args
@@ -360,7 +371,8 @@ class BuildGenerator(object):
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
-            "ENV": {}  # Dictionary of dynamical environment variables
+            "ENV": {},  # Dictionary of dynamical environment variables
+            "STRIP_BINARIES": False  # Flag for stripping binaries of build
         }
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
@@ -398,7 +410,8 @@ class BuildGenerator(object):
             'options': self.options,
             'stage': Stage,
             'copy_win_files': copy_win_files,
-            'args': self.custom_cli_args
+            'args': self.custom_cli_args,
+            'log': self.log
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -433,7 +446,7 @@ class BuildGenerator(object):
         self.log.error(f'Stage {stage.value} does not support')
         return False
 
-    def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None):
+    def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
         Handler for 'action' from build config file
 
@@ -465,10 +478,10 @@ class BuildGenerator(object):
             work_dir = self.options["ROOT_DIR"]
             if stage in [Stage.BUILD, Stage.INSTALL]:
                 work_dir = self.options["BUILD_DIR"]
-        self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc))
+        self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
     def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2015",
-                      dependencies=None, env=None):
+                      dependencies=None, env=None, verbose=False):
         """
         Handler for VS components
 
@@ -502,7 +515,7 @@ class BuildGenerator(object):
                     ms_arguments[key] = msbuild_args[key]
 
         self.actions[Stage.BUILD].append(VsComponent(name, solution_path, ms_arguments, vs_version,
-                                                     dependencies, env))
+                                                     dependencies, env, verbose))
 
     def _run_build_config_actions(self, stage):
         for action in self.actions[stage]:
@@ -617,6 +630,10 @@ class BuildGenerator(object):
 
         if not self._run_build_config_actions(Stage.BUILD):
             return False
+
+        if self.options['STRIP_BINARIES']:
+            if not self._strip_bins():
+                return False
 
         return True
 
@@ -761,6 +778,72 @@ class BuildGenerator(object):
                     last_build_path = build_dir.relative_to(build_root_dir)
                     last_build_file = build_dir.parent.parent / f'last_build_{self.product_type}'
                     last_build_file.write_text(str(last_build_path))
+
+        return True
+
+    def _strip_bins(self):
+        """
+        Strip binaries and save debug information
+
+        :return: Boolean
+        """
+
+        system_os = platform.system()
+
+        if system_os == 'Linux':
+            bins_to_strip = []
+            binaries_with_error = []
+            executable_bin_filter = ['', '.so']
+            executable_lib_filter = ['.a']
+            search_results = self.options['BUILD_DIR'].rglob('*')
+
+            for path in search_results:
+                if path.is_file():
+                    if os.access(path, os.X_OK) and path.suffix in executable_bin_filter\
+                            or path.suffix in executable_lib_filter:
+                        bins_to_strip.append(path)
+
+            for result in bins_to_strip:
+                orig_file = str(result.absolute())
+                debug_file = str((result.parent / f'{result.stem}.sym').absolute())
+                self.log.info('-' * 80)
+                self.log.info(f'Stripping {orig_file}')
+
+                strip_commands = OrderedDict([
+                    ('copy_debug', ['objcopy',
+                                    '--only-keep-debug',
+                                    orig_file,
+                                    debug_file]),
+                    ('strip', ['strip',
+                               '--strip-debug',
+                               '--strip-unneeded',
+                               '--remove-section=.comment',
+                               orig_file]),
+                    ('add_debug_link', ['objcopy',
+                                        f'--add-gnu-debuglink={debug_file}',
+                                        orig_file]),
+                    ('set_chmod', ['chmod',
+                                   '-x',
+                                   debug_file])
+                ])
+
+                for command in strip_commands.values():
+                    err, out = cmd_exec(command, shell=False, log=self.log)
+                    if err:
+                        if orig_file not in binaries_with_error:
+                            binaries_with_error.append(orig_file)
+                        self.log.error(out)
+                        continue
+
+            if binaries_with_error:
+                self.log.error('Stripping for next binaries was failed. See full log for details:\n%s',
+                               '\n'.join(binaries_with_error))
+                return False
+        elif system_os == 'Windows':
+            pass
+        else:
+            self.log.error(f'Can not strip binaries on {system_os}')
+            return False
 
         return True
 
