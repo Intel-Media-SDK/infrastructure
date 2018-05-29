@@ -805,11 +805,18 @@ which is not present in mediasdk_directories.''')
 
     parsed_args, unknown_args = parser.parse_known_args()
 
+    log = logging.getLogger()
+    dictConfig(LOG_CONFIG)
+
     custom_cli_args = {}
     if unknown_args:
         for arg in unknown_args:
-            arg = arg.split('=')
-            custom_cli_args[arg[0]] = arg[1]
+            try:
+                arg = arg.split('=')
+                custom_cli_args[arg[0]] = arg[1]
+            except:
+                log.exception(f'Wrong argument layout: {arg}')
+                exit(ErrorCode.CRITICAL)
 
     if parsed_args.commit_time:
         commit_time = datetime.strptime(parsed_args.commit_time, '%Y-%m-%d %H:%M:%S')
@@ -832,9 +839,6 @@ which is not present in mediasdk_directories.''')
     # We must create BuildGenerator anyway.
     # If generate_build_config will be inside constructor
     # and fails, class will not be created.
-    log = logging.getLogger()
-    dictConfig(LOG_CONFIG)
-
     try:
         if not parsed_args.changed_repo and not parsed_args.repo_states:
             log.error('"--changed-repo" or "--repo-states" argument bust be added')
