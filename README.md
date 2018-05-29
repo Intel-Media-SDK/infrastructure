@@ -17,7 +17,7 @@ Dependencies:
 - git
 
 ```bash
-sudo pip3 install buildbot==1.1.1 buildbot-console-view==1.1.1 buildbot-www==1.1.1
+sudo pip3 install buildbot==1.1.2 buildbot-console-view==1.1.2 buildbot-www==1.1.2
 ```
 Hint:  
 It can work with default DB (sqlite) for that it needs to change next value in `bb/master/config.py`:
@@ -79,7 +79,7 @@ opencl-headers-2.2-1.20180306gite986688.el7.noarch
 ```
 
 ```bash
-sudo pip3 install buildbot-worker==1.1.1
+sudo pip3 install buildbot-worker==1.1.2
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
 
 #Recommended list of packages
