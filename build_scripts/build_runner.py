@@ -304,7 +304,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
-                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, config_args=None):
+                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, custom_cli_args=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -335,8 +335,8 @@ class BuildGenerator(object):
                          (repository which is not in mediasdk_directories)
         :type repo_url: String
 
-        :param config_args: List of custom command line arguments (ex. arg=value)
-        :type config_args: List
+        :param custom_cli_args: Dict of custom command line arguments (ex. 'arg': 'value')
+        :type custom_cli_args: Dict
         """
 
         self.build_config_path = build_config_path
@@ -365,14 +365,10 @@ class BuildGenerator(object):
         self.dev_pkg_data_to_archive = None
         self.install_pkg_data_to_archive = None
         self.config_variables = {}
-        self.config_args = {}
+        self.custom_cli_args = custom_cli_args
 
         self.log = logging.getLogger()
 
-        if config_args:
-            for arg in config_args:
-                arg = arg.split('=')
-                self.config_args[arg[0]] = arg[1]
 
         # Build and extract in directory for forked repositories
         # in case of commit from forked repository
@@ -399,10 +395,10 @@ class BuildGenerator(object):
         global_vars = {
             'action': self._action,
             'vs_component': self._vs_component,
-            'DEFAULT_OPTIONS': self.options,
-            'Stage': Stage,
+            'options': self.options,
+            'stage': Stage,
             'copy_win_files': copy_win_files,
-            'args': self.config_args
+            'args': self.custom_cli_args
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -807,33 +803,30 @@ which is not present in mediasdk_directories.''')
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
 
-    # Catch arguments undefined in argparser
-    config_args = []
-    for sys_arg in sys.argv:
-        if not sys_arg.startswith('-') and '=' in sys_arg:
-            config_args.append(sys_arg)
+    parsed_args, unknown_args = parser.parse_known_args()
 
-    for arg in config_args:
-        sys.argv.remove(arg)
+    custom_cli_args = {}
+    if unknown_args:
+        for arg in unknown_args:
+            arg = arg.split('=')
+            custom_cli_args[arg[0]] = arg[1]
 
-    args = parser.parse_args()
-
-    if args.commit_time:
-        commit_time = datetime.strptime(args.commit_time, '%Y-%m-%d %H:%M:%S')
+    if parsed_args.commit_time:
+        commit_time = datetime.strptime(parsed_args.commit_time, '%Y-%m-%d %H:%M:%S')
     else:
         commit_time = None
 
     build_config = BuildGenerator(
-        build_config_path=pathlib.Path(args.build_config).absolute(),
-        root_dir=pathlib.Path(args.root_dir).absolute(),
-        build_type=args.build_type,
-        product_type=args.product_type,
-        build_event=args.build_event,
+        build_config_path=pathlib.Path(parsed_args.build_config).absolute(),
+        root_dir=pathlib.Path(parsed_args.root_dir).absolute(),
+        build_type=parsed_args.build_type,
+        product_type=parsed_args.product_type,
+        build_event=parsed_args.build_event,
         commit_time=commit_time,
-        changed_repo=args.changed_repo,
-        repo_states_file_path=args.repo_states,
-        repo_url=args.repo_url,
-        config_args=config_args
+        changed_repo=parsed_args.changed_repo,
+        repo_states_file_path=parsed_args.repo_states,
+        repo_url=parsed_args.repo_url,
+        custom_cli_args=custom_cli_args
     )
 
     # We must create BuildGenerator anyway.
@@ -843,16 +836,16 @@ which is not present in mediasdk_directories.''')
     dictConfig(LOG_CONFIG)
 
     try:
-        if not args.changed_repo and not args.repo_states:
+        if not parsed_args.changed_repo and not parsed_args.repo_states:
             log.error('"--changed-repo" or "--repo-states" argument bust be added')
             exit(ErrorCode.CRITICAL.value)
-        elif args.changed_repo and args.repo_states:
+        elif parsed_args.changed_repo and parsed_args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
         # prepare build configuration
         if build_config.generate_build_config():
             # run stage of build
-            no_errors = build_config.run_stage(args.stage)
+            no_errors = build_config.run_stage(parsed_args.stage)
         else:
             log.critical('Failed to process the product configuration')
             no_errors = False
@@ -861,16 +854,16 @@ which is not present in mediasdk_directories.''')
         no_errors = False
         log.exception('Exception occurred')
 
-    build_state_file = pathlib.Path(args.root_dir) / 'build_state'
+    build_state_file = pathlib.Path(parsed_args.root_dir) / 'build_state'
     if no_errors:
         if not build_state_file.exists():
             build_state_file.write_text(json.dumps({'status': "PASS"}))
         log.info('-' * 50)
-        log.info("%sING COMPLETED", args.stage.name)
+        log.info("%sING COMPLETED", parsed_args.stage.name)
     else:
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
         log.error('-' * 50)
-        log.error("%sING FAILED", args.stage.name)
+        log.error("%sING FAILED", parsed_args.stage.name)
         exit(ErrorCode.CRITICAL.value)
 
 if __name__ == '__main__':
