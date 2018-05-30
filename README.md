@@ -44,9 +44,7 @@ nano msdk_secrets.py #add your real values
 nano buildbot.tac #edit `umask` with the value `umask=0o2`
 
 #Start Master Buildbot
-cd ..
-buildbot start master
-
+buildbot start .
 ```
 ### Deploy build box Worker Buildbot
 Prerequisites:
@@ -81,6 +79,10 @@ opencl-headers-2.2-1.20180306gite986688.el7.noarch
 ```bash
 sudo pip3 install buildbot-worker==1.1.2
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
+
+#Install devtoolset-6 for gcc 6.3.1
+sudo yum install centos-release-scl
+sudo yum install devtoolset-6
 
 #Recommended list of packages
 sudo yum groupinstall "Development Tools"
