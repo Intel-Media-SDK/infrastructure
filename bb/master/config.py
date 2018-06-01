@@ -37,7 +37,7 @@ BUILD_API_LATEST = "build-api-next"
 TEST = "test"
 TEST_API_LATEST = "test-api-next"
 
-RUN_COMMAND = "python3.6"
+RUN_COMMAND = "python3"
 WORKERS = {BUILD: {"b-1-10": {},
                    "b-1-14": {}},
            TEST: {"t-1-17": {},
