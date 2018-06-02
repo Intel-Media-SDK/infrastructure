@@ -43,7 +43,7 @@ WORKERS = {BUILD: {"b-1-10": {},
            TEST: {"t-1-17": {},
                   "t-1-16": {}}}
 
-BUILD_TYPE = "release"
+BUILD_TYPE = "Release"
 MASTER_PRODUCT_TYPE = "linux" # Product type of master (branch) build
 
 PORT = "5000"

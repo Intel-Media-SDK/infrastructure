@@ -133,7 +133,7 @@ def main():
                         choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest'],
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
-                        choices=['release', 'debug'],
+                        choices=['Release', 'Debug'],
                         help='Type of build')
     args = parser.parse_args()
 
