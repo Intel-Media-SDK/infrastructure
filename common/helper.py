@@ -511,20 +511,24 @@ def update_json(check_type, success, output, json_path):
     return True
 
 
-def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None):
-
+def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True):
     if log:
-        if isinstance(cmd, list):
-            log.info(f'cmd: {subprocess.list2cmdline(cmd)}')
+        if verbose:
+            log_out = log.info
         else:
-            log.info(f'cmd: {cmd}')
+            log_out = log.debug
+
+        if isinstance(cmd, list):
+            log_out(f'cmd: {subprocess.list2cmdline(cmd)}')
+        else:
+            log_out(f'cmd: {cmd}')
 
         if not cwd:
             cwd = str(pathlib.Path.cwd())
-        log.info(f'working directory: {cwd}')
+            log_out(f'working directory: {cwd}')
 
         if env:
-            log.info(f'environment: {env}')
+            log_out(f'environment: {env}')
 
     try:
         completed_process = subprocess.run(cmd,

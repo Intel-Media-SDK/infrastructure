@@ -788,6 +788,9 @@ class BuildGenerator(object):
         :return: Boolean
         """
 
+        self.log.info('-' * 80)
+        self.log.info(f'Stripping binaries')
+
         system_os = platform.system()
 
         if system_os == 'Linux':
@@ -806,8 +809,8 @@ class BuildGenerator(object):
             for result in bins_to_strip:
                 orig_file = str(result.absolute())
                 debug_file = str((result.parent / f'{result.stem}.sym').absolute())
-                self.log.info('-' * 80)
-                self.log.info(f'Stripping {orig_file}')
+                self.log.debug('-' * 80)
+                self.log.debug(f'Stripping {orig_file}')
 
                 strip_commands = OrderedDict([
                     ('copy_debug', ['objcopy',
@@ -828,7 +831,7 @@ class BuildGenerator(object):
                 ])
 
                 for command in strip_commands.values():
-                    err, out = cmd_exec(command, shell=False, log=self.log)
+                    err, out = cmd_exec(command, shell=False, log=self.log, verbose=False)
                     if err:
                         if orig_file not in binaries_with_error:
                             binaries_with_error.append(orig_file)
