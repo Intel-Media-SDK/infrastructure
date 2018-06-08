@@ -132,8 +132,8 @@ def main():
     parser.add_argument('-p', "--product-type", default='linux',
                         choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest'],
                         help='Type of product')
-    parser.add_argument('-b', "--build-type", default='Release',
-                        choices=['Release', 'Debug'],
+    parser.add_argument('-b', "--build-type", default='release',
+                        choices=['release', 'debug'],
                         help='Type of build')
     args = parser.parse_args()
 

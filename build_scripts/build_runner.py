@@ -872,7 +872,7 @@ In most cases used to specify link to the forked repositories.
 Use this argument if you want to specify repository
 which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default='release',
-                        choices=['release', 'debug', 'Release', 'Debug'],
+                        choices=['release', 'debug'],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
                         choices=['linux', 'embedded', 'open_source', 'windows',
