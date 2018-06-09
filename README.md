@@ -61,6 +61,9 @@ sudo yum install gtest gtest-devel ocl-icd ocl-icd-devel
 #Compile OpenCL from these cources: https://github.com/intel/compute-runtime/releases/tag/2018ww18-010782
 #By using these instructions: https://github.com/intel/compute-runtime/blob/master/documentation/BUILD_Centos.md
 sudo rpm -ihv intel-opencl-1.0-0.x86_64-igdrcl.rpm
+
+#Compile and install libva from https://github.com/intel/libva
+#Use instructions in README.md of libva repository
 ```
 Current package versions used in Media SDK CI:
 ```bash
