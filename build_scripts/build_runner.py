@@ -797,13 +797,11 @@ class BuildGenerator(object):
             bins_to_strip = []
             binaries_with_error = []
             executable_bin_filter = ['', '.so']
-            executable_lib_filter = ['.a']
             search_results = self.options['BUILD_DIR'].rglob('*')
 
             for path in search_results:
                 if path.is_file():
-                    if os.access(path, os.X_OK) and path.suffix in executable_bin_filter\
-                            or path.suffix in executable_lib_filter:
+                    if os.access(path, os.X_OK) and path.suffix in executable_bin_filter:
                         bins_to_strip.append(path)
 
             for result in bins_to_strip:
