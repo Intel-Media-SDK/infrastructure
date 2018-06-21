@@ -487,7 +487,7 @@ class BuildGenerator(object):
                 work_dir = self.options["BUILD_DIR"]
         self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
-    def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2015",
+    def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2017",
                       dependencies=None, env=None, verbose=False):
         """
         Handler for VS components
