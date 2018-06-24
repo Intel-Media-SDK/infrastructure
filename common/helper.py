@@ -349,6 +349,8 @@ def copy_win_files(repos_dir, build_dir):
                                           '*.bsc', 'mfx_pipeline.lib', 'mfx_trans_pipeline.lib')
 
     win_thm32_bin = repos_dir / 'build\\win_thm32\\bin'
+    win_thm64_bin = repos_dir / 'build\\win_thm64\\bin'
+    win_intel64_bin = repos_dir / 'build\\win_intel64\\bin'
     win_win32_bin = repos_dir / 'build\\win_Win32\\bin'
     win_x64_bin = repos_dir / 'build\\win_x64\\bin'
     lib_samples_release = repos_dir / 'mdp_msdk-lib\\samples\\_build\\x64\\Release'
@@ -359,6 +361,16 @@ def copy_win_files(repos_dir, build_dir):
     if win_thm32_bin.exists():
         copytree(win_thm32_bin,
                  build_dir / 'win_thm32' / 'bin',
+                 ignore=ignore_files)
+
+    if win_thm64_bin.exists():
+        copytree(win_thm64_bin,
+                 build_dir / 'win_thm64' / 'bin',
+                 ignore=ignore_files)
+
+    if win_intel64_bin.exists():
+        copytree(win_intel64_bin,
+                 build_dir / 'win_intel64' / 'bin',
                  ignore=ignore_files)
 
     if win_win32_bin.exists():
