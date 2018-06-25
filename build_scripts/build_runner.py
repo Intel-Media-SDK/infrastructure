@@ -189,6 +189,10 @@ class VsComponent(Action):
         'vs2015': {
             'ms_build': r'C:\Program Files (x86)\MSBuild\14.0\Bin;',
             'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC;'
+        },
+        'vs2017': {
+            'ms_build': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\MSBuild\15.0\Bin;',
+            'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\Auxiliary\Build;'
         }
     }
 
@@ -256,7 +260,10 @@ class VsComponent(Action):
             else:
                 ms_build = f'{ms_build} {arg_name}:{data}'
 
-        self.cmd = ['call vcvarsall.bat', ms_build]
+        if self.vs_version == 'vs2017':
+            self.cmd = ['call vcvars64.bat', ms_build]
+        else:
+            self.cmd = ['call vcvarsall.bat', ms_build]
 
     def _enable_vs_multi_processor_compilation(self):
         """
@@ -480,7 +487,7 @@ class BuildGenerator(object):
                 work_dir = self.options["BUILD_DIR"]
         self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
-    def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2015",
+    def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2017",
                       dependencies=None, env=None, verbose=False):
         """
         Handler for VS components
