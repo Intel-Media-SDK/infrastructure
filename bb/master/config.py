@@ -19,7 +19,6 @@
 # SOFTWARE.
 
 import sys
-import os
 from enum import Enum
 
 import msdk_secrets
@@ -34,14 +33,24 @@ BUILD_MASTER = "build-master-branch"
 BUILD_NOT_MASTER = "build"
 BUILD_API_LATEST = "build-api-next"
 
+BUILD_GCC_LATEST = {
+    "name": "build-gcc8",
+    "product_conf_file": "conf_linux_public.py",
+    "product_type": "linux_gcc_latest", # Product type of master (branch) build
+    "build_type": "release"
+}
+
 TEST = "test"
 TEST_API_LATEST = "test-api-next"
 
 RUN_COMMAND = "python3"
-WORKERS = {BUILD: {"b-1-10": {},
-                   "b-1-14": {}},
-           TEST: {"t-1-17": {},
-                  "t-1-16": {}}}
+WORKERS = {
+    BUILD: {"b-1-10": {},
+            "b-1-14": {}},
+    BUILD_GCC_LATEST["name"]: {"b-1-18": {}},
+    TEST: {"t-1-17": {},
+           "t-1-16": {}}
+}
 
 BUILD_TYPE = "release"
 MASTER_PRODUCT_TYPE = "linux" # Product type of master (branch) build
