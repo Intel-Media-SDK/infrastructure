@@ -34,10 +34,12 @@ BUILD_NOT_MASTER = "build"
 BUILD_API_LATEST = "build-api-next"
 
 BUILD_GCC_LATEST = {
-    "name": "build-gcc8",
+    "name": "build-gcc-8.1.0",
     "product_conf_file": "conf_linux_public.py",
     "product_type": "linux_gcc_latest", # Product type of master (branch) build
-    "build_type": "release"
+    "build_type": "release",
+    "api_latest": False,
+    "gcc_version": "8.1.0"
 }
 
 TEST = "test"
