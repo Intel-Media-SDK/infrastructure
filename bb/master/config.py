@@ -29,9 +29,34 @@ class Mode(Enum):
     TEST_MODE = "test_mode"
 
 BUILD = "build"
-BUILD_MASTER = "build-master-branch"
-BUILD_NOT_MASTER = "build"
-BUILD_API_LATEST = "build-api-next"
+TEST = "test"
+
+BUILD_MASTER = {
+    "name": "build-master-branch",
+    "product_conf_file": "conf_linux_public.py",
+    "product_type": "linux", # Product type of master (branch) build
+    "build_type": "release",
+    "api_latest": False,
+    "gcc_version": None
+}
+
+BUILD_NOT_MASTER = {
+    "name": "build",
+    "product_conf_file": "conf_linux_public.py",
+    "product_type": "linux", # Product type of master (branch) build
+    "build_type": "release",
+    "api_latest": False,
+    "gcc_version": None
+}
+
+BUILD_API_LATEST = {
+    "name": "build-api-next",
+    "product_conf_file": "conf_linux_public.py",
+    "product_type": "api_latest", # Product type of master (branch) build
+    "build_type": "release",
+    "api_latest": True,
+    "gcc_version": None
+}
 
 BUILD_GCC_LATEST = {
     "name": "build-gcc-8.1.0",
@@ -42,10 +67,19 @@ BUILD_GCC_LATEST = {
     "gcc_version": "8.1.0"
 }
 
-TEST = "test"
-TEST_API_LATEST = "test-api-next"
 
-RUN_COMMAND = "python3"
+TEST = {
+    "name": "test",
+    "product_type": "linux", # Product type of master (branch) build
+    "build_type": "release",
+}
+
+TEST_API_LATEST = {
+    "name": "test-api-next",
+    "product_type": "api_latest", # Product type of master (branch) build
+    "build_type": "release",
+}
+
 WORKERS = {
     BUILD: {"b-1-10": {},
             "b-1-14": {}},
@@ -54,9 +88,8 @@ WORKERS = {
            "t-1-16": {}}
 }
 
-BUILD_TYPE = "release"
-MASTER_PRODUCT_TYPE = "linux" # Product type of master (branch) build
 
+RUN_COMMAND = "python3"
 PORT = "5000"
 WORKER_PORT = "9000"
 BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis info to buildbot.net
@@ -83,6 +116,7 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     BUILDBOT_TITLE = "MediaSDK Private"
     WORKERS = {BUILD: {"b-50-41": {},
                        "b-50-61": {}},
+               BUILD_GCC_LATEST["name"]: {"b-999-999": {}},
                TEST: {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
