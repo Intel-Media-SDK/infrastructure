@@ -29,7 +29,6 @@ class Mode(Enum):
     TEST_MODE = "test_mode"
 
 BUILD = "build"
-TEST = "test"
 
 BUILD_MASTER = {
     "name": "build-master-branch",
@@ -81,11 +80,17 @@ TEST_API_LATEST = {
 }
 
 WORKERS = {
-    BUILD: {"b-1-10": {},
-            "b-1-14": {}},
-    BUILD_GCC_LATEST["name"]: {"b-1-18": {}},
-    TEST: {"t-1-17": {},
-           "t-1-16": {}}
+    BUILD: {
+        "b-1-10": {},
+        "b-1-14": {}
+    },
+    BUILD_GCC_LATEST["name"]: {
+        "b-1-18": {}
+    },
+    TEST["name"]: {
+        "t-1-17": {},
+        "t-1-16": {}
+    }
 }
 
 
