@@ -30,34 +30,6 @@ class Mode(Enum):
 
 BUILD = "build"
 
-"""
-BUILD_MASTER = {
-    "name": "build-master-branch",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "linux", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": False,
-    "gcc_version": None
-}
-
-BUILD_NOT_MASTER = {
-    "name": "build",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "linux", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": False,
-    "gcc_version": None
-}
-
-BUILD_API_LATEST = {
-    "name": "build-api-next",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "api_latest", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": True,
-    "gcc_version": None
-}
-"""
 
 BUILDERS = {
     "build_master": {
@@ -66,6 +38,7 @@ BUILDERS = {
         "product_type": "linux", # Product type of master (branch) build
         "build_type": "release",
         "api_latest": False,
+        "compiler": None,
         "compiler_version": None,
         "branch": "master"
     },
@@ -76,6 +49,7 @@ BUILDERS = {
         "product_type": "linux", # Product type of master (branch) build
         "build_type": "release",
         "api_latest": False,
+        "compiler": None,
         "compiler_version": None,
         "branch": "(?!master)"
     },
@@ -86,6 +60,7 @@ BUILDERS = {
         "product_type": "api_latest", # Product type of master (branch) build
         "build_type": "release",
         "api_latest": True,
+        "compiler": None,
         "compiler_version": None,
         "branch": ".+?"
     },
@@ -96,6 +71,7 @@ BUILDERS = {
         "product_type": "linux_gcc_latest", # Product type of master (branch) build
         "build_type": "release",
         "api_latest": False,
+        "compiler": "gcc",
         "compiler_version": "8.1.0",
         "branch": ".+?"
     },
@@ -106,6 +82,7 @@ BUILDERS = {
         "product_type": "linux_clang_latest", # Product type of master (branch) build
         "build_type": "release",
         "api_latest": False,
+        "compiler": "clang",
         "compiler_version": "6.0",
         "branch": ".+?"
     }
