@@ -143,7 +143,7 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     BUILDBOT_TITLE = "MediaSDK Private"
     WORKERS = {BUILD: {"b-50-41": {},
                        "b-50-61": {}},
-               BUILD_GCC_LATEST["name"]: {"b-999-999": {}},
+               BUILDERS["build_gcc_latest"]["name"]: {"b-999-999": {}},
                TEST: {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
