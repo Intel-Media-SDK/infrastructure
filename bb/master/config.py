@@ -28,94 +28,107 @@ class Mode(Enum):
     PRODUCTION_MODE_PRIVATE = "production_mode_private"
     TEST_MODE = "test_mode"
 
-TEST = "test" #TODO: tmp to determine workers
-
+"""
+Specification of BUILDERS:
+"name"              - name of build in Buildbot UI
+"product_conf_file" - product_config which should be used
+"product_type"      - Product type (all available types can be found in `build_runner.py`)
+"build_type"        - type of build (for example: "release")
+"api_latest"        - use api_latest? (True/False
+"compiler"          - compiler which should be used (env and product_config schould support this key)
+"compiler_version"  - version of compiler
+"branch"            - on this branch the build will be activated (supports Python re)
+"worker"            - worker(s) which should be used from `WORKERS`
+"""
 BUILDERS = {
     "build_master": {
         "name": "build-master-branch",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "linux", # Product type of master (branch) build
+        "product_type": "linux",
         "build_type": "release",
         "api_latest": False,
         "compiler": None,
         "compiler_version": None,
         "branch": "master",
-        "worker": "build" #TODO: change
+        "worker": "centos"
     },
 
     "build_not_master": {
         "name": "build",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "linux", # Product type of master (branch) build
+        "product_type": "linux",
         "build_type": "release",
         "api_latest": False,
         "compiler": None,
         "compiler_version": None,
         "branch": "(?!master)",
-        "worker": "build" #TODO: change
+        "worker": "centos"
     },
 
     "build_api_latest": {
         "name": "build-api-next",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "api_latest", # Product type of master (branch) build
+        "product_type": "api_latest",
         "build_type": "release",
         "api_latest": True,
         "compiler": None,
         "compiler_version": None,
         "branch": ".+?",
-        "worker": "build" #TODO: change
+        "worker": "centos"
     },
 
     "build_gcc_latest": {
         "name": "build-gcc-8.1.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "linux_gcc_latest", # Product type of master (branch) build
+        "product_type": "linux_gcc_latest",
         "build_type": "release",
         "api_latest": False,
         "compiler": "gcc",
         "compiler_version": "8.1.0",
         "branch": ".+?",
-        "worker": "ubuntu" #TODO: change
+        "worker": "ubuntu"
     },
 
     "build_clang_latest": {
         "name": "build-clang-6.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "linux_clang_latest", # Product type of master (branch) build
+        "product_type": "linux_clang_latest",
         "build_type": "release",
         "api_latest": False,
         "compiler": "clang",
         "compiler_version": "6.0",
         "branch": ".+?",
-        "worker": "ubuntu" #TODO: change
+        "worker": "ubuntu"
     }
 }
 
 TESTERS = {
     "test": {
         "name": "test",
-        "product_type": "linux", # Product type of master (branch) build
+        "product_type": "linux",
         "build_type": "release",
+        "worker": "centos_test"
     },
 
     "test_api_latest": {
         "name": "test-api-next",
-        "product_type": "api_latest", # Product type of master (branch) build
+        "product_type": "api_latest",
         "build_type": "release",
+        "worker": "centos_test"
     }
 }
 
 
 WORKERS = {
-    "build": {
+    "centos": {
         "b-1-10": {},
         "b-1-14": {}
     },
     "ubuntu": {
-        "b-1-18": {}
+        "b-1-18": {},
+        "b-1-18aux": {}
     },
-    TEST: {
+    "centos_test": {
         "t-1-17": {},
         "t-1-16": {}
     }
@@ -150,7 +163,7 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     WORKERS = {"build": {"b-50-41": {},
                          "b-50-61": {}},
                "ubuntu": {"b-999-999": {}},
-               TEST: {"t-999-999": {}}}
+               "centos_test": {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
     MASTER_PRODUCT_TYPE = "embedded_private"
