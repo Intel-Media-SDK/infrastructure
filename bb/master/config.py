@@ -28,9 +28,6 @@ class Mode(Enum):
     PRODUCTION_MODE_PRIVATE = "production_mode_private"
     TEST_MODE = "test_mode"
 
-BUILD = "build"
-
-
 BUILDERS = {
     "build_master": {
         "name": "build-master-branch",
@@ -93,28 +90,30 @@ BUILDERS = {
     }
 }
 
+TESTERS = {
+    "test": {
+        "name": "test",
+        "product_type": "linux", # Product type of master (branch) build
+        "build_type": "release",
+    },
 
-TEST = {
-    "name": "test",
-    "product_type": "linux", # Product type of master (branch) build
-    "build_type": "release",
+    "test_api_latest": {
+        "name": "test-api-next",
+        "product_type": "api_latest", # Product type of master (branch) build
+        "build_type": "release",
+    }
 }
 
-TEST_API_LATEST = {
-    "name": "test-api-next",
-    "product_type": "api_latest", # Product type of master (branch) build
-    "build_type": "release",
-}
 
 WORKERS = {
-    BUILD: {
+    "build": {
         "b-1-10": {},
         "b-1-14": {}
     },
     "ubuntu": {
         "b-1-18": {}
     },
-    TEST["name"]: {
+    "test": {
         "t-1-17": {},
         "t-1-16": {}
     }
@@ -146,10 +145,10 @@ if CURRENT_MODE == Mode.PRODUCTION_MODE:
 
 elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     BUILDBOT_TITLE = "MediaSDK Private"
-    WORKERS = {BUILD: {"b-50-41": {},
-                       "b-50-61": {}},
-               BUILDERS["build_gcc_latest"]["name"]: {"b-999-999": {}},
-               TEST: {"t-999-999": {}}}
+    WORKERS = {"build": {"b-50-41": {},
+                         "b-50-61": {}},
+               "ubuntu": {"b-999-999": {}},
+               "test": {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
     MASTER_PRODUCT_TYPE = "embedded_private"
