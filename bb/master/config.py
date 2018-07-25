@@ -28,6 +28,8 @@ class Mode(Enum):
     PRODUCTION_MODE_PRIVATE = "production_mode_private"
     TEST_MODE = "test_mode"
 
+TEST = "test" #TODO: tmp to determine workers
+
 BUILDERS = {
     "build_master": {
         "name": "build-master-branch",
@@ -113,7 +115,7 @@ WORKERS = {
     "ubuntu": {
         "b-1-18": {}
     },
-    "test": {
+    TEST: {
         "t-1-17": {},
         "t-1-16": {}
     }
@@ -148,7 +150,7 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     WORKERS = {"build": {"b-50-41": {},
                          "b-50-61": {}},
                "ubuntu": {"b-999-999": {}},
-               "test": {"t-999-999": {}}}
+               TEST: {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
     MASTER_PRODUCT_TYPE = "embedded_private"
