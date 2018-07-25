@@ -40,7 +40,8 @@ BUILDERS = {
         "api_latest": False,
         "compiler": None,
         "compiler_version": None,
-        "branch": "master"
+        "branch": "master",
+        "worker": "build" #TODO: change
     },
 
     "build_not_master": {
@@ -51,7 +52,8 @@ BUILDERS = {
         "api_latest": False,
         "compiler": None,
         "compiler_version": None,
-        "branch": "(?!master)"
+        "branch": "(?!master)",
+        "worker": "build" #TODO: change
     },
 
     "build_api_latest": {
@@ -62,7 +64,8 @@ BUILDERS = {
         "api_latest": True,
         "compiler": None,
         "compiler_version": None,
-        "branch": ".+?"
+        "branch": ".+?",
+        "worker": "build" #TODO: change
     },
 
     "build_gcc_latest": {
@@ -73,7 +76,8 @@ BUILDERS = {
         "api_latest": False,
         "compiler": "gcc",
         "compiler_version": "8.1.0",
-        "branch": ".+?"
+        "branch": ".+?",
+        "worker": "ubuntu" #TODO: change
     },
 
     "build_clang_latest": {
@@ -84,7 +88,8 @@ BUILDERS = {
         "api_latest": False,
         "compiler": "clang",
         "compiler_version": "6.0",
-        "branch": ".+?"
+        "branch": ".+?",
+        "worker": "ubuntu" #TODO: change
     }
 }
 
@@ -106,7 +111,7 @@ WORKERS = {
         "b-1-10": {},
         "b-1-14": {}
     },
-    BUILDERS["build_gcc_latest"]["name"]: {
+    "ubuntu": {
         "b-1-18": {}
     },
     TEST["name"]: {
