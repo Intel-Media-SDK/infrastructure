@@ -34,14 +34,14 @@ Specification of BUILDERS:
 "product_conf_file" - product_config which should be used
 "product_type"      - Product type (all available types can be found in `build_runner.py`)
 "build_type"        - type of build (for example: "release")
-"api_latest"        - use api_latest? (True/False
+"api_latest"        - if `True` it will enable product`s `api_latest` feature
 "compiler"          - compiler which should be used (env and product_config schould support this key)
 "compiler_version"  - version of compiler
 "branch"            - on this branch the build will be activated (supports Python re)
 "worker"            - worker(s) which should be used from `WORKERS`
 """
-BUILDERS = {
-    "build_master": {
+BUILDERS = [
+    {
         "name": "build-master-branch",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "linux",
@@ -53,8 +53,8 @@ BUILDERS = {
         "worker": "centos"
     },
 
-    "build_not_master": {
-        "name": "build",
+    {
+        "name": "build", #build all except master branch
         "product_conf_file": "conf_linux_public.py",
         "product_type": "linux",
         "build_type": "release",
@@ -65,7 +65,7 @@ BUILDERS = {
         "worker": "centos"
     },
 
-    "build_api_latest": {
+    {
         "name": "build-api-next",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "api_latest",
@@ -77,7 +77,7 @@ BUILDERS = {
         "worker": "centos"
     },
 
-    "build_gcc_latest": {
+    {
         "name": "build-gcc-8.1.0",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "linux_gcc_latest",
@@ -89,7 +89,7 @@ BUILDERS = {
         "worker": "ubuntu"
     },
 
-    "build_clang_latest": {
+    {
         "name": "build-clang-6.0",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "linux_clang_latest",
@@ -100,23 +100,23 @@ BUILDERS = {
         "branch": ".+?",
         "worker": "ubuntu"
     }
-}
+]
 
-TESTERS = {
-    "test": {
+TESTERS = [
+    {
         "name": "test",
         "product_type": "linux",
         "build_type": "release",
         "worker": "centos_test"
     },
 
-    "test_api_latest": {
+    {
         "name": "test-api-next",
         "product_type": "api_latest",
         "build_type": "release",
         "worker": "centos_test"
     }
-}
+]
 
 
 WORKERS = {
