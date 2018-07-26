@@ -28,66 +28,112 @@ class Mode(Enum):
     PRODUCTION_MODE_PRIVATE = "production_mode_private"
     TEST_MODE = "test_mode"
 
-BUILD = "build"
+"""
+Specification of BUILDERS:
+"name"              - name of build in Buildbot UI
+"product_conf_file" - product_config which should be used
+"product_type"      - Product type (all available types can be found in `build_runner.py`)
+"build_type"        - type of build (for example: "release")
+"api_latest"        - if `True` it will enable product`s `api_latest` feature
+"compiler"          - compiler which should be used (env and product_config schould support this key)
+"compiler_version"  - version of compiler
+"branch"            - on this branch pattern(!) the build will be activated (use Python re)
+"worker"            - worker(s) which should be used from `WORKERS`
 
-BUILD_MASTER = {
-    "name": "build-master-branch",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "linux", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": False,
-    "gcc_version": None
-}
+Python re examples:
+^master$ - build only master branch
+(?!master) - build everything except branch master
+.+? - build everything
+"""
+BUILDERS = [
+    {
+        "name": "build-master-branch",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux",
+        "build_type": "release",
+        "api_latest": False,
+        "compiler": None,
+        "compiler_version": None,
+        "branch": "^master$",
+        "worker": "centos"
+    },
 
-BUILD_NOT_MASTER = {
-    "name": "build",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "linux", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": False,
-    "gcc_version": None
-}
+    {
+        "name": "build", #build all except master branch
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux",
+        "build_type": "release",
+        "api_latest": False,
+        "compiler": None,
+        "compiler_version": None,
+        "branch": "(?!master)",
+        "worker": "centos"
+    },
 
-BUILD_API_LATEST = {
-    "name": "build-api-next",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "api_latest", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": True,
-    "gcc_version": None
-}
+    {
+        "name": "build-api-next",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "api_latest",
+        "build_type": "release",
+        "api_latest": True,
+        "compiler": None,
+        "compiler_version": None,
+        "branch": ".+?",
+        "worker": "centos"
+    },
 
-BUILD_GCC_LATEST = {
-    "name": "build-gcc-8.1.0",
-    "product_conf_file": "conf_linux_public.py",
-    "product_type": "linux_gcc_latest", # Product type of master (branch) build
-    "build_type": "release",
-    "api_latest": False,
-    "gcc_version": "8.1.0"
-}
+    {
+        "name": "build-gcc-8.1.0",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_gcc_latest",
+        "build_type": "release",
+        "api_latest": False,
+        "compiler": "gcc",
+        "compiler_version": "8.1.0",
+        "branch": ".+?",
+        "worker": "ubuntu"
+    },
 
+    {
+        "name": "build-clang-6.0",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_clang_latest",
+        "build_type": "release",
+        "api_latest": False,
+        "compiler": "clang",
+        "compiler_version": "6.0",
+        "branch": ".+?",
+        "worker": "ubuntu"
+    }
+]
 
-TEST = {
-    "name": "test",
-    "product_type": "linux", # Product type of master (branch) build
-    "build_type": "release",
-}
+TESTERS = [
+    {
+        "name": "test",
+        "product_type": "linux",
+        "build_type": "release",
+        "worker": "centos_test"
+    },
 
-TEST_API_LATEST = {
-    "name": "test-api-next",
-    "product_type": "api_latest", # Product type of master (branch) build
-    "build_type": "release",
-}
+    {
+        "name": "test-api-next",
+        "product_type": "api_latest",
+        "build_type": "release",
+        "worker": "centos_test"
+    }
+]
+
 
 WORKERS = {
-    BUILD: {
+    "centos": {
         "b-1-10": {},
         "b-1-14": {}
     },
-    BUILD_GCC_LATEST["name"]: {
-        "b-1-18": {}
+    "ubuntu": {
+        "b-1-18": {},
+        "b-1-18aux": {}
     },
-    TEST["name"]: {
+    "centos_test": {
         "t-1-17": {},
         "t-1-16": {}
     }
@@ -119,10 +165,10 @@ if CURRENT_MODE == Mode.PRODUCTION_MODE:
 
 elif CURRENT_MODE == Mode.PRODUCTION_MODE_PRIVATE:
     BUILDBOT_TITLE = "MediaSDK Private"
-    WORKERS = {BUILD: {"b-50-41": {},
-                       "b-50-61": {}},
-               BUILD_GCC_LATEST["name"]: {"b-999-999": {}},
-               TEST: {"t-999-999": {}}}
+    WORKERS = {"build": {"b-50-41": {},
+                         "b-50-61": {}},
+               "ubuntu": {"b-999-999": {}},
+               "centos_test": {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
     MASTER_PRODUCT_TYPE = "embedded_private"
