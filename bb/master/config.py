@@ -37,8 +37,13 @@ Specification of BUILDERS:
 "api_latest"        - if `True` it will enable product`s `api_latest` feature
 "compiler"          - compiler which should be used (env and product_config schould support this key)
 "compiler_version"  - version of compiler
-"branch"            - on this branch the build will be activated (supports Python re)
+"branch"            - on this branch pattern(!) the build will be activated (use Python re)
 "worker"            - worker(s) which should be used from `WORKERS`
+
+Python re examples:
+^master$ - build only master branch
+(?!master) - build everything except branch master
+.+? - build everything
 """
 BUILDERS = [
     {
@@ -49,7 +54,7 @@ BUILDERS = [
         "api_latest": False,
         "compiler": None,
         "compiler_version": None,
-        "branch": "master",
+        "branch": "^master$",
         "worker": "centos"
     },
 
