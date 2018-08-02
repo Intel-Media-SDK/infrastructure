@@ -104,7 +104,19 @@ BUILDERS = [
         "compiler_version": "6.0",
         "branch": ".+?",
         "worker": "ubuntu"
-    }
+    },
+
+	{
+        "name": "build-api-next-no-x11",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "api_latest_no_x11",
+        "build_type": "release",
+        "api_latest": True,
+        "compiler": None,
+        "compiler_version": None,
+        "branch": ".+?",
+        "worker": "centos_no_x11"
+    },
 ]
 
 TESTERS = [
@@ -129,6 +141,10 @@ WORKERS = {
         "b-1-10": {},
         "b-1-14": {}
     },
+	 "centos_no_x11": {
+		"b-1-20": {},
+		"b-1-14": {} #temporary solution for tests
+    },
     "ubuntu": {
         "b-1-18": {},
         "b-1-18aux": {}
@@ -136,7 +152,7 @@ WORKERS = {
     "centos_test": {
         "t-1-17": {},
         "t-1-16": {}
-    }
+    },
 }
 
 
