@@ -48,48 +48,30 @@ buildbot start .
 ```
 ### Deploy build box Worker Buildbot
 Prerequisites:
-- CentOS v7.3
+- CentOS v6.9 / v7.3
 - Python v3.6.x
 
-Needed packages (dependencies):
-```bash
-sudo yum install libpciaccess libpciaccess-devel opencl-headers
+To set up environment for MediaSDK and install all dependencies do:
+- [Build Media SDK on CentOS](https://github.com/Intel-Media-SDK/MediaSDK/wiki/Build-Media-SDK-on-CentOS)
+- [Build Media SDK on Ubuntu](https://github.com/Intel-Media-SDK/MediaSDK/wiki/Build-Media-SDK-on-Ubuntu)
 
-#Enable epel repository
-sudo yum install gtest gtest-devel ocl-icd ocl-icd-devel
-
-#Compile OpenCL from these cources: https://github.com/intel/compute-runtime/releases/tag/2018ww18-010782
-#By using these instructions: https://github.com/intel/compute-runtime/blob/master/documentation/BUILD_Centos.md
-sudo rpm -ihv intel-opencl-1.0-0.x86_64-igdrcl.rpm
-
-#Compile and install libva from https://github.com/intel/libva
-#Use instructions in README.md of libva repository
-```
 Current package versions used in Media SDK CI:
 ```bash
 libpciaccess-0.14-1.el7.x86_64
 libpciaccess-devel-0.14-1.el7.x86_64
-
 gtest-1.6.0-2.el7.x86_64
 gtest-devel-1.6.0-2.el7.x86_64
-
 ocl-icd-2.2.12-1.el7.x86_64
 ocl-icd-devel-2.2.12-1.el7.x86_64
-
 opencl-headers-2.2-1.20180306gite986688.el7.noarch
 ```
-
+Install packages for Buildbot:
 ```bash
 sudo pip3 install buildbot-worker==1.1.2
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
-
-#Install devtoolset-6 for gcc 6.3.1
-sudo yum install centos-release-scl
-sudo yum install devtoolset-6
-
-#Recommended list of packages
-sudo yum groupinstall "Development Tools"
-sudo yum install cmake git
+```
+If you want the environment with X11, install:
+```bash
 sudo yum install libX11 libXext libXfixes libGL libGL-devel libX11-devel 
 ```
 **Read more about the packages [here](docs/packages.md).**
