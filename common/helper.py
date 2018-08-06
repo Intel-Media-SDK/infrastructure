@@ -32,7 +32,7 @@ import subprocess
 from enum import Enum
 from logging.config import dictConfig
 from shutil import copystat, Error, copy2
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 import json
 
 from .logger_conf import LOG_CONFIG
@@ -119,8 +119,10 @@ def make_archive(path, data_to_archive):
         pkg = tarfile.open(path, "w")
     elif path.suffix == '.gz':
         pkg = tarfile.open(path, "w:gz")
+    elif path.suffix == '.bz2':
+        pkg = tarfile.open(path, "w:bz2")
     elif path.suffix == '.zip':
-        pkg = ZipFile(path, 'w')
+        pkg = ZipFile(path, 'w', compression=ZIP_DEFLATED)
     else:
         log.error("Extension %s is not supported", path.suffix)
         no_errors = False
@@ -345,18 +347,28 @@ def copy_win_files(repos_dir, build_dir):
     :return: None | Exception
     """
 
-    ignore_files = shutil.ignore_patterns('*.pdb', '*.map', '*.list', '*.obj', '*.*log', '*.exp',
-                                          '*.bsc', 'mfx_pipeline.lib', 'mfx_trans_pipeline.lib')
+    ignore_files = shutil.ignore_patterns('*.ipdb', '*.map', '*.list', '*obj*', '*.*log', '*.exp',
+                                          '*.bsc', 'mfx_pipeline.lib', 'mfx_trans_pipeline.lib', r'amd64', r'x86')
 
     win_thm32_bin = repos_dir / 'build\\win_thm32'
     win_thm64_bin = repos_dir / 'build\\win_thm64'
     win_intel64_bin = repos_dir / 'build\\win_intel64'
     win_win32_bin = repos_dir / 'build\\win_Win32'
     win_x64_bin = repos_dir / 'build\\win_x64'
-    lib_samples_release = repos_dir / 'mdp_msdk-lib\\samples\\_build\\x64\\Release'
-    mfts_samples_release_int = repos_dir / 'mdp_msdk-mfts\\samples\\_build\\x64\\Release_Internal'
-    mfts_samples_release = repos_dir / 'mdp_msdk-mfts\\samples\\_build\\x64\\Release'
-    mfts_samples_release_thm = repos_dir / 'mdp_msdk-mfts\\samples\\_build\\Win32\\Release_THM'
+    lib_samples32 = repos_dir / 'mdp_msdk-lib\\samples\\_build\\Win32'
+    lib_samples64 = repos_dir / 'mdp_msdk-lib\\samples\\_build\\x64'
+    mfts_samples32 = repos_dir / 'mdp_msdk-mfts\\samples\\_build\\Win32'
+    mfts_samples64 = repos_dir / 'mdp_msdk-mfts\\samples\\_build\\x64'
+
+    if win_win32_bin.exists():
+        copytree(win_win32_bin,
+                 build_dir / 'win_Win32',
+                 ignore=ignore_files)
+
+    if win_x64_bin.exists():
+        copytree(win_x64_bin,
+                 build_dir / 'win_x64',
+                 ignore=ignore_files)
 
     if win_thm32_bin.exists():
         copytree(win_thm32_bin,
@@ -373,34 +385,24 @@ def copy_win_files(repos_dir, build_dir):
                  build_dir / 'win_intel64',
                  ignore=ignore_files)
 
-    if win_win32_bin.exists():
-        copytree(win_win32_bin,
-                 build_dir / 'win_Win32',
+    if lib_samples32.exists():
+        copytree(lib_samples32,
+                 build_dir / 'samples' / 'Win32',
                  ignore=ignore_files)
 
-    if win_x64_bin.exists():
-        copytree(win_x64_bin,
-                 build_dir / 'win_x64',
+    if lib_samples64.exists():
+        copytree(lib_samples64,
+                 build_dir / 'samples' / 'x64',
                  ignore=ignore_files)
 
-    if lib_samples_release.exists():
-        copytree(lib_samples_release,
-                 build_dir / 'win_x64' / 'bin',
+    if mfts_samples32.exists():
+        copytree(mfts_samples32,
+                 build_dir / 'mfts_samples' / 'Win32',
                  ignore=ignore_files)
 
-    if mfts_samples_release_int.exists():
-        copytree(mfts_samples_release_int,
-                 build_dir / 'win_x64' / 'Release_Internal',
-                 ignore=ignore_files)
-
-    if mfts_samples_release.exists():
-        copytree(mfts_samples_release,
-                 build_dir / 'win_x64' / 'Release',
-                 ignore=ignore_files)
-
-    if mfts_samples_release_thm.exists():
-        copytree(mfts_samples_release_thm,
-                 build_dir / 'win_Win32' / 'Release_THM',
+    if mfts_samples64.exists():
+        copytree(mfts_samples64,
+                 build_dir / 'mfts_samples' / 'x64',
                  ignore=ignore_files)
 
 
