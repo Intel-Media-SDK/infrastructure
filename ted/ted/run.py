@@ -123,7 +123,7 @@ class Runner(object):
 
         stream = case.pop("stream")
         cmd.append(stream.codec)
-        cmd.extend(['-i', str(stream.path)])
+        cmd.extend(['-i', str(stream.path.absolute())]) #TODO: use absolute here 'higher'?
 
         decoded = "{:04d}.yuv".format(case_id)
         cmd.extend(['-o', decoded])
@@ -150,7 +150,7 @@ class Runner(object):
         cmd.append('-hw')
         
         stream = case.pop('stream')
-        cmd.extend(['-i', stream.path])
+        cmd.extend(['-i', stream.path.absolute()])
         cmd.extend(['-w', stream.width])
         cmd.extend(['-h', stream.height])
 
@@ -212,7 +212,7 @@ class Runner(object):
         cmd.extend(['-lib', 'hw'])
 
         stream = case.pop('stream')
-        cmd.extend(['-i', stream.path])
+        cmd.extend(['-i', stream.path.absolute()])
         cmd.extend(['-sw', stream.width])
         cmd.extend(['-sh', stream.height])
 

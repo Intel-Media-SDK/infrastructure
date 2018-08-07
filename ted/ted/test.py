@@ -72,7 +72,9 @@ class Test(object):
 
         subdir = 'results'
 
-        samples_dir = Path('/opt/intel/mediasdk/share/mfx/samples')
+        #samples_dir = Path('/opt/intel/mediasdk/share/mfx/samples')
+        #Temporary, for old position of samples
+        samples_dir = Path('/opt/intel/mediasdk/samples')
 
         extended_path = {
             'PATH': str(samples_dir) + os.pathsep + os.environ['PATH'],

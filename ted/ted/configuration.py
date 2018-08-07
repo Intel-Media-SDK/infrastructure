@@ -105,7 +105,7 @@ def collect_file_info(fn, version=True):
 
 class Stream(object):
     def __init__(self, cfg, base_dir):
-        self.path = (base_dir / cfg['path']).absolute()
+        self.path = base_dir / cfg['path']
 
         if not self.path.exists():
             raise TestEnvironmentError("{} does not exist in {}".format(self.path.name, self.path))
@@ -127,7 +127,7 @@ class Stream(object):
 class Configuration(object):
     def __init__(self, cfg, base_dir):
         self.streams = {}
-        streams_folder = (base_dir / "ted" / "content").absolute()
+        streams_folder = base_dir / "content"
 
         if 'streams' not in cfg:
             raise ConfigurationError("No streams defined")
@@ -149,7 +149,7 @@ class Configuration(object):
         self.environment['CPU'] = platform.processor()
         self.environment['OS'] = platform.platform()
 
-        target = (base_dir / 'results').absolute()
+        target = base_dir / 'results'
 
         # prepare directory structure for test runs
         bins = target / 'bin'
