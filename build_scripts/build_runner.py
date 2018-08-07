@@ -692,7 +692,7 @@ class BuildGenerator(object):
         if platform.system() == 'Windows':
             extension = "zip"
         elif platform.system() == 'Linux':
-            extension = "tar"
+            extension = "tar.gz"
         else:
             self.log.critical(f'Can not pack data on this OS: {platform.system()}')
             return False
