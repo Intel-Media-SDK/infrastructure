@@ -118,7 +118,7 @@ def make_archive(path, data_to_archive):
     if path.suffix == '.tar':
         pkg = tarfile.open(path, "w")
     elif path.suffix == '.gz':
-        pkg = tarfile.open(path, "w:gz")
+        pkg = tarfile.open(path, "w:gz", compresslevel=6)
     elif path.suffix == '.bz2':
         pkg = tarfile.open(path, "w:bz2")
     elif path.suffix == '.zip':
