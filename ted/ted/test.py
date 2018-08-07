@@ -72,9 +72,10 @@ class Test(object):
 
         subdir = 'results'
 
+        samples_dir = Path('/opt/intel/mediasdk/share/mfx/samples')
+
         extended_path = {
-            'PATH': str(base.resolve() / subdir / 'bin') + os.pathsep + os.environ['PATH'],
-            'LD_LIBRARY_PATH': str(base.resolve() / subdir / 'bin' / 'lib'),
+            'PATH': str(samples_dir) + os.pathsep + os.environ['PATH'],
         }
 
         self.runner = run.Runner(extended_path, cfg)
