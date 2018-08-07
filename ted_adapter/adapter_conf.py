@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import pathlib
+
 #Here should be the driver `iHD_drv_video.so`
 DRIVER_PATH = pathlib.Path("/opt/intel/msdk_driver/lib64")
 

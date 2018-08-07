@@ -81,7 +81,7 @@ class TestAdapter(object):
         self._mkdir(str(self.root_dir))
 
         # Copy `install_pkg.tar` to the workdir and untar it
-        self._copy(str(self.remote_pkg), str(self.root_dir))
+        self._copy(str(remote_pkg), str(self.root_dir))
         #_untar(str(self.root_dir / pkg_name))
         self._untar(str(self.root_dir / pkg_name), str(self.root_dir))
 
@@ -101,7 +101,7 @@ class TestAdapter(object):
         self._get_artifacts()
 
         env = os.environ.copy()
-        env['MFX_HOME'] = str(self.test_driver_dir)
+        env['MFX_HOME'] = str(adapter_conf.MEDIASDK_PATH)
         env['LIBVA_DRIVERS_PATH'] = str(adapter_conf.DRIVER_PATH)
 
         process = subprocess.run('python3 ted/ted.py',
