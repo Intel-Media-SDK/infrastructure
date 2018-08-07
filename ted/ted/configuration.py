@@ -105,10 +105,10 @@ def collect_file_info(fn, version=True):
 
 class Stream(object):
     def __init__(self, cfg, base_dir):
-        self.path = base_dir / cfg['path']
+        self.path = (base_dir / cfg['path']).absolute()
 
         if not self.path.exists():
-            raise TestEnvironmentError("{} does not exist".format(self.path.name))
+            raise TestEnvironmentError("{} does not exist in {}".format(self.path.name, self.path))
 
         self.codec = cfg['codec']
         if self.codec not in _SUPPORTED_CODECS:
@@ -127,11 +127,12 @@ class Stream(object):
 class Configuration(object):
     def __init__(self, cfg, base_dir):
         self.streams = {}
+        streams_folder = (base_dir / "ted" / "content").absolute()
 
         if 'streams' not in cfg:
             raise ConfigurationError("No streams defined")
         try:
-            folder = cfg.get('streams_folder', r'$MFX_HOME/tests/content')
+            folder = streams_folder
             streams_root = Path(os.path.expandvars(folder))
 
             for i, stream in enumerate(cfg['streams']):
@@ -148,7 +149,7 @@ class Configuration(object):
         self.environment['CPU'] = platform.processor()
         self.environment['OS'] = platform.platform()
 
-        target = base_dir / 'results'
+        target = (base_dir / 'results').absolute()
 
         # prepare directory structure for test runs
         bins = target / 'bin'
@@ -170,6 +171,7 @@ class Configuration(object):
 
         file_info = []
 
+        #TODO: ?!
         libmfx = self.libmfx_folder / 'libmfxhw64.so'
         if not libmfx.exists():
             raise ConfigurationError("can't find 'libmfxhw64.so' in {}".format(self.libmfx_folder))
