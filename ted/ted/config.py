@@ -1,4 +1,6 @@
-# Copyright (c) 2018 Intel Corporation
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2017 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +22,15 @@
 
 import pathlib
 
-#Here should be the driver `iHD_drv_video.so`
-DRIVER_PATH = pathlib.Path("/opt/intel/msdk_driver/lib64")
-DRIVER = "iHD_drv_video.so"
+MEDIASDK_FOLDER = pathlib.Path('/opt/intel/mediasdk')
+POSSIBLE_SAMPLES_FOLDER = [
+    MEDIASDK_FOLDER / 'share' / 'mfx' / 'samples',
+    MEDIASDK_FOLDER / 'samples',
+]
 
-MEDIASDK_PATH = pathlib.Path("/opt/intel/mediasdk")
+def get_samples_folder():
+    for samples_folder in POSSIBLE_SAMPLES_FOLDER:
+        if samples_folder.exists():
+            print(f"Samples found in: {samples_folder}")
+            return samples_folder #success
+    return None

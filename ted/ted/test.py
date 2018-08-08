@@ -29,6 +29,7 @@ import itertools
 from pathlib import Path
 
 from . import objects, run
+import config
 
 
 class ValidationError(Exception):
@@ -72,9 +73,13 @@ class Test(object):
 
         subdir = 'results'
 
-        #samples_dir = Path('/opt/intel/mediasdk/share/mfx/samples')
-        #Temporary, for old position of samples
-        samples_dir = Path('/opt/intel/mediasdk/samples')
+        samples_dir = config.get_samples_folder()
+
+        if samples_dir is None:
+            print(f"Samples were not found.")
+            print(f"Put samples to the one of the following locations and restart ted:")
+            print(config.POSSIBLE_SAMPLES_FOLDER)
+            exit(1)
 
         extended_path = {
             'PATH': str(samples_dir) + os.pathsep + os.environ['PATH'],

@@ -29,8 +29,9 @@ import subprocess
 import collections
 import configparser
 
-
 from pathlib import Path
+
+import config
 
 
 class TestEnvironmentError(Exception):
@@ -127,12 +128,11 @@ class Stream(object):
 class Configuration(object):
     def __init__(self, cfg, base_dir):
         self.streams = {}
-        streams_folder = base_dir / "content"
 
         if 'streams' not in cfg:
             raise ConfigurationError("No streams defined")
         try:
-            folder = streams_folder
+            folder = base_dir / "content"
             streams_root = Path(os.path.expandvars(folder))
 
             for i, stream in enumerate(cfg['streams']):
@@ -158,7 +158,14 @@ class Configuration(object):
         libs.mkdir(exist_ok=True)
 
         try:
-            folder = cfg.get('samples_folder')
+            folder = config.get_samples_folder()
+
+            if samples_dir is None:
+                print(f"Samples were not found.")
+                print(f"Put samples to the one of the following locations and restart ted:")
+                print(config.POSSIBLE_SAMPLES_FOLDER)
+                exit(1)
+
             self.mediasdk_samples = Path(os.path.expandvars(folder))
         except KeyError:
             raise ConfigurationError("'samples_folder' is not configured")
@@ -171,7 +178,6 @@ class Configuration(object):
 
         file_info = []
 
-        #TODO: ?!
         libmfx = self.libmfx_folder / 'libmfxhw64.so'
         if not libmfx.exists():
             raise ConfigurationError("can't find 'libmfxhw64.so' in {}".format(self.libmfx_folder))

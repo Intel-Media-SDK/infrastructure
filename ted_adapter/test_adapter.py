@@ -55,7 +55,7 @@ class TestAdapter(object):
         :param tests_artifacts_dir: Path to tests artifacts
         :type tests_artifacts_dir: pathlib.Path
 
-        :param root_dir: Path to workdir for build artifacts unpacking
+        :param root_dir: Path to workdir for unpacking build artifacts
         :type root_dir: pathlib.Path
         """
 
@@ -149,7 +149,7 @@ class TestAdapter(object):
 
 
 def driver_exists():
-    return (adapter_conf.DRIVER_PATH / 'iHD_drv_video.so').exists()
+    return (adapter_conf.DRIVER_PATH / adapter_conf.DRIVER).exists()
 
 def main():
     """
@@ -160,9 +160,10 @@ def main():
 
     if not driver_exists():
         path = str(adapter_conf.DRIVER_PATH)
-        print(f"Driver does not exist in the following location: {path}")
-        print(f"You need to put iHD_drv_video.so (and probably additional files) to this location!")
+        print(f"Driver was not found in this location: {path}")
+        print(f"Install the driver and run ted again.")
         exit(1)
+
 
     parser = argparse.ArgumentParser(prog="build_runner.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
