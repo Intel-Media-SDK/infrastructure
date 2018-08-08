@@ -160,7 +160,7 @@ class Configuration(object):
         try:
             folder = config.get_samples_folder()
 
-            if samples_dir is None:
+            if folder is None:
                 print(f"Samples were not found.")
                 print(f"Put samples to the one of the following locations and restart ted:")
                 print(config.POSSIBLE_SAMPLES_FOLDER)
