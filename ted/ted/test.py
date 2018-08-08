@@ -28,8 +28,7 @@ import itertools
 
 from pathlib import Path
 
-from . import objects, run
-import config
+from . import objects, run, config
 
 
 class ValidationError(Exception):
@@ -170,7 +169,7 @@ class Test(object):
             case = collections.OrderedDict(zip(keys, vals))
             if 'stream' not in case:
                 if self.test_type != 'transcode':
-                    raise ValidationError("stream is not defined")
+                    raise ValidationError(f"stream is not defined: {self.test_type}")
             else:
                 # process common options
                 case['stream'] = self.cfg.stream_by_name(case['stream'])

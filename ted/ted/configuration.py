@@ -31,7 +31,7 @@ import configparser
 
 from pathlib import Path
 
-import config
+from . import config
 
 
 class TestEnvironmentError(Exception):
