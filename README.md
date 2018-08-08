@@ -129,6 +129,12 @@ buildbot-worker start worker
 >#And restart session!
 >```
 
+### Set up shares
+```
+ln -s /nfs/import_dir/ci/tests/ /media/tests
+ln -s /nfs/import_dir/ci/builds/ /media/builds
+```
+
 ### Hints
 - You can update all configurations by simple executing `git pull` command!
 - Do not forget to add the line with `umask = 0o2` to the `buildbot.tac` file on all your masters and workers for the correct file permissions!
