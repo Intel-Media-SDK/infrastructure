@@ -92,11 +92,9 @@ Dependencies:
 - CentOS v7.3
 - python v3.6.x
 - git
-- Intel® Media Server Studio 2017 R3
-  - Minimal needed rpms:
-      ```bash
-      intel-linux-media-xxx-xxx.el7.centos.x86_64.rpm  # Will install iHD_drv_video.so etc
-      ```
+- Driver `iHD_drv_video.so` and MDF (install it from https://github.com/intel/media-driver)
+    - `lib64` folder should be in the `/opt/intel/msdk_driver`!
+    - `/opt/intel/mediasdk` should be empty
 
 ```bash
 # Install git lfs:
