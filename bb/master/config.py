@@ -143,7 +143,6 @@ WORKERS = {
     },
 	 "centos_no_x11": {
 		"b-1-20": {},
-		"b-1-14": {} #temporary solution for tests
     },
     "ubuntu": {
         "b-1-18": {},
