@@ -124,12 +124,10 @@ class TestAdapter(object):
         shutil.copystat = _orig_copystat
 
     def _remove(self, directory: str, sudo=False):
-        prefix = "sudo" if sudo else ""
-        return self._execute_command(f"{prefix} rm -rf {directory}")
+        return self._execute_command(f"{prefix} rm -rf {directory}", sudo)
 
     def _copy(self, target_directory: str, destination_directory: str, sudo=False):
-        prefix = "sudo" if sudo else ""
-        return self._execute_command(f"{prefix} cp -r {target_directory} {destination_directory}")
+        return self._execute_command(f"{prefix} cp -r {target_directory} {destination_directory}", sudo)
 
     def _untar(self, archive_path, destination_path):
         #return _execute_command(f"tar xvf {filename}")
@@ -139,8 +137,9 @@ class TestAdapter(object):
     def _mkdir(self, path):
         return self._execute_command(f"mkdir -p {path}")
 
-    def _execute_command(self, command):
-        process = subprocess.run(command,
+    def _execute_command(self, command, sudo=False):
+        prefix = "sudo" if sudo else ""
+        process = subprocess.run(f"{prefix} command",
                                  shell=True,
                                  timeout=self.tests_timeout,
                                  encoding='utf-8',
