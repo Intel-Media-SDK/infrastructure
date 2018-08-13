@@ -137,6 +137,9 @@ class GitRepo(object):
         self.log.info("Checkout repo %s to %s", self.name, checkout_to)
         self.repo.git.checkout(checkout_to, force=True)
 
+        if str(self.commit_id).lower() == 'head':
+            self.commit_id = str(self.repo.head.commit)
+
         if not silent:
             # error raises after checkout to master if we try
             # to get time of triggered commit_id before fetching repo
