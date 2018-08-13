@@ -95,6 +95,7 @@ Dependencies:
 - Driver `iHD_drv_video.so` and MDF (install it from https://github.com/intel/media-driver)
     - `lib64` folder should be in the `/opt/intel/msdk_driver`!
     - `/opt/intel/mediasdk` should be empty
+- User which will start the script should be sudoer without asking the password!
 
 ```bash
 # Install git lfs:
