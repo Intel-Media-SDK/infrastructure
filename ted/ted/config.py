@@ -33,4 +33,8 @@ def get_samples_folder():
         if samples_folder.exists():
             print(f"Samples found in: {samples_folder}")
             return samples_folder #success
-    return None
+
+    print(f"Samples were not found.")
+    print(f"Put samples to the one of the following locations and restart ted:")
+    print(config.POSSIBLE_SAMPLES_FOLDER)
+    exit(1)

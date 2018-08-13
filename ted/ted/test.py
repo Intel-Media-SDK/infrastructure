@@ -74,12 +74,6 @@ class Test(object):
 
         samples_dir = config.get_samples_folder()
 
-        if samples_dir is None:
-            print(f"Samples were not found.")
-            print(f"Put samples to the one of the following locations and restart ted:")
-            print(config.POSSIBLE_SAMPLES_FOLDER)
-            exit(1)
-
         extended_path = {
             'PATH': str(samples_dir) + os.pathsep + os.environ['PATH'],
         }

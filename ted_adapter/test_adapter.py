@@ -37,7 +37,7 @@ import traceback
 import adapter_conf
 
 
-class TestAdapter(object):
+class TedAdapter(object):
     """
     Wrapper for 'ted'
     """
@@ -101,7 +101,9 @@ class TestAdapter(object):
         self._get_artifacts()
 
         env = os.environ.copy()
+        #Path to mediasdk fodler which will be tested
         env['MFX_HOME'] = str(adapter_conf.MEDIASDK_PATH)
+        #Path to the folder lib64 where located driver
         env['LIBVA_DRIVERS_PATH'] = str(adapter_conf.DRIVER_PATH)
 
         process = subprocess.run('python3 ted/ted.py',
@@ -123,6 +125,12 @@ class TestAdapter(object):
         shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
         shutil.copystat = _orig_copystat
 
+"""
+Direct calls of rm, cp commands needs to use them with `sudo`
+because we need to copy CI build artifacts to the
+`/opt/intel/mediasdk`
+Note: user should be sudoer without asking the password!
+"""
     def _remove(self, directory: str, sudo=False):
         return self._execute_command(f"{prefix} rm -rf {directory}", sudo)
 
@@ -130,7 +138,6 @@ class TestAdapter(object):
         return self._execute_command(f"{prefix} cp -r {target_directory} {destination_directory}", sudo)
 
     def _untar(self, archive_path, destination_path):
-        #return _execute_command(f"tar xvf {filename}")
         with tarfile.open(archive_path) as archive:
             archive.extractall(path=destination_path)
 
@@ -147,8 +154,15 @@ class TestAdapter(object):
         return process.returncode
 
 
-def driver_exists():
+def _driver_exists():
     return (adapter_conf.DRIVER_PATH / adapter_conf.DRIVER).exists()
+
+def check_driver():
+    if not _driver_exists():
+        print(f"Driver was not found in this location: {adapter_conf.DRIVER_PATH}")
+        print(f"Install the driver and run ted again.")
+        exit(1)
+
 
 def main():
     """
@@ -157,11 +171,8 @@ def main():
     :return: None
     """
 
-    if not driver_exists():
-        path = str(adapter_conf.DRIVER_PATH)
-        print(f"Driver was not found in this location: {path}")
-        print(f"Install the driver and run ted again.")
-        exit(1)
+    #Check existence of driver
+    check_driver()
 
 
     parser = argparse.ArgumentParser(prog="build_runner.py",
@@ -195,7 +206,7 @@ def main():
     build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
     tests_artifacts_dir = MediaSdkDirectories.get_tests_dir(*directories_layout)
 
-    adapter = TestAdapter(build_artifacts_dir, tests_artifacts_dir, root_dir=pathlib.Path(args.root_dir))
+    adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, root_dir=pathlib.Path(args.root_dir))
     try:
         failed_cases = adapter.run_test()
     except:
