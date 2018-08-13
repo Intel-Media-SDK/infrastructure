@@ -104,7 +104,34 @@ BUILDERS = [
         "compiler_version": "6.0",
         "branch": ".+?",
         "worker": "ubuntu"
-    }
+    },
+
+    {
+        "name": "build-fastboot",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_fastboot",
+        "build_type": "release",
+        "api_latest": False,
+        "fastboot": True, #Question: there are two ways: add field "tag": {"apit_latest", "fastboot" ...}
+                          #Or stay as now dynamical size of these dicts
+        "compiler": None,
+        "compiler_version": None,
+        "branch": ".+?",
+        "worker": "centos"
+    },
+
+    {
+        "name": "build-fastboot-gcc-8.1.0",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_fastboot_gcc_latest",
+        "build_type": "release",
+        "api_latest": False,
+        "fastboot": True,
+        "compiler": "gcc",
+        "compiler_version": "8.1.0",
+        "branch": ".+?",
+        "worker": "ubuntu"
+    },
 ]
 
 TESTERS = [
