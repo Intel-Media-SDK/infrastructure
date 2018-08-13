@@ -411,6 +411,9 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
+        self.dev_pkg_data_to_archive = []
+        self.install_pkg_data_to_archive = []
+
         global_vars = {
             'action': self._action,
             'vs_component': self._vs_component,
@@ -419,7 +422,10 @@ class BuildGenerator(object):
             'copy_win_files': copy_win_files,
             'args': self.custom_cli_args,
             'log': self.log,
-            'product_type': self.product_type
+            'product_type': self.product_type,
+            # TODO should be in lower case
+            'DEV_PKG_DATA_TO_ARCHIVE': self.dev_pkg_data_to_archive,
+            'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -431,10 +437,6 @@ class BuildGenerator(object):
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
-
-        self.dev_pkg_data_to_archive = self.config_variables.get('DEV_PKG_DATA_TO_ARCHIVE', [])
-        self.install_pkg_data_to_archive = self.config_variables.get(
-            'INSTALL_PKG_DATA_TO_ARCHIVE', [])
 
         return True
 
