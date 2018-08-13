@@ -34,27 +34,34 @@ import pathlib
 import tarfile
 import traceback
 
+import adapter_conf
 
-class TestAdapter(object):
+
+class TedAdapter(object):
     """
     Wrapper for 'ted'
     """
 
+    #TODO: add relevant path and delete it
     test_driver_dir = pathlib.Path('/localdisk/bb/worker/infrastructure') #TODO: hardcoded path
     test_results_dir = test_driver_dir / 'ted/results'
     tests_timeout = 300  # 5 minutes
 
-    def __init__(self, build_artifacts_dir, tests_artifacts_dir):
+    def __init__(self, build_artifacts_dir, tests_artifacts_dir, root_dir):
         """
         :param build_artifacts_dir: Path to build artifacts
         :type build_artifacts_dir: pathlib.Path
-        
+
         :param tests_artifacts_dir: Path to tests artifacts
         :type tests_artifacts_dir: pathlib.Path
+
+        :param root_dir: Path to workdir for unpacking build artifacts
+        :type root_dir: pathlib.Path
         """
 
         self.build_artifacts_dir = build_artifacts_dir
         self.tests_artifacts_dir = tests_artifacts_dir
+        self.root_dir = root_dir
 
     def _get_artifacts(self):
         """
@@ -64,20 +71,24 @@ class TestAdapter(object):
         :return: None
         """
 
-        pkg_name = 'developer_pkg.tar'
-        binaries_dir = self.test_driver_dir / 'bin'
-        local_pkg = self.test_driver_dir / 'developer_pkg.tar'
+        pkg_name = 'install_pkg.tar'
         remote_pkg = self.build_artifacts_dir / pkg_name
 
-        if local_pkg.exists():
-            local_pkg.unlink()
-        if binaries_dir.exists():
-            shutil.rmtree(binaries_dir)
+        #TODO: implement exceptions
 
-        shutil.copy(remote_pkg, self.test_driver_dir)
+        # Clean workdir and re-create it
+        self._remove(str(self.root_dir))
+        self._mkdir(str(self.root_dir))
 
-        with tarfile.open(local_pkg) as archive:
-            archive.extractall(path=self.test_driver_dir)
+        # Copy `install_pkg.tar` to the workdir and untar it
+        self._copy(str(remote_pkg), str(self.root_dir))
+        #_untar(str(self.root_dir / pkg_name))
+        self._untar(str(self.root_dir / pkg_name), str(self.root_dir))
+
+        # Remove old `/opt/intel/mediasdk` and copy fresh built artifacts
+        self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=True)
+        self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=True)
+
 
     def run_test(self):
         """
@@ -90,7 +101,10 @@ class TestAdapter(object):
         self._get_artifacts()
 
         env = os.environ.copy()
-        env['MFX_HOME'] = str(self.test_driver_dir)
+        #Path to mediasdk fodler which will be tested
+        env['MFX_HOME'] = str(adapter_conf.MEDIASDK_PATH)
+        #Path to the folder lib64 where located driver
+        env['LIBVA_DRIVERS_PATH'] = str(adapter_conf.DRIVER_PATH)
 
         process = subprocess.run('python3 ted/ted.py',
                                  shell=True,
@@ -111,6 +125,44 @@ class TestAdapter(object):
         shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
         shutil.copystat = _orig_copystat
 
+"""
+Direct calls of rm, cp commands needs to use them with `sudo`
+because we need to copy CI build artifacts to the
+`/opt/intel/mediasdk`
+Note: user should be sudoer without asking the password!
+"""
+    def _remove(self, directory: str, sudo=False):
+        return self._execute_command(f"{prefix} rm -rf {directory}", sudo)
+
+    def _copy(self, target_directory: str, destination_directory: str, sudo=False):
+        return self._execute_command(f"{prefix} cp -r {target_directory} {destination_directory}", sudo)
+
+    def _untar(self, archive_path, destination_path):
+        with tarfile.open(archive_path) as archive:
+            archive.extractall(path=destination_path)
+
+    def _mkdir(self, path):
+        return self._execute_command(f"mkdir -p {path}")
+
+    def _execute_command(self, command, sudo=False):
+        prefix = "sudo" if sudo else ""
+        process = subprocess.run(f"{prefix} command",
+                                 shell=True,
+                                 timeout=self.tests_timeout,
+                                 encoding='utf-8',
+                                 errors='backslashreplace')
+        return process.returncode
+
+
+def _driver_exists():
+    return (adapter_conf.DRIVER_PATH / adapter_conf.DRIVER).exists()
+
+def check_driver():
+    if not _driver_exists():
+        print(f"Driver was not found in this location: {adapter_conf.DRIVER_PATH}")
+        print(f"Install the driver and run ted again.")
+        exit(1)
+
 
 def main():
     """
@@ -118,6 +170,10 @@ def main():
 
     :return: None
     """
+
+    #Check existence of driver
+    check_driver()
+
 
     parser = argparse.ArgumentParser(prog="build_runner.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -135,6 +191,8 @@ def main():
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
+    parser.add_argument('-d', "--root-dir", metavar="PATH", required=True,
+                        help="Path to worker directory")
     args = parser.parse_args()
 
     directories_layout = [
@@ -148,7 +206,7 @@ def main():
     build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
     tests_artifacts_dir = MediaSdkDirectories.get_tests_dir(*directories_layout)
 
-    adapter = TestAdapter(build_artifacts_dir, tests_artifacts_dir)
+    adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, root_dir=pathlib.Path(args.root_dir))
     try:
         failed_cases = adapter.run_test()
     except:

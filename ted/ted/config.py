@@ -20,27 +20,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import json
 import pathlib
 
-from . import test, configuration
+MEDIASDK_FOLDER = pathlib.Path('/opt/intel/mediasdk')
+POSSIBLE_SAMPLES_FOLDER = [
+    MEDIASDK_FOLDER / 'share' / 'mfx' / 'samples',
+    MEDIASDK_FOLDER / 'samples',
+]
 
+def get_samples_folder():
+    for samples_folder in POSSIBLE_SAMPLES_FOLDER:
+        if samples_folder.exists():
+            print(f"Samples found in: {samples_folder}")
+            return samples_folder #success
 
-def tests(base_dir, cfg):
-    base_dir = pathlib.Path(base_dir)
-
-    for fn in (base_dir / 'tests').rglob("*.json"):
-        try:
-            yield test.Test(fn, base_dir, cfg)
-        except Exception as ex:
-            print(" WARN: Can't parse test '{}' - {}".format(fn.name, ex))
-
-
-def config(base_dir):
-    fn = base_dir / 'ted.json'
-
-    cfg = json.loads(fn.read_text())
-
-    return configuration.Configuration(cfg, base_dir)
-
-
+    print(f"Samples were not found.")
+    print(f"Put samples to the one of the following locations and restart ted:")
+    print(config.POSSIBLE_SAMPLES_FOLDER)
+    exit(1)
