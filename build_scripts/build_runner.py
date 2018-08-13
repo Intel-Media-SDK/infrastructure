@@ -886,7 +886,7 @@ which is not present in mediasdk_directories.''')
     parser.add_argument('-p', "--product-type", default='linux',
                         choices=['linux', 'embedded', 'open_source', 'windows',
                                  'windows_uwp', 'api_latest', 'embedded_private', 'android',
-                                 'linux_gcc_latest', 'linux_clang_latest'],
+                                 'linux_gcc_latest', 'linux_clang_latest', 'api_latest_no_x11'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
