@@ -149,13 +149,6 @@ class Configuration(object):
 
         try:
             folder = config.get_samples_folder()
-
-            if folder is None:
-                print(f"Samples were not found.")
-                print(f"Put samples to the one of the following locations and restart ted:")
-                print(config.POSSIBLE_SAMPLES_FOLDER)
-                exit(1)
-
         except KeyError:
             raise ConfigurationError("'samples_folder' is not configured")
 
