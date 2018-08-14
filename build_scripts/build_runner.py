@@ -381,8 +381,8 @@ class BuildGenerator(object):
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False  # Flag for stripping binaries of build
         }
-        self.dev_pkg_data_to_archive = None
-        self.install_pkg_data_to_archive = None
+        self.dev_pkg_data_to_archive = []
+        self.install_pkg_data_to_archive = []
         self.config_variables = {}
         self.custom_cli_args = custom_cli_args
 
@@ -410,9 +410,6 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
-
-        self.dev_pkg_data_to_archive = []
-        self.install_pkg_data_to_archive = []
 
         global_vars = {
             'action': self._action,
