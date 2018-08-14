@@ -106,14 +106,17 @@ BUILDERS = [
         "worker": "ubuntu"
     },
 
+    # Fastboot is a special configuration of MediaSDK, when we 
+    # build MediaSDK in small scope but it can load very fast
+    # (needed by embedded systems)
+    # see method of building it in product-config
     {
         "name": "build-fastboot",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "linux_fastboot",
         "build_type": "release",
         "api_latest": False,
-        "fastboot": True, #Question: there are two ways: add field "tag": {"apit_latest", "fastboot" ...}
-                          #Or stay as now dynamical size of these dicts
+        "fastboot": True,
         "compiler": None,
         "compiler_version": None,
         "branch": ".+?",
