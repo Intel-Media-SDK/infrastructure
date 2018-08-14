@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@ import itertools
 
 from pathlib import Path
 
-from . import objects, run
+from . import objects, run, config
 
 
 class ValidationError(Exception):
@@ -72,9 +72,10 @@ class Test(object):
 
         subdir = 'results'
 
+        samples_dir = config.get_samples_folder()
+
         extended_path = {
-            'PATH': str(base.resolve() / subdir / 'bin') + os.pathsep + os.environ['PATH'],
-            'LD_LIBRARY_PATH': str(base.resolve() / subdir / 'bin' / 'lib'),
+            'PATH': str(samples_dir) + os.pathsep + os.environ['PATH'],
         }
 
         self.runner = run.Runner(extended_path, cfg)
@@ -162,7 +163,7 @@ class Test(object):
             case = collections.OrderedDict(zip(keys, vals))
             if 'stream' not in case:
                 if self.test_type != 'transcode':
-                    raise ValidationError("stream is not defined")
+                    raise ValidationError(f"stream is not defined: {self.test_type}")
             else:
                 # process common options
                 case['stream'] = self.cfg.stream_by_name(case['stream'])

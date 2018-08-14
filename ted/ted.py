@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ from ted import discover
 
 if __name__ == '__main__':
     print('Intel(R) Media SDK Open Source TEst Driver')
-    print('Copyright (c) 2016 Intel Corporation\n')
+    print('Copyright (c) 2018 Intel Corporation\n')
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

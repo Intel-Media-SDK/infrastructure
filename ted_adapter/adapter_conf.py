@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,27 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import json
 import pathlib
 
-from . import test, configuration
+#Here should be the driver `iHD_drv_video.so`
+DRIVER_PATH = pathlib.Path("/opt/intel/msdk_driver/lib64")
+DRIVER = "iHD_drv_video.so"
 
-
-def tests(base_dir, cfg):
-    base_dir = pathlib.Path(base_dir)
-
-    for fn in (base_dir / 'tests').rglob("*.json"):
-        try:
-            yield test.Test(fn, base_dir, cfg)
-        except Exception as ex:
-            print(" WARN: Can't parse test '{}' - {}".format(fn.name, ex))
-
-
-def config(base_dir):
-    fn = base_dir / 'ted.json'
-
-    cfg = json.loads(fn.read_text())
-
-    return configuration.Configuration(cfg, base_dir)
-
-
+MEDIASDK_PATH = pathlib.Path("/opt/intel/mediasdk")
