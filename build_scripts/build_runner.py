@@ -359,7 +359,7 @@ class BuildGenerator(object):
 
         self.build_config_path = build_config_path
         self.actions = defaultdict(list)
-        self.product_repos = {}
+        self.product_repos = []
         self.product_type = product_type
         self.build_event = build_event
         self.commit_time = commit_time
@@ -421,14 +421,15 @@ class BuildGenerator(object):
             'log': self.log,
             'product_type': self.product_type,
             # TODO should be in lower case
+            'PRODUCT_REPOS': self.product_repos,
             'DEV_PKG_DATA_TO_ARCHIVE': self.dev_pkg_data_to_archive,
             'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
 
-        if 'PRODUCT_REPOS' in self.config_variables:
-            for repo in self.config_variables['PRODUCT_REPOS']:
+        if self.product_repos:
+            for repo in self.product_repos:
                 self.product_repos[repo['name']] = {
                     'branch': repo.get('branch', 'master'),
                     'commit_id': repo.get('commit_id'),
