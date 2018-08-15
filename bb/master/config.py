@@ -52,6 +52,7 @@ BUILDERS = [
         "product_type": "linux",
         "build_type": "release",
         "api_latest": False,
+        "fastboot": False,
         "compiler": None,
         "compiler_version": None,
         "branch": "^master$",
@@ -64,6 +65,7 @@ BUILDERS = [
         "product_type": "linux",
         "build_type": "release",
         "api_latest": False,
+        "fastboot": False,
         "compiler": None,
         "compiler_version": None,
         "branch": "(?!master)",
@@ -76,6 +78,7 @@ BUILDERS = [
         "product_type": "api_latest",
         "build_type": "release",
         "api_latest": True,
+        "fastboot": False,
         "compiler": None,
         "compiler_version": None,
         "branch": ".+?",
@@ -88,6 +91,7 @@ BUILDERS = [
         "product_type": "linux_gcc_latest",
         "build_type": "release",
         "api_latest": False,
+        "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "8.1.0",
         "branch": ".+?",
@@ -100,18 +104,50 @@ BUILDERS = [
         "product_type": "linux_clang_latest",
         "build_type": "release",
         "api_latest": False,
+        "fastboot": False,
         "compiler": "clang",
         "compiler_version": "6.0",
         "branch": ".+?",
         "worker": "ubuntu"
     },
 
-	{
+    # Fastboot is a special configuration of MediaSDK, when we 
+    # build MediaSDK in small scope but it can load very fast
+    # (needed by embedded systems)
+    # see method of building it in product-config
+    {
+        "name": "build-fastboot",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_fastboot",
+        "build_type": "release",
+        "api_latest": False,
+        "fastboot": True,
+        "compiler": None,
+        "compiler_version": None,
+        "branch": ".+?",
+        "worker": "centos"
+    },
+
+    {
+        "name": "build-fastboot-gcc-8.1.0",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_fastboot_gcc_latest",
+        "build_type": "release",
+        "api_latest": False,
+        "fastboot": True,
+        "compiler": "gcc",
+        "compiler_version": "8.1.0",
+        "branch": ".+?",
+        "worker": "ubuntu"
+    },
+
+    {
         "name": "build-api-next-no-x11",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "api_latest_no_x11",
         "build_type": "release",
         "api_latest": True,
+        "fastboot": False,
         "compiler": None,
         "compiler_version": None,
         "branch": ".+?",
