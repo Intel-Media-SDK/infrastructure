@@ -888,7 +888,7 @@ which is not present in mediasdk_directories.''')
                                  'windows_uwp', 'api_latest', 'embedded_private', 'android',
                                  'linux_gcc_latest', 'linux_clang_latest',
                                  'linux_fastboot', 'linux_fastboot_gcc_latest,
-                                 'api_latest_no_x11'],
+                                 'linux_api_latest_no_x11'],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
