@@ -71,7 +71,7 @@ class TedAdapter(object):
         :return: None
         """
 
-        pkg_name = 'install_pkg.tar'
+        pkg_name = 'install_pkg.tar.gz'
         remote_pkg = self.build_artifacts_dir / pkg_name
 
         #TODO: implement exceptions
@@ -137,8 +137,9 @@ Note: user should be sudoer without asking the password!
     def _copy(self, target_directory: str, destination_directory: str, sudo=False):
         return self._execute_command(f"{prefix} cp -r {target_directory} {destination_directory}", sudo)
 
+    # TODO use extract_archive() from common.helper
     def _untar(self, archive_path, destination_path):
-        with tarfile.open(archive_path) as archive:
+        with tarfile.open(archive_path, 'r:gz') as archive:
             archive.extractall(path=destination_path)
 
     def _mkdir(self, path):
