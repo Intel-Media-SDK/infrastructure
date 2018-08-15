@@ -381,8 +381,8 @@ class BuildGenerator(object):
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False  # Flag for stripping binaries of build
         }
-        self.dev_pkg_data_to_archive = None
-        self.install_pkg_data_to_archive = None
+        self.dev_pkg_data_to_archive = []
+        self.install_pkg_data_to_archive = []
         self.config_variables = {}
         self.custom_cli_args = custom_cli_args
 
@@ -419,11 +419,15 @@ class BuildGenerator(object):
             'copy_win_files': copy_win_files,
             'args': self.custom_cli_args,
             'log': self.log,
-            'product_type': self.product_type
+            'product_type': self.product_type,
+            # TODO should be in lower case
+            'DEV_PKG_DATA_TO_ARCHIVE': self.dev_pkg_data_to_archive,
+            'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
 
+        # TODO add product_repos to global_vars
         if 'PRODUCT_REPOS' in self.config_variables:
             for repo in self.config_variables['PRODUCT_REPOS']:
                 self.product_repos[repo['name']] = {
@@ -431,10 +435,6 @@ class BuildGenerator(object):
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
-
-        self.dev_pkg_data_to_archive = self.config_variables.get('DEV_PKG_DATA_TO_ARCHIVE', [])
-        self.install_pkg_data_to_archive = self.config_variables.get(
-            'INSTALL_PKG_DATA_TO_ARCHIVE', [])
 
         return True
 
