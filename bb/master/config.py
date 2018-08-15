@@ -139,6 +139,7 @@ BUILDERS = [
         "compiler_version": "8.1.0",
         "branch": ".+?",
         "worker": "ubuntu"
+    },
 
     {
         "name": "build-api-next-no-x11",
