@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sudo systemctl restart buildbot-worker
+sudo service buildbot-worker restart || sudo systemctl restart buildbot-worker
