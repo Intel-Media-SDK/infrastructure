@@ -119,6 +119,9 @@ class TedAdapter(object):
         rotate_dir(self.tests_artifacts_dir)
         print(f'Copy results to {self.tests_artifacts_dir}')
 
+        tests_artifacts_url = MediaSdkDirectories.get_artifact_url(self.tests_artifacts_dir)
+        print(f'Artifacts are available by: {tests_artifacts_url}')
+
         # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
         shutil.copystat = lambda x, y, follow_symlinks=True: x

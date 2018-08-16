@@ -769,6 +769,9 @@ class BuildGenerator(object):
 
         self.log.info('Copy to %s', build_dir)
 
+        build_url = MediaSdkDirectories.get_artifact_url(build_dir)
+        self.log.info('Artifacts are available by: %s', build_url)
+
         # Workaround for copying to samba share on Linux
         # to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat

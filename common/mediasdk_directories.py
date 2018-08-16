@@ -25,7 +25,7 @@ which uses in build runner
 import os
 import pathlib
 import platform
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
 
 LOGICAL_DRIVE = 3  # Drive type from MSDN
 
@@ -57,6 +57,8 @@ class MediaSdkDirectories(object):
     """
     _tests_root_path = r'/media/tests'
     _builds_root_path = r'/media/builds'
+    _root_path = r'/media'
+    _url = r'http://mediasdk.intel.com/'
 
     _repositories = {
         # TODO split this part
@@ -165,6 +167,20 @@ class MediaSdkDirectories(object):
             branch = branch.split('/', 3)[-1]
 
         return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id
+
+    @classmethod
+    def get_artifact_url(cls, dir):
+        """
+        Get url to artifacts
+
+        :param dir: Path to build/tests dir
+        :type dir: pathlib.Path
+
+        :return: URL to artifacts
+        :rtype: String
+        """
+        dir_parts = dir.relative_to(cls._root_path).parts
+        return urljoin(cls._url, '/'.join(dir_part for dir_part in dir_parts))
 
     @classmethod
     def get_repo_url_by_name(cls, name='MediaSDK'):
