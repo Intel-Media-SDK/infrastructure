@@ -886,7 +886,7 @@ which is not present in mediasdk_directories.''')
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
                         choices=['linux', 'embedded', 'open_source', 'windows',
-                                 'windows_sw_lib', 'windows_hw_lib', 'windows_tools',
+                                 'windows_sw_lib', 'windows_hw_lib', 'windows_tools', 'windows_mfts',
                                  'windows_uwp', 'api_latest', 'embedded_private', 'android',
                                  'linux_gcc_latest', 'linux_clang_latest',
                                  'linux_fastboot', 'linux_fastboot_gcc_latest',
