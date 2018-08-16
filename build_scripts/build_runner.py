@@ -420,6 +420,7 @@ class BuildGenerator(object):
             'args': self.custom_cli_args,
             'log': self.log,
             'product_type': self.product_type,
+            'build_event': self.build_event,
             # TODO should be in lower case
             'DEV_PKG_DATA_TO_ARCHIVE': self.dev_pkg_data_to_archive,
             'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive
@@ -885,6 +886,7 @@ which is not present in mediasdk_directories.''')
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='linux',
                         choices=['linux', 'embedded', 'open_source', 'windows',
+                                 'windows_sw_lib', 'windows_hw_lib', 'windows_tools',
                                  'windows_uwp', 'api_latest', 'embedded_private', 'android',
                                  'linux_gcc_latest', 'linux_clang_latest',
                                  'linux_fastboot', 'linux_fastboot_gcc_latest',
