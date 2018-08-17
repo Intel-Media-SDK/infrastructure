@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,37 @@
 # SOFTWARE.
 
 
+from pathlib import Path
+from collections import namedtuple
 import hevc_fei_smoke_test
+
+# constants
+PATH_DIR_NAME = Path(__file__).resolve().parent
+
+# paths to every needed binary
+ASG = PATH_DIR_NAME / 'asg-hevc'
+FEI_EXTRACTOR = PATH_DIR_NAME / 'hevc_fei_extractor'
+SAMPLE_FEI = Path('/opt/intel/mediasdk/samples/sample_hevc_fei')
+SAMPLE_ENCODE = Path('/opt/intel/mediasdk/samples/sample_encode')
+
+PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI,
+             'SAMPLE_ENCODE': SAMPLE_ENCODE}
+
+# parameters of the test stream (key:value)
+STREAM = namedtuple('STREAM', ['name', 'w', 'h', 'frames', 'picstruct'])
+TEST_STREAM = STREAM(name='test_stream_176x96.yuv', w='176', h='96', frames='100',
+                     picstruct='tff')
+
+PATH_TEST_STREAM = PATH_DIR_NAME.parent / f'ted/content/{TEST_STREAM.name}'
+
+# file for log
+LOG = hevc_fei_smoke_test.PathPlus(PATH_DIR_NAME / 'res.log')
+
+# path for input and output files
+PATH_TO_IO = PATH_DIR_NAME / 'IOFiles'
+
+# end of constants
+
 
 TEST_CASES_DICT = {
     'Encode': {
@@ -32,32 +62,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                                 f'-o {{path_to_io}}.prmvmvp -g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -f 25 -qp 2 -g 2 '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -f 25 -qp 2 -g 2 '
                                  f'-GopRefDist 1 -gpb:on -NumRefFrame 1 -NumRefActiveP 1 '
                                  f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 2 -x 1 '
-                                 f'-num_active_P 1 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -69,31 +102,34 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5'
-                                 f' -no_cu_to_pu_split -max_log2_cu_size 5 -min_log2_cu_size 5 '
-                                 f'-sub_pel_mode 3 -pred_file {{path_to_io}}_mvmvp.mvin'},
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -f 25 -qp 2 -g 3 '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -f 25 -qp 2 -g 3 '
                                  f'-GopRefDist 1 -gpb:on -NumRefFrame 2 -NumRefActiveP 2 '
                                  f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
@@ -106,33 +142,38 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -log2_ctu_size 5'
-                                 f' -no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
-                                 f'-sub_pel_mode 3 -pred_file {{path_to_io}}_mvmvp.mvin'},
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -f 25 -qp 2 -g 2 '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 2 '
                                  f'-GopRefDist 1 -gpb:on -NumRefFrame 1 -NumRefActiveP 1 '
-                                 f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder '
-                                 f'-encode -mvpin {{path_to_io}}_mvmvp.mvin'},
+                                 f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 2 -x 1 '
-                                 f'-num_active_P 1 -r 1 -log2_ctu_size 5 -no_cu_to_pu_split '
-                                 f'-max_log2_cu_size 4 -min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
                                  f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
                                  f'-mv_thres 70 -split_thres 70'}
@@ -142,31 +183,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 '
-                                 f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
-                                 f'-sub_pel_mode 3 -pred_file {{path_to_io}}_mvmvp.mvin'},
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -f 25 -qp 2 -g 3 '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 3 '
                                  f'-GopRefDist 1 -gpb:on -NumRefFrame 2 -NumRefActiveP 2 '
                                  f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 3 -x 2'
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 3 -x 2'
                                  f' -num_active_P 2 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
@@ -181,32 +226,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                                 f'-o {{path_to_io}}.prmvmvp -g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 2 '
                                  f'-GopRefDist 1 -gpb:off -NumRefFrame 1 -NumRefActiveP 1 '
                                  f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 2 -x 1 -num_active_P 1 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
@@ -219,32 +267,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5'
                                  f' -no_cu_to_pu_split -max_log2_cu_size 5 -min_log2_cu_size 5 '
-                                 f'-sub_pel_mode 3 -pred_file {{path_to_io}}_mvmvp.mvin'},
+                                 f'-sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
                                  f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
                                  f'-NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
@@ -257,32 +308,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -log2_ctu_size 5'
-                                 f' -no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
-                                 f'-sub_pel_mode 3 -pred_file {{path_to_io}}_mvmvp.mvin'},
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 2 -GopRefDist 1 -gpb:off '
                                  f'-NumRefFrame 1 -NumRefActiveP 1 -NumPredictorsL0 4 '
                                  f'-NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 2 -x 1 -num_active_P 1 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
@@ -295,32 +349,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 '
-                                 f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
-                                 f'-sub_pel_mode 3 -pred_file {{path_to_io}}_mvmvp.mvin'},
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
                                  f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
                                  f'-NumPredictorsL1 4 -EncodedOrder -encode '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
@@ -337,33 +394,36 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
                                  f'-g 32 -x 2 -num_active_P 1 -num_active_BL0 1 -num_active_BL1 1 '
                                  f'-r 4 -log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 0 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 32 -GopRefDist 4 -gpb:on '
                                  f'-NumRefFrame 2 -NumRefActiveP 1 -NumRefActiveBL0 1 '
                                  f'-NumRefActiveBL1 1 -NumPredictorsL0 4 -NumPredictorsL1 4'
-                                 f' -encode -EncodedOrder -mvpin {{path_to_io}}_mvmvp.mvin'},
+                                 f' -encode -EncodedOrder '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 32 -x 2 -num_active_P 1 -num_active_BL0 1 -num_active_BL1 1 '
                                  f'-r 4 -log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 0 '
@@ -375,33 +435,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
                                  f'-g 32 -x 2 -num_active_P 1 -num_active_BL0 1 '
                                  f'-num_active_BL1 1 -r 4 -log2_ctu_size 5 -no_cu_to_pu_split '
                                  f'-max_log2_cu_size 5 -min_log2_cu_size 5 -sub_pel_mode 0 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 32 -GopRefDist 4 -gpb:on '
                                  f'-NumRefFrame 2 -NumRefActiveP 1 -NumRefActiveBL0 1 '
                                  f'-NumRefActiveBL1 1 -NumPredictorsL0 4 -NumPredictorsL1 4'
                                  f' -EncodedOrder -encode -mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 32 -x 2 -num_active_P 1 -num_active_BL0 1 -num_active_BL1 1 '
                                  f'-r 4 -log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 0 '
@@ -418,33 +480,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 '
                                  f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
                                  f'-mvp_block_size 1 -sub_pel_mode 0 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:on '
                                  f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
                                  f'-NumPredictorsL1 4 -encode -EncodedOrder '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -mvp_block_size 1 -sub_pel_mode 0 '
@@ -459,33 +523,35 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split -i '
-                                 f'{hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 '
                                  f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
                                  f'-mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
-                                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-i {{path_to_io}}.prmvmvp -o '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
                                  f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
                                  f'-NumPredictorsL1 4 -encode -EncodedOrder '
                                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc {{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
                                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-g 3 -x 2 -num_active_P 2 -r 1 '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
@@ -504,28 +570,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 24 -g 1 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 24 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 24 -g 1 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -534,39 +601,41 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
-                                 f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 24'}
+                                 f'-repack_str_file {{path_to_io}}_repak.multipak '
+                                 f'-InitialQP 24'}
                         ],
                     'QP-26':
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 26 -g 1 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 26 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 26 -g 1 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -575,9 +644,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 26'}
@@ -586,28 +655,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 28 -g 1 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 28 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 28 -g 1 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -616,9 +686,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 28'}
@@ -627,28 +697,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 31 -g 1 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 31 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]}'
-                                 f' -w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames}'
+                                 f' -w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 31 -g 1 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -657,9 +728,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 31'}
@@ -671,28 +742,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 24 -g 2 -GopRefDist 1 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 2 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 2 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 24 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -qp 24 -g 2 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -qp 24 -g 2 '
                                  f'-GopRefDist 1 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -701,9 +773,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 2 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 2 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 24'}
@@ -712,28 +784,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 28 -g 2 -GopRefDist 1 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 2 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 2 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 28 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 28 -g 2 -GopRefDist 1 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -742,9 +815,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 2 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 2 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 28'}
@@ -756,28 +829,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 26 -g 5 -GopRefDist 3 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 5 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 26 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]}'
-                                 f' -w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -qp 26 -g 5 '
+                                 f'-n {TEST_STREAM.frames}'
+                                 f' -w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -qp 26 -g 5 '
                                  f'-GopRefDist 3 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -786,9 +860,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 5 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 26'}
@@ -797,28 +871,29 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.hevc '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -qp 31 -g 5 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -qp 31 -g 5 '
                                  f'-GopRefDist 3 -encode -EncodedOrder'},
                             {'FEI_EXTRACTOR':
-                                 f'{{path_to_io}}.hevc -multi_pak_str {{path_to_io}}.multipak'},
+                                 f'{{path_to_io}}.hevc '
+                                 f'-multi_pak_str {{path_to_io}}.multipak'},
                             {'ASG':
                                  f'-generate -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 5 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 31 -DeltaQP 1 1 2 2 3 3 4 4'},
                             {'SAMPLE_FEI':
-                                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
+                                 f'-i {PATH_TEST_STREAM} '
                                  f'-o {{path_to_io}}.repack '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]}'
-                                 f' -w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                                 f'-n {TEST_STREAM.frames}'
+                                 f' -w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
                                  f'-qp 31 -g 5 -GopRefDist 3 -encode -EncodedOrder '
                                  f'-repackctrl {{path_to_io}}.repakctrl '
                                  f'-repackstat {{path_to_io}}.repakstat'},
@@ -827,9 +902,9 @@ TEST_CASES_DICT = {
                                  f'-multi_pak_str {{path_to_io}}_repak.multipak'},
                             {'ASG':
                                  f'-verify -gen_repack_ctrl '
-                                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} -g 5 -r 1 '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 31'}
@@ -842,26 +917,28 @@ TEST_CASES_DICT = {
             {'case type': hevc_fei_smoke_test.TestCase},
             {'ASG':
                  f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
-                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                 f'-i {PATH_TEST_STREAM} '
+                 f'-n {TEST_STREAM.frames} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
                  f'-o {{path_to_io}}.prmvmvp -g 2 -x 1 -num_active_P 1 -r 1 -log2_ctu_size 5  '
                  f'-no_cu_to_pu_split -max_log2_cu_size 5 -min_log2_cu_size 5 -sub_pel_mode 3 '
                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
             {'SAMPLE_FEI':
-                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp_4_NumPredictors.hevc '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                 f'-i {{path_to_io}}.prmvmvp '
+                 f'-o {{path_to_io}}.prmvmvp.mvmvp_4_NumPredictors.hevc '
+                 f'-n {TEST_STREAM.frames} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
                  f'-f 25 -qp 2 -g 2 -GopRefDist 1 -gpb:on -NumRefFrame 1 -NumRefActiveP 1 '
                  f'-NumPredictorsL0 4 -NumPredictorsL1 4 -encode -EncodedOrder '
                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
             {'SAMPLE_FEI':
-                 f'-i {{path_to_io}}.prmvmvp -o {{path_to_io}}.prmvmvp.mvmvp_2_NumPredictors.hevc '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
+                 f'-i {{path_to_io}}.prmvmvp '
+                 f'-o {{path_to_io}}.prmvmvp.mvmvp_2_NumPredictors.hevc '
+                 f'-n {TEST_STREAM.frames} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
                  f'-f 25 -qp 2 -g 2 -GopRefDist 1 -gpb:on -NumRefFrame 1 -NumRefActiveP 1 '
                  f'-NumPredictorsL0 2 -NumPredictorsL1 2 -encode -EncodedOrder '
                  f'-mvpin {{path_to_io}}_mvmvp.mvin'},
@@ -871,12 +948,12 @@ TEST_CASES_DICT = {
                  f'{{path_to_io}}_2.custat_mvmvp_numpredictors'},
             {'ASG':
                  f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                 f'-n {TEST_STREAM.frames} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
+                 f'-g 2 -x 1 -num_active_P 1 -r 1 -sub_pel_mode 3 '
                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 -min_log2_cu_size 5 '
-                 f'-sub_pel_mode 3 -pak_ctu_file {{path_to_io}}_2.ctustat_mvmvp_numpredictors '
+                 f'-pak_ctu_file {{path_to_io}}_2.ctustat_mvmvp_numpredictors '
                  f'-pak_cu_file {{path_to_io}}_2.custat_mvmvp_numpredictors '
                  f'-mv_thres 80 -numpredictors 2'}
         ],
@@ -884,20 +961,20 @@ TEST_CASES_DICT = {
         [
             {'case type': hevc_fei_smoke_test.TestCase},
             {'SAMPLE_FEI':
-                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
+                 f'-i {PATH_TEST_STREAM} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
+                 f'-n {TEST_STREAM.frames} '
                  f'-preenc 4 -qp 30 -l 1 -g 30 -GopRefDist 4 -NumRefFrame 4 -bref'}
         ],
     'PREENC + ENCODE':
         [
             {'case type': hevc_fei_smoke_test.TestCase},
             {'SAMPLE_FEI':
-                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
+                 f'-i {PATH_TEST_STREAM} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
+                 f'-n {TEST_STREAM.frames} '
                  f'-o {{path_to_io}}.hevc '
                  f'-preenc -encode -qp 30 -l 1 -g 30 -GopRefDist 4 -NumRefFrame 4 -bref'}
         ],
@@ -905,18 +982,18 @@ TEST_CASES_DICT = {
         [
             {'case type': hevc_fei_smoke_test.TestCaseBitExact},
             {'SAMPLE_FEI':
-                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
+                 f'-i {PATH_TEST_STREAM} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
+                 f'-n {TEST_STREAM.frames} '
                  f'-o {{path_to_io}}.hevc '
                  f'-f 25 -qp 24 -g 31 -GopRefDist 4 -gpb:on -NumRefFrame 0 -bref -encode '
                  f'-EncodedOrder -DisableQPOffset'},
             {'SAMPLE_FEI':
-                 f'-i {hevc_fei_smoke_test.PATH_TEST_STREAM} '
-                 f'-w {hevc_fei_smoke_test.TEST_STREAM["w"]} '
-                 f'-h {hevc_fei_smoke_test.TEST_STREAM["h"]} '
-                 f'-n {hevc_fei_smoke_test.TEST_STREAM["frames"]} '
+                 f'-i {PATH_TEST_STREAM} '
+                 f'-w {TEST_STREAM.w} '
+                 f'-h {TEST_STREAM.h} '
+                 f'-n {TEST_STREAM.frames} '
                  f'-o {{path_to_io}}.cmp '
                  f'-f 25 -qp 24 -g 31 -GopRefDist 4 -gpb:on -NumRefFrame 0 -bref -encode '
                  f'-DisableQPOffset'}

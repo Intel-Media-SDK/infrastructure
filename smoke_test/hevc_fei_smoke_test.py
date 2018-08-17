@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,7 @@ import shutil
 import time
 import filecmp
 import enum
-import pathlib
-from collections import abc
+from pathlib import Path
 from string import Template
 
 
@@ -39,9 +38,9 @@ class ReturnCode(enum.Enum):
     ERROR_TEST_FAILED = 1
     ERROR_ACCESS_DENIED = 2
 
-class Path(type(pathlib.Path())):
-    # overridden method for opening file with mode a+
-    def write_text(self, data, encoding=None, errors=None):
+
+class PathPlus(type(Path())):
+    def append_text(self, data, encoding=None, errors=None):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
@@ -50,7 +49,7 @@ class Path(type(pathlib.Path())):
 
     def clear_text_file(self):
         with self.open(mode='w') as file:
-            return file.write('')
+            pass
 
 
 class TestRunner:
@@ -70,9 +69,11 @@ class TestRunner:
             string_err = 'OK'
 
         print(f'     {string_err}', end='')
+
         test_case_object.write_details()
-        string_for_log = ' \n' + string_err + '\n' + "="*100
-        LOG.write_text(string_for_log)
+        separator = '='*100
+        log_string = f' \n{string_err}\n{separator}'
+        cfg.LOG.append_text(log_string)
 
 
 class TestCase:
@@ -85,19 +86,19 @@ class TestCase:
         self.stages = stages
 
     def run(self, case_id):
-        template_for_log = Template('$case_name \n#' + str(case_id) + '\n')
+        log_template = Template(f'$case_name \n#{case_id}\n')
         if self.case_name:
-            string_for_log = template_for_log.substitute(case_name=self.case_name)
+            log_string = log_template.substitute(case_name=self.case_name)
         else:
-            string_for_log = template_for_log.substitute(case_name='')
+            log_string = log_template.substitute(case_name='')
 
-        print(string_for_log, end='')
-        LOG.write_text('\n\n')
-        LOG.write_text(string_for_log)
+        print(log_string, end='')
+        cfg.LOG.append_text('\n\n')
+        cfg.LOG.append_text(log_string)
 
         for stage in self.stages:
             try:
-                process = subprocess.run([stage.path_to_bin] + stage.params.split(),  check=True,
+                process = subprocess.run([stage.path_to_bin] + stage.params.split(), check=True,
                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 stage.log_content = process.stdout.strip().decode("utf-8")
             except subprocess.CalledProcessError as exception:
@@ -108,13 +109,16 @@ class TestCase:
 
     def write_details(self):
         for stage in self.stages:
-            string_for_log = "cmd: " + str(stage.path_to_bin) + " " + stage.params + "\n\n"
-            string_for_log += stage.log_content
+            lines = [
+                f'cmd: {stage.path_to_bin} {stage.params}\n\n',
+                stage.log_content,
+                ]
+            log_string = '\n'.join(lines)
+            cfg.LOG.append_text(log_string)
             if stage.return_code != 0:
-                string_for_log += f'ERROR: app failed with return code: {stage.return_code}'
-                LOG.write_text(string_for_log)
+                log_string_err = f'ERROR: app failed with return code: {stage.return_code}'
+                cfg.LOG.append_text(log_string_err)
                 break
-            LOG.write_text(string_for_log)
 
 
 class TestCaseBitExact(TestCase):
@@ -124,17 +128,34 @@ class TestCaseBitExact(TestCase):
         TestCase.run(self, case_id)
         if self.err_code:
             return True
-        self.is_bit_exact = filecmp.cmp(PATH_TO_IO / f'{case_id:04}.hevc',
-                                        PATH_TO_IO / f'{case_id:04}.cmp')
+        self.is_bit_exact = filecmp.cmp(cfg.PATH_TO_IO / f'{case_id:04}.hevc',
+                                        cfg.PATH_TO_IO / f'{case_id:04}.cmp')
         return not self.is_bit_exact
 
     def write_details(self):
         TestCase.write_details(self)
         if not self.err_code:
-            bit_exact_status = 'PASS' if self.is_bit_exact else 'FAILED'
-            string_for_log = '\n---------VERIFICATION---------\n\nBit to bit comparing:\n'
-            string_for_log += bit_exact_status
-            LOG.write_text(string_for_log)
+            lines = [
+                'PASS' if self.is_bit_exact else 'FAILED',
+                '---------VERIFICATION---------',
+                'Bit to bit comparing:',
+                ]
+            log_string = '\n'.join(lines)
+            cfg.LOG.append_text(log_string)
+
+
+class TestCaseErr(TestCase):
+    def __init__(self, case_name, err_msg):
+        TestCase.__init__(self, case_name, [])
+        self.err_msg = err_msg
+        self.err_code = True
+
+    def run(self, case_id):
+        TestCase.run(self, case_id)
+        return self.err_code
+
+    def write_details(self):
+        cfg.LOG.append_text(f'\n{self.err_msg}')
 
 
 class RunnableBinary:
@@ -153,31 +174,31 @@ class TestCasesCreator:
         self.test_cases = []
 
     def create_test_cases(self, cases_dict):
-        test_cases_list = TestCasesCreator.nested_dict_iter(cases_dict)
+        test_cases_list = nested_dict_iter(cases_dict)
 
         for num_of_case, test_case in enumerate(test_cases_list, 1):
             test_case_name = test_case[0]
             stages = []
-            for cases_dict in test_case[1]:
-                for key, cmd in cases_dict.items():
+            case_type = None
+            for test_dict in test_case[1]:
+                for key, cmd in test_dict.items():
                     if key == 'case type':
                         case_type = cmd
-                    else:
-                        stages.append(RunnableBinary(PATH_DICT[key],
-                                                     cmd.format(path_to_io=
-                                                                f'{PATH_TO_IO / f"{num_of_case:04}"}')))
 
-            self.test_cases.append(case_type(test_case_name, stages))
+                    else:
+                        stages.append(RunnableBinary(cfg.PATH_DICT[key],
+                                                     cmd.format(path_to_io=
+                                                                f'{cfg.PATH_TO_IO / f"{num_of_case:04}"}')))
+            if case_type is None:
+                err_msg = f'Case type is unidentified'
+                self.test_cases.append(TestCaseErr(test_case_name, err_msg))
+            elif not stages:
+                err_msg = f'Test case is empty'
+                self.test_cases.append(TestCaseErr(test_case_name, err_msg))
+            else:
+                self.test_cases.append(case_type(test_case_name, stages))
 
         return self.test_cases
-
-    @staticmethod
-    def nested_dict_iter(nested_dict):
-        for key, value in nested_dict.items():
-            if isinstance(value, abc.Mapping):
-                yield from TestCasesCreator.nested_dict_iter(value)
-            else:
-                yield key, value
 
 
 class GroupNamesOfCases:
@@ -185,84 +206,68 @@ class GroupNamesOfCases:
         self.names = []
 
     def create_groupe_names(self, cases_dict):
-        self.names = list(GroupNamesOfCases.nested_dict_iter(cases_dict, 0, ' '))
+        self.names = list(nested_dict_iter(cases_dict, indent_count=0, case_name=' '))
         return self.names
 
-    @staticmethod
-    def nested_dict_iter(nested_dict, indent, name):
-        for key, value in nested_dict.items():
+
+def nested_dict_iter(nested_dict, indent_count=None, case_name=None):
+    for key, value in nested_dict.items():
+        if case_name is None:
             if isinstance(value, dict):
-                name += '\t' * indent + str(key)
-                yield from GroupNamesOfCases.nested_dict_iter(value, indent + 1, name)
-                name = ' '
+                yield from nested_dict_iter(value)
             else:
-                yield name + '\n' + '\t' * indent
-                name = ' '
+                yield key, value
+
+        else:
+            if isinstance(value, dict):
+                case_name += f'{indent(indent_count)}{key}'
+                yield from nested_dict_iter(value, indent_count + 1, case_name)
+            else:
+                yield f'{case_name}\n{indent(indent_count)}'
+            case_name = ' '
 
 
-# constants
-PATH_DIR_NAME = Path(__file__).resolve().parent
+def indent(count):
+    return '\t' * count
 
-# paths to every needed binary
-ASG = PATH_DIR_NAME.joinpath('asg-hevc')
-FEI_EXTRACTOR = PATH_DIR_NAME.joinpath('hevc_fei_extractor')
-SAMPLE_FEI = Path('/opt/intel/mediasdk/samples/sample_hevc_fei')
-SAMPLE_ENCODE = Path('/opt/intel/mediasdk/samples/sample_encode')
 
-PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI,
-             'SAMPLE_ENCODE': SAMPLE_ENCODE}
-
-# parameters of the test stream (key:value)
-TEST_STREAM = {'name': 'test_stream_176x96.yuv', 'w': '176', 'h': '96', 'frames': '100',
-               'picstruct': 'tff'}
-
-PATH_TEST_STREAM = PATH_DIR_NAME.parent / f'ted/content/{TEST_STREAM["name"]}'
-
-# file for log
-LOG = PATH_DIR_NAME / 'res.log'
-LOG.clear_text_file()
-
-# path for input and output files
-PATH_TO_IO = PATH_DIR_NAME / 'IOFiles'
-
-# end of constants
-
+import config as cfg
 
 if __name__ == '__main__':
-
-    from config import TEST_CASES_DICT
 
     START_TIME = time.time()
 
     # delete path and create new if it exists
-    if PATH_TO_IO.exists():
-        shutil.rmtree(PATH_TO_IO)
-    PATH_TO_IO.mkdir()
+    if cfg.PATH_TO_IO.exists():
+        shutil.rmtree(cfg.PATH_TO_IO)
+    cfg.PATH_TO_IO.mkdir()
 
-    for name, path in PATH_DICT.items():
+    cfg.LOG.clear_text_file()
+
+    for name, path in cfg.PATH_DICT.items():
         if not os.access(path, os.X_OK):
             print(f'No {name} or it cannot be executed')
             sys.exit(ReturnCode.ERROR_ACCESS_DENIED.value)
 
     TEST_CASES_CREATOR = TestCasesCreator()
-    TEST_CASES = TEST_CASES_CREATOR.create_test_cases(TEST_CASES_DICT)
+    TEST_CASES = TEST_CASES_CREATOR.create_test_cases(cfg.TEST_CASES_DICT)
 
-    GROUP_NAMES_OF_CASES = GroupNamesOfCases().create_groupe_names(TEST_CASES_DICT)
+    GROUP_NAMES_OF_CASES = GroupNamesOfCases().create_groupe_names(cfg.TEST_CASES_DICT)
 
     RUNNER = TestRunner()
 
     for num_of_case, test_case in enumerate(TEST_CASES, 1):
-        print('\n' + GROUP_NAMES_OF_CASES[num_of_case-1], end='')
+        print(f'\n{GROUP_NAMES_OF_CASES[num_of_case-1]}', end='')
         RUNNER.run_test_case(test_case, num_of_case)
 
-    INFO_FOR_LOG = '\n' + f'PASSED {RUNNER.passed} of {len(TEST_CASES)}'
+    INFO_FOR_LOG = f'\nPASSED {RUNNER.passed} of {len(TEST_CASES)}'
     print(INFO_FOR_LOG)
-    LOG.write_text(INFO_FOR_LOG)
+    cfg.LOG.append_text(INFO_FOR_LOG)
 
-    if PATH_TO_IO.exists():
-        shutil.rmtree(PATH_TO_IO)
+    if cfg.PATH_TO_IO.exists():
+        shutil.rmtree(cfg.PATH_TO_IO)
 
-    print(f'See details in {LOG.name}')
+    print(f'See details in {cfg.LOG}')
     print(f'Time:  {(time.time() - START_TIME):.5f} seconds')
 
     if RUNNER.failed != 0:
