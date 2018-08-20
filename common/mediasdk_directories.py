@@ -59,9 +59,9 @@ class MediaSdkDirectories(object):
     _tests_root_path = _mount_point_root_dir / 'tests'
     _builds_root_path = _mount_point_root_dir / 'builds'
 
-    _mount_point_root_url = r'http://mediasdk.intel.com'
-    _tests_root_url = urljoin(_mount_point_root_url, 'tests')
-    _builds_root_url = urljoin(_mount_point_root_url, 'builds')
+    _root_url = r'http://mediasdk.intel.com'
+    _tests_root_url = urljoin(_root_url, 'tests')
+    _builds_root_url = urljoin(_root_url, 'builds')
 
     _repositories = {
         # TODO split this part
@@ -121,8 +121,7 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
         if url:
-            return '/'.join(s.strip('/') for s in (cls._tests_root_url, branch, build_event, commit_id,
-                                                   f'{product_type}_{build_type}'))
+            return '/'.join((cls._tests_root_url, branch, build_event, commit_id, f'{product_type}_{build_type}'))
         else:
             return pathlib.Path(cls._tests_root_path) / branch / build_event / commit_id / f'{product_type}_{build_type}'
 
@@ -153,7 +152,7 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
         if url:
-            return urljoin(cls.get_commit_dir(branch, build_event, commit_id, url), f'{product_type}_{build_type}')
+            return '/'.join((cls.get_commit_dir(branch, build_event, commit_id, url), f'{product_type}_{build_type}'))
         else:
             return cls.get_commit_dir(branch, build_event, commit_id, url) / f'{product_type}_{build_type}'
 
@@ -183,7 +182,7 @@ class MediaSdkDirectories(object):
         if branch.startswith('refs/changes/'):
             branch = branch.split('/', 3)[-1]
         if url:
-            return '/'.join(s.strip('/') for s in (cls._builds_root_url, branch, build_event, commit_id))
+            return '/'.join((cls._builds_root_url, branch, build_event, commit_id))
         else:
             return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id
 
