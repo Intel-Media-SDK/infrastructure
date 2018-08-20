@@ -82,7 +82,6 @@ class TedAdapter(object):
 
         # Copy `install_pkg.tar` to the workdir and untar it
         self._copy(str(remote_pkg), str(self.root_dir))
-        #_untar(str(self.root_dir / pkg_name))
         self._untar(str(self.root_dir / pkg_name), str(self.root_dir))
 
         # Remove old `/opt/intel/mediasdk` and copy fresh built artifacts
