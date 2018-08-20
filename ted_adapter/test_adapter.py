@@ -85,8 +85,8 @@ class TedAdapter(object):
         self._untar(str(self.root_dir / pkg_name), str(self.root_dir))
 
         # Remove old `/opt/intel/mediasdk` and copy fresh built artifacts
-        self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=True)
-        self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=True)
+        self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
+        self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
 
 
     def run_test(self):
