@@ -144,7 +144,7 @@ class TedAdapter(object):
 
     def _execute_command(self, command, sudo=False):
         prefix = "sudo" if sudo else ""
-        process = subprocess.run(f"{prefix} command",
+        process = subprocess.run(f"{prefix} {command}",
                                  shell=True,
                                  timeout=self.tests_timeout,
                                  encoding='utf-8',
