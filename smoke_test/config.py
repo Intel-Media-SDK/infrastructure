@@ -32,12 +32,10 @@ PATH_DIR_NAME = Path(__file__).resolve().parent
 ASG = PATH_DIR_NAME / 'asg-hevc'
 FEI_EXTRACTOR = PATH_DIR_NAME / 'hevc_fei_extractor'
 SAMPLE_FEI = Path('/opt/intel/mediasdk/samples/sample_hevc_fei')
-SAMPLE_ENCODE = Path('/opt/intel/mediasdk/samples/sample_encode')
 
-PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI,
-             'SAMPLE_ENCODE': SAMPLE_ENCODE}
+PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
 
-# parameters of the test stream (key:value)
+# parameters of the test stream (key=value)
 STREAM = namedtuple('STREAM', ['name', 'w', 'h', 'frames', 'picstruct'])
 TEST_STREAM = STREAM(name='test_stream_176x96.yuv', w='176', h='96', frames='100',
                      picstruct='tff')

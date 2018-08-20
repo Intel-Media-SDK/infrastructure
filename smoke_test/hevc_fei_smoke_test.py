@@ -170,65 +170,68 @@ class RunnableBinary:
 
 
 class TestCasesCreator:
-    def __init__(self,):
+    def __init__(self, cases_dict):
         self.test_cases = []
-
-    def create_test_cases(self, cases_dict):
+        self.titles = []
         test_cases_list = nested_dict_iter(cases_dict)
 
-        for num_of_case, test_case in enumerate(test_cases_list, 1):
-            test_case_name = test_case[0]
-            stages = []
-            case_type = None
-            for test_dict in test_case[1]:
-                for key, cmd in test_dict.items():
-                    if key == 'case type':
-                        case_type = cmd
+        prev_parents = []
 
-                    else:
-                        stages.append(RunnableBinary(cfg.PATH_DICT[key],
-                                                     cmd.format(path_to_io=
-                                                                f'{cfg.PATH_TO_IO / f"{num_of_case:04}"}')))
-            if case_type is None:
-                err_msg = f'Case type is unidentified'
-                self.test_cases.append(TestCaseErr(test_case_name, err_msg))
-            elif not stages:
-                err_msg = f'Test case is empty'
-                self.test_cases.append(TestCaseErr(test_case_name, err_msg))
-            else:
-                self.test_cases.append(case_type(test_case_name, stages))
+        for num_of_case, (parents, case_name, case) in enumerate(test_cases_list, 1):
+            self.create_case(num_of_case, case_name, case)
+            prev_parents = self.create_title(parents, prev_parents)
 
-        return self.test_cases
+    def create_case(self, num_of_case, case_name, case):
+        test_case_name = case_name
+        stages = []
+        case_type = None
+        for test_dict in case:
+            for key, cmd in test_dict.items():
+                if key == 'case type':
+                    case_type = cmd
 
-
-class GroupNamesOfCases:
-    def __init__(self,):
-        self.names = []
-
-    def create_groupe_names(self, cases_dict):
-        self.names = list(nested_dict_iter(cases_dict, indent_count=0, case_name=' '))
-        return self.names
-
-
-def nested_dict_iter(nested_dict, indent_count=None, case_name=None):
-    for key, value in nested_dict.items():
-        if case_name is None:
-            if isinstance(value, dict):
-                yield from nested_dict_iter(value)
-            else:
-                yield key, value
-
+                else:
+                    stages.append(RunnableBinary(cfg.PATH_DICT[key],
+                                                 cmd.format(path_to_io=
+                                                            f'{cfg.PATH_TO_IO / f"{num_of_case:04}"}')))
+        if case_type is None:
+            err_msg = f'Case type is unidentified'
+            self.test_cases.append(TestCaseErr(test_case_name, err_msg))
+        elif not stages:
+            err_msg = f'Test case is empty'
+            self.test_cases.append(TestCaseErr(test_case_name, err_msg))
         else:
-            if isinstance(value, dict):
-                case_name += f'{indent(indent_count)}{key}'
-                yield from nested_dict_iter(value, indent_count + 1, case_name)
-            else:
-                yield f'{case_name}\n{indent(indent_count)}'
-            case_name = ' '
+            self.test_cases.append(case_type(test_case_name, stages))
+
+    def create_title(self, parents, prev_parents):
+        title = ''
+        indent = '\t'
+        if parents != prev_parents:
+            intersection = list(set(parents) & set(prev_parents))
+            for level, label in enumerate(parents):
+                if label in intersection:
+                    title += indent
+                else:
+                    title += level * indent + label
+
+        title += '\n' + indent * len(parents)
+        self.titles.append(title)
+        return parents
 
 
-def indent(count):
-    return '\t' * count
+def nested_dict_iter(nested_dict, path=None):
+    if path is None:
+        path = []
+    for k, v in nested_dict.items():
+        if isinstance(v, dict):
+            path.append(k)
+            yield from nested_dict_iter(v, path)
+            path.pop()
+        else:
+            path.append(k)
+            *parents, key = path
+            yield parents, key, v
+            path.pop()
 
 
 import config as cfg
@@ -249,15 +252,14 @@ if __name__ == '__main__':
             print(f'No {name} or it cannot be executed')
             sys.exit(ReturnCode.ERROR_ACCESS_DENIED.value)
 
-    TEST_CASES_CREATOR = TestCasesCreator()
-    TEST_CASES = TEST_CASES_CREATOR.create_test_cases(cfg.TEST_CASES_DICT)
-
-    GROUP_NAMES_OF_CASES = GroupNamesOfCases().create_groupe_names(cfg.TEST_CASES_DICT)
+    TEST_CASES_CREATOR = TestCasesCreator(cfg.TEST_CASES_DICT)
+    TEST_CASES = TEST_CASES_CREATOR.test_cases
+    TITLES = TEST_CASES_CREATOR.titles
 
     RUNNER = TestRunner()
 
     for num_of_case, test_case in enumerate(TEST_CASES, 1):
-        print(f'\n{GROUP_NAMES_OF_CASES[num_of_case-1]}', end='')
+        print(f'\n{TITLES[num_of_case-1]}', end='')
         RUNNER.run_test_case(test_case, num_of_case)
 
     INFO_FOR_LOG = f'\nPASSED {RUNNER.passed} of {len(TEST_CASES)}'
