@@ -125,17 +125,15 @@ class TedAdapter(object):
         shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
         shutil.copystat = _orig_copystat
 
-"""
-Direct calls of rm, cp commands needs to use them with `sudo`
-because we need to copy CI build artifacts to the
-`/opt/intel/mediasdk`
-Note: user should be sudoer without asking the password!
-"""
+# Direct calls of rm, cp commands needs to use them with `sudo`
+# because we need to copy CI build artifacts to the
+# `/opt/intel/mediasdk`
+# Note: user should be sudoer without asking the password!
     def _remove(self, directory: str, sudo=False):
-        return self._execute_command(f"{prefix} rm -rf {directory}", sudo)
+        return self._execute_command(f"rm -rf {directory}", sudo)
 
     def _copy(self, target_directory: str, destination_directory: str, sudo=False):
-        return self._execute_command(f"{prefix} cp -r {target_directory} {destination_directory}", sudo)
+        return self._execute_command(f"cp -r {target_directory} {destination_directory}", sudo)
 
     # TODO use extract_archive() from common.helper
     def _untar(self, archive_path, destination_path):
