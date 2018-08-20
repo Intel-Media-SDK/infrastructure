@@ -55,9 +55,10 @@ class MediaSdkDirectories(object):
     """
     Container for static links
     """
-    _tests_root_path = r'/media/tests'
-    _builds_root_path = r'/media/builds'
-    _root_path = r'/media'
+    _mount_point_root_dir = r'/media'
+    _tests_root_path = pathlib.Path(_mount_point_root_dir) / 'tests'
+    _builds_root_path = pathlib.Path(_mount_point_root_dir) / 'builds'
+
     _root_url = r'http://mediasdk.intel.com/'
 
     _repositories = {

@@ -770,7 +770,6 @@ class BuildGenerator(object):
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)
-        rotate_dir(build_url)
 
         self.log.info('Copy to %s', build_dir)
         self.log.info('Artifacts are available by: %s', build_url)

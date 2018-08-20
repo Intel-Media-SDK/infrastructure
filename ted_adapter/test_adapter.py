@@ -121,7 +121,6 @@ class TedAdapter(object):
 
     def copy_logs_to_share(self):
         rotate_dir(self.tests_artifacts_dir)
-        rotate_dir(self.tests_artifacts_url)
         print(f'Copy results to {self.tests_artifacts_dir}')
 
         print(f'Artifacts are available by: {self.tests_artifacts_url}')
