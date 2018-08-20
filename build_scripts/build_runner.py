@@ -753,7 +753,9 @@ class BuildGenerator(object):
         commit_id = 'unknown'
 
         if self.changed_repo:
-            _, branch, commit_id = self.changed_repo.split(':')
+            repo_name, branch, commit_id = self.changed_repo.split(':')
+            if commit_id == 'HEAD':
+                commit_id = ProductState.get_head_revision(self.options['REPOS_DIR'] / repo_name)
         elif self.repo_states:
             for repo in self.repo_states:
                 if repo['trigger']:

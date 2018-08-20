@@ -261,3 +261,14 @@ class ProductState(object):
                 }
 
             sources_state.write(json.dumps(states, indent=4, sort_keys=True))
+
+    @staticmethod
+    def get_head_revision(repo_dir):
+        """
+        Get head revision of repository
+
+        :param repo_dir: path to repository
+        :type repo_dir: pathlib.Path
+        """
+
+        return str(git.Repo(str(repo_dir)).head.commit)
