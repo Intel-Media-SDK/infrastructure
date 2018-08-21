@@ -27,18 +27,11 @@ import sys
 import shutil
 import time
 import filecmp
-import enum
 from pathlib import Path
 from string import Template
 
 
 # classes definition
-class ReturnCode(enum.Enum):
-    ERROR_SUCCESS = 0
-    ERROR_TEST_FAILED = 1
-    ERROR_ACCESS_DENIED = 2
-
-
 class PathPlus(type(Path())):
     def append_text(self, data, encoding=None, errors=None):
         if not isinstance(data, str):
@@ -102,6 +95,7 @@ class TestCase:
                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 stage.log_content = process.stdout.strip().decode("utf-8")
             except subprocess.CalledProcessError as exception:
+                stage.log_content = exception.stdout.strip().decode("utf-8")
                 stage.return_code = exception.returncode
                 self.err_code = True
                 return self.err_code
@@ -116,7 +110,7 @@ class TestCase:
             log_string = '\n'.join(lines)
             cfg.LOG.append_text(log_string)
             if stage.return_code != 0:
-                log_string_err = f'ERROR: app failed with return code: {stage.return_code}'
+                log_string_err = f'\nERROR: app failed with return code: {stage.return_code}'
                 cfg.LOG.append_text(log_string_err)
                 break
 
@@ -250,7 +244,7 @@ if __name__ == '__main__':
     for name, path in cfg.PATH_DICT.items():
         if not os.access(path, os.X_OK):
             print(f'No {name} or it cannot be executed')
-            sys.exit(ReturnCode.ERROR_ACCESS_DENIED.value)
+            sys.exit(cfg.ReturnCode.ERROR_ACCESS_DENIED.value)
 
     TEST_CASES_CREATOR = TestCasesCreator(cfg.TEST_CASES_DICT)
     TEST_CASES = TEST_CASES_CREATOR.test_cases
@@ -273,5 +267,5 @@ if __name__ == '__main__':
     print(f'Time:  {(time.time() - START_TIME):.5f} seconds')
 
     if RUNNER.failed != 0:
-        sys.exit(ReturnCode.ERROR_TEST_FAILED.value)
-    sys.exit(ReturnCode.ERROR_SUCCESS.value)
+        sys.exit(cfg.ReturnCode.ERROR_TEST_FAILED.value)
+    sys.exit(cfg.ReturnCode.ERROR_SUCCESS.value)

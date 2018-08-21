@@ -21,17 +21,44 @@
 # SOFTWARE.
 
 
+import enum
 from pathlib import Path
 from collections import namedtuple
 import hevc_fei_smoke_test
 
+
+class ReturnCode(enum.Enum):
+    ERROR_SUCCESS = 0
+    ERROR_TEST_FAILED = 1
+    ERROR_ACCESS_DENIED = 2
+
+
+def get_samples_folder():
+    for samples_folder in POSSIBLE_SAMPLES_FOLDER:
+        if samples_folder.exists():
+            print(f'Samples found in: {samples_folder}')
+            return samples_folder #success
+
+    print(f'Samples were not found.')
+    print(f'Put samples to the one of the following locations and restart:')
+    print(POSSIBLE_SAMPLES_FOLDER)
+    exit(ReturnCode.ERROR_ACCESS_DENIED.value)
+
+
 # constants
 PATH_DIR_NAME = Path(__file__).resolve().parent
 
-# paths to every needed binary
+MEDIASDK_FOLDER = Path('/opt/intel/mediasdk')
+
+POSSIBLE_SAMPLES_FOLDER = [
+    MEDIASDK_FOLDER / 'share' / 'mfx' / 'samples',
+    MEDIASDK_FOLDER / 'samples',
+]
+SAMPLES_FOLDER = get_samples_folder()
+
 ASG = PATH_DIR_NAME / 'asg-hevc'
 FEI_EXTRACTOR = PATH_DIR_NAME / 'hevc_fei_extractor'
-SAMPLE_FEI = Path('/opt/intel/mediasdk/samples/sample_hevc_fei')
+SAMPLE_FEI = SAMPLES_FOLDER / 'sample_hevc_fei'
 
 PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
 
@@ -47,8 +74,6 @@ LOG = hevc_fei_smoke_test.PathPlus(PATH_DIR_NAME / 'res.log')
 
 # path for input and output files
 PATH_TO_IO = PATH_DIR_NAME / 'IOFiles'
-
-# end of constants
 
 
 TEST_CASES_DICT = {
@@ -230,7 +255,7 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
@@ -253,7 +278,7 @@ TEST_CASES_DICT = {
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
-                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -271,9 +296,9 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5'
-                                 f' -no_cu_to_pu_split -max_log2_cu_size 5 -min_log2_cu_size 5 '
-                                 f'-sub_pel_mode 3 '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
                             {'SAMPLE_FEI':
                                  f'-i {{path_to_io}}.prmvmvp '
@@ -294,7 +319,7 @@ TEST_CASES_DICT = {
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 3 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -312,7 +337,7 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
@@ -335,7 +360,7 @@ TEST_CASES_DICT = {
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
-                                 f'-g 2 -x 1 -num_active_P 1 -r 1 '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -353,7 +378,7 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
@@ -376,7 +401,7 @@ TEST_CASES_DICT = {
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -sub_pel_mode 3 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -439,7 +464,7 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 32 -x 2 -num_active_P 1 -num_active_BL0 1 '
+                                 f'-g 32 -x 3 -num_active_P 1 -num_active_BL0 2 '
                                  f'-num_active_BL1 1 -r 4 -log2_ctu_size 5 -no_cu_to_pu_split '
                                  f'-max_log2_cu_size 5 -min_log2_cu_size 5 -sub_pel_mode 0 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
@@ -450,7 +475,7 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-f 25 -qp 2 -g 32 -GopRefDist 4 -gpb:on '
-                                 f'-NumRefFrame 2 -NumRefActiveP 1 -NumRefActiveBL0 1 '
+                                 f'-NumRefFrame 3 -NumRefActiveP 1 -NumRefActiveBL0 2 '
                                  f'-NumRefActiveBL1 1 -NumPredictorsL0 4 -NumPredictorsL1 4'
                                  f' -EncodedOrder -encode -mvpin {{path_to_io}}_mvmvp.mvin'},
                             {'FEI_EXTRACTOR':
@@ -462,7 +487,7 @@ TEST_CASES_DICT = {
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
-                                 f'-g 32 -x 2 -num_active_P 1 -num_active_BL0 1 -num_active_BL1 1 '
+                                 f'-g 32 -x 3 -num_active_P 1 -num_active_BL0 2 -num_active_BL1 1 '
                                  f'-r 4 -log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
                                  f'-min_log2_cu_size 5 -sub_pel_mode 0 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -527,7 +552,7 @@ TEST_CASES_DICT = {
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
                                  f'-o {{path_to_io}}.prmvmvp '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 -gpb_off '
                                  f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
                                  f'-mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
                                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
@@ -550,7 +575,7 @@ TEST_CASES_DICT = {
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
-                                 f'-g 3 -x 2 -num_active_P 2 -r 1 '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
                                  f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
                                  f'-min_log2_cu_size 4 -mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
                                  f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
@@ -922,15 +947,6 @@ TEST_CASES_DICT = {
                  f'-o {{path_to_io}}.prmvmvp -g 2 -x 1 -num_active_P 1 -r 1 -log2_ctu_size 5  '
                  f'-no_cu_to_pu_split -max_log2_cu_size 5 -min_log2_cu_size 5 -sub_pel_mode 3 '
                  f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-            {'SAMPLE_FEI':
-                 f'-i {{path_to_io}}.prmvmvp '
-                 f'-o {{path_to_io}}.prmvmvp.mvmvp_4_NumPredictors.hevc '
-                 f'-n {TEST_STREAM.frames} '
-                 f'-w {TEST_STREAM.w} '
-                 f'-h {TEST_STREAM.h} '
-                 f'-f 25 -qp 2 -g 2 -GopRefDist 1 -gpb:on -NumRefFrame 1 -NumRefActiveP 1 '
-                 f'-NumPredictorsL0 4 -NumPredictorsL1 4 -encode -EncodedOrder '
-                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
             {'SAMPLE_FEI':
                  f'-i {{path_to_io}}.prmvmvp '
                  f'-o {{path_to_io}}.prmvmvp.mvmvp_2_NumPredictors.hevc '
