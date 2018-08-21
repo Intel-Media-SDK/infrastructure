@@ -865,7 +865,7 @@ TEST_CASES_DICT = {
                                  f'-generate -gen_repack_ctrl '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
-                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 3 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 26 -DeltaQP 1 1 2 2 3 3 4 4'},
@@ -885,7 +885,7 @@ TEST_CASES_DICT = {
                                  f'-verify -gen_repack_ctrl '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
-                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 3 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 26'}
@@ -907,7 +907,7 @@ TEST_CASES_DICT = {
                                  f'-generate -gen_repack_ctrl '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
-                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 3 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_str_file {{path_to_io}}.multipak '
                                  f'-InitialQP 31 -DeltaQP 1 1 2 2 3 3 4 4'},
@@ -927,7 +927,7 @@ TEST_CASES_DICT = {
                                  f'-verify -gen_repack_ctrl '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
-                                 f'-h {TEST_STREAM.h} -g 5 -r 1 '
+                                 f'-h {TEST_STREAM.h} -g 5 -r 3 '
                                  f'-repack_ctrl_file {{path_to_io}}.repakctrl '
                                  f'-repack_stat_file {{path_to_io}}.repakstat '
                                  f'-repack_str_file {{path_to_io}}_repak.multipak -InitialQP 31'}
