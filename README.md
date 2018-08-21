@@ -95,7 +95,7 @@ Dependencies:
 - Driver `iHD_drv_video.so` and MDF (install it from https://github.com/intel/media-driver)
     - `lib64` folder should be in the `/opt/intel/msdk_driver`!
     - `/opt/intel/mediasdk` should be empty
-- User which will start the script should be sudoer without asking the password!
+- Change permissions on: `cd /opt/intel/ && chown <user_who_will_start_the_infrastructure_scripts>:<user_who_will_start_the_infrastructure_scripts> .` This change needs for auto-copy of build artifacts to the mediasdk folder (mediasdk folder will be deleted and created again).
 
 ```bash
 # Install git lfs:
