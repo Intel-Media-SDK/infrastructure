@@ -55,16 +55,6 @@ To set up environment for MediaSDK and install all dependencies do:
 - [Build Media SDK on CentOS](https://github.com/Intel-Media-SDK/MediaSDK/wiki/Build-Media-SDK-on-CentOS)
 - [Build Media SDK on Ubuntu](https://github.com/Intel-Media-SDK/MediaSDK/wiki/Build-Media-SDK-on-Ubuntu)
 
-Current package versions used in Media SDK CI:
-```bash
-libpciaccess-0.14-1.el7.x86_64
-libpciaccess-devel-0.14-1.el7.x86_64
-gtest-1.6.0-2.el7.x86_64
-gtest-devel-1.6.0-2.el7.x86_64
-ocl-icd-2.2.12-1.el7.x86_64
-ocl-icd-devel-2.2.12-1.el7.x86_64
-opencl-headers-2.2-1.20180306gite986688.el7.noarch
-```
 Install packages for Buildbot:
 ```bash
 sudo pip3 install buildbot-worker==1.1.2
@@ -139,6 +129,23 @@ ln -s /nfs/import_dir/ci/builds/ /media/builds
 - Do not forget to add the line with `umask = 0o2` to the `buildbot.tac` file on all your masters and workers for the correct file permissions!
 - To have additional information about your worker in Buildbot\`s worker list add **ip-address** to the `worker/info/host` file.
 - Our configuration of Buildbot uses `GitPoller` so in case of private repos you need to execute `git config --global credential.helper store` and login once with your infrastructure credentials (otherwise polling will NOT work).
+
+# Used versions of packages in CI
+- Driver: https://github.com/intel/libva/releases/tag/2.2.0
+- LibVA: https://github.com/intel/media-driver/commit/5799e328b39912eefb2e48fa5c2ed82f319da832 (master)
+- Additional:
+```bash
+# on (CentOS 7.3)
+libpciaccess-0.14-1.el7.x86_64
+libpciaccess-devel-0.14-1.el7.x86_64
+gtest-1.6.0-2.el7.x86_64
+gtest-devel-1.6.0-2.el7.x86_64
+ocl-icd-2.2.12-1.el7.x86_64
+ocl-icd-devel-2.2.12-1.el7.x86_64
+opencl-headers-2.2-1.20180306gite986688.el7.noarch
+```
+
+
 
 # How to reproduce build manually 
 Our infrastructure was built on the principle of total reproducibility. You can reproduce certain `build step` from our Buildbot CI on your local machine. For that you have to:  
