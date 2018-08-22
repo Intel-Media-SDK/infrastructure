@@ -47,7 +47,7 @@ class TedAdapter(object):
     test_results_dir = test_driver_dir / 'ted/results'
     tests_timeout = 300  # 5 minutes
 
-    def __init__(self, build_artifacts_dir, tests_artifacts_dir, root_dir):
+    def __init__(self, build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir):
         """
         :param build_artifacts_dir: Path to build artifacts
         :type build_artifacts_dir: pathlib.Path
@@ -55,12 +55,16 @@ class TedAdapter(object):
         :param tests_artifacts_dir: Path to tests artifacts
         :type tests_artifacts_dir: pathlib.Path
 
+        :param tests_artifacts_url: URL to tests artifacts
+        :type tests_artifacts_url: String
+
         :param root_dir: Path to workdir for unpacking build artifacts
         :type root_dir: pathlib.Path
         """
 
         self.build_artifacts_dir = build_artifacts_dir
         self.tests_artifacts_dir = tests_artifacts_dir
+        self.tests_artifacts_url = tests_artifacts_url
         self.root_dir = root_dir
 
     def _get_artifacts(self):
@@ -117,6 +121,8 @@ class TedAdapter(object):
     def copy_logs_to_share(self):
         rotate_dir(self.tests_artifacts_dir)
         print(f'Copy results to {self.tests_artifacts_dir}')
+
+        print(f'Artifacts are available by: {self.tests_artifacts_url}')
 
         # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
@@ -203,8 +209,9 @@ def main():
 
     build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
     tests_artifacts_dir = MediaSdkDirectories.get_tests_dir(*directories_layout)
+    tests_artifacts_url = MediaSdkDirectories.get_tests_dir(*directories_layout, url=True)
 
-    adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, root_dir=pathlib.Path(args.root_dir))
+    adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
     try:
         failed_cases = adapter.run_test()
     except:

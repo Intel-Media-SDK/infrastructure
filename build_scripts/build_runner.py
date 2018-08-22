@@ -766,10 +766,15 @@ class BuildGenerator(object):
             branch, self.build_event, commit_id,
             self.product_type, self.options["BUILD_TYPE"])
 
+        build_url = MediaSdkDirectories.get_build_dir(
+            branch, self.build_event, commit_id,
+            self.product_type, self.options["BUILD_TYPE"], url=True)
+
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)
 
         self.log.info('Copy to %s', build_dir)
+        self.log.info('Artifacts are available by: %s', build_url)
 
         # Workaround for copying to samba share on Linux
         # to avoid exceptions while setting Linux permissions.
