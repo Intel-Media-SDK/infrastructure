@@ -503,7 +503,7 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-generate -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
                                  f'-i {PATH_TEST_STREAM} '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
@@ -528,7 +528,7 @@ TEST_CASES_DICT = {
                                  f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
-                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-verify -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
@@ -546,7 +546,7 @@ TEST_CASES_DICT = {
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
                             {'ASG':
-                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-generate -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
                                  f'-i {PATH_TEST_STREAM} '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
@@ -571,7 +571,7 @@ TEST_CASES_DICT = {
                                  f'{{path_to_io}}_mvmvp.ctustat '
                                  f'{{path_to_io}}_mvmvp.custat'},
                             {'ASG':
-                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-verify -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
                                  f'-n {TEST_STREAM.frames} '
                                  f'-w {TEST_STREAM.w} '
                                  f'-h {TEST_STREAM.h} '
