@@ -129,12 +129,12 @@ class TestCaseBitExact(TestCase):
     def write_details(self):
         TestCase.write_details(self)
         if not self.err_code:
-            lines = [
+            log_lines = [
                 'PASS' if self.is_bit_exact else 'FAILED',
                 '---------VERIFICATION---------',
                 'Bit to bit comparing:',
                 ]
-            log_string = '\n'.join(lines)
+            log_string = '\n'.join(log_lines)
             cfg.LOG.append_text(log_string)
 
 
