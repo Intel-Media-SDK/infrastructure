@@ -148,8 +148,8 @@ BUILDERS = [
         "build_type": "release",
         "api_latest": True,
         "fastboot": False,
-        "compiler": None,
-        "compiler_version": None,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
         "branch": ".+?",
         "worker": "centos_no_x11"
     },
