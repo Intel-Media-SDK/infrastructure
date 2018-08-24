@@ -144,7 +144,7 @@ BUILDERS = [
     {
         "name": "build-api-next-no-x11",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "api_latest_no_x11",
+        "product_type": "linux_api_latest_no_x11",
         "build_type": "release",
         "api_latest": True,
         "fastboot": False,
