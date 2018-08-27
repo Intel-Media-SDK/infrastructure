@@ -141,19 +141,18 @@ BUILDERS = [
         "worker": "ubuntu"
     },
 
-#TODO: Temporary disable this builder because worker (machine) is not ready
-#    {
-#        "name": "build-api-next-no-x11",
-#        "product_conf_file": "conf_linux_public.py",
-#        "product_type": "api_latest_no_x11",
-#        "build_type": "release",
-#        "api_latest": True,
-#        "fastboot": False,
-#        "compiler": None,
-#        "compiler_version": None,
-#        "branch": ".+?",
-#        "worker": "centos_no_x11"
-#    },
+    {
+        "name": "build-api-next-no-x11",
+        "product_conf_file": "conf_linux_public.py",
+        "product_type": "linux_api_latest_no_x11",
+        "build_type": "release",
+        "api_latest": True,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "branch": ".+?",
+        "worker": "centos_no_x11"
+    },
 ]
 
 TESTERS = [
