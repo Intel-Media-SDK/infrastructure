@@ -25,7 +25,7 @@ import msdk_secrets
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
-    PRODUCTION_MODE_NEXT_GEN = "PRODUCTION_MODE_NEXT_GEN"
+    PRODUCTION_MODE_NEXT_GEN = "production_mode_next_gen"
     TEST_MODE = "test_mode"
 
 """
