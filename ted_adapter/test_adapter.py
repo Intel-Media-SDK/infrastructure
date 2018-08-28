@@ -209,7 +209,7 @@ def main():
 
     build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
     tests_artifacts_dir = MediaSdkDirectories.get_tests_dir(*directories_layout)
-    tests_artifacts_url = MediaSdkDirectories.get_tests_dir(*directories_layout, url=True)
+    tests_artifacts_url = MediaSdkDirectories.get_tests_url(*directories_layout)
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
     try:
