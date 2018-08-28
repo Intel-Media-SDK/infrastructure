@@ -25,7 +25,7 @@ import msdk_secrets
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
-    PRODUCTION_MODE_NEXT_GEN = "production_mode_next_gen"
+    PRODUCTION_MODE_LINUX_NEXT_GEN = "production_mode_linux_next_gen"
     TEST_MODE = "test_mode"
 
 """
@@ -208,14 +208,14 @@ GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 GITHUB_OWNER = "Intel-Media-SDK"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
-#CURRENT_MODE = Mode.PRODUCTION_MODE_NEXT_GEN
+#CURRENT_MODE = Mode.PRODUCTION_MODE_LINUX_NEXT_GEN
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
-elif CURRENT_MODE == Mode.PRODUCTION_MODE_NEXT_GEN:
+elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
     BUILDBOT_TITLE = "MediaSDK Next-Gen"
     WORKERS = {"build": {"b-50-41": {},
                          "b-50-61": {}},
@@ -223,7 +223,7 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_NEXT_GEN:
                "centos_test": {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
-    MASTER_PRODUCT_TYPE = "next_gen"
+    MASTER_PRODUCT_TYPE = "linux_next_gen"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     GITHUB_OWNERS_REPO = "flow_test"
