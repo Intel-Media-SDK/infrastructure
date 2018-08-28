@@ -131,8 +131,9 @@ ln -s /nfs/import_dir/ci/builds/ /media/builds
 - Our configuration of Buildbot uses `GitPoller` so in case of private repos you need to execute `git config --global credential.helper store` and login once with your infrastructure credentials (otherwise polling will NOT work).
 
 # Used versions of packages in CI
-- Driver: https://github.com/intel/libva/releases/tag/2.2.0
-- LibVA: https://github.com/intel/media-driver/commit/5799e328b39912eefb2e48fa5c2ed82f319da832 (master)
+- LibVA: https://github.com/intel/libva/releases/tag/2.2.0
+- Driver: https://github.com/intel/media-driver/releases/tag/intel-media-18.2.0
+
 - Additional:
 ```bash
 # on (CentOS 7.3)
