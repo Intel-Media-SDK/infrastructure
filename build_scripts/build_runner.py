@@ -894,7 +894,7 @@ which is not present in mediasdk_directories.''')
     parser.add_argument('-p', "--product-type", default='linux',
                         choices=['linux', 'embedded', 'open_source', 'windows',
                                  'windows_sw_lib', 'windows_hw_lib', 'windows_tools', 'windows_mfts',
-                                 'windows_uwp', 'api_latest', 'next_gen', 'android',
+                                 'windows_uwp', 'api_latest', 'linux_next_gen', 'android',
                                  'linux_gcc_latest', 'linux_clang_latest',
                                  'linux_fastboot', 'linux_fastboot_gcc_latest',
                                  'linux_api_latest_no_x11'],
