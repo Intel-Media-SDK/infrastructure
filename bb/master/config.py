@@ -216,13 +216,38 @@ if CURRENT_MODE == Mode.PRODUCTION_MODE:
 
 elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
     BUILDBOT_TITLE = "MediaSDK Next-Gen"
-    WORKERS = {"build": {"b-50-41": {},
-                         "b-50-61": {}},
-               "ubuntu": {"b-999-999": {}},
+    WORKERS = {"centos": {"b-50-41": {},
+                          "b-50-61": {}},
                "centos_test": {"t-999-999": {}}}
     GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
     BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
     MASTER_PRODUCT_TYPE = "linux_next_gen"
+    BUILDERS = [
+        {
+            "name": "build-master-branch",
+            "product_conf_file": "conf_linux_public.py",
+            "product_type": "linux_next_gen",
+            "build_type": "release",
+            "api_latest": False,
+            "fastboot": False,
+            "compiler": "gcc",
+            "compiler_version": "6.3.1",
+            "branch": "^master$",
+            "worker": "centos"
+        },
+
+        {
+            "name": "build",  # build all except master branch
+            "product_conf_file": "conf_linux_public.py",
+            "product_type": "linux_next_gen",
+            "build_type": "release",
+            "api_latest": False,
+            "fastboot": False,
+            "compiler": "gcc",
+            "compiler_version": "6.3.1",
+            "branch": "(?!master)",
+            "worker": "centos"
+        }]
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     GITHUB_OWNERS_REPO = "flow_test"
