@@ -168,7 +168,7 @@ class MediaSdkDirectories(object):
         """
         if product_type == 'android':
             return cls._public_tests_root_url
-        elif product_type == 'embedded_private':
+        elif product_type == 'linux_next_gen':
             return cls._next_gen_tests_root_url
         else:
             return cls._public_tests_root_url
@@ -268,7 +268,7 @@ class MediaSdkDirectories(object):
         """
         if product_type == 'android':
             return cls._public_builds_root_url
-        elif product_type == 'embedded_private':
+        elif product_type == 'linux_next_gen':
             return cls._next_gen_builds_root_url
         else:
             return cls._public_builds_root_url
