@@ -766,9 +766,9 @@ class BuildGenerator(object):
             branch, self.build_event, commit_id,
             self.product_type, self.options["BUILD_TYPE"])
 
-        build_url = MediaSdkDirectories.get_build_dir(
+        build_url = MediaSdkDirectories.get_build_url(
             branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"], url=True)
+            self.product_type, self.options["BUILD_TYPE"])
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)

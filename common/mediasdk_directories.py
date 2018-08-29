@@ -59,9 +59,17 @@ class MediaSdkDirectories(object):
     _tests_root_path = _mount_point_root_dir / 'tests'
     _builds_root_path = _mount_point_root_dir / 'builds'
 
-    _root_url = r'http://mediasdk.intel.com'
-    _tests_root_url = urljoin(_root_url, 'tests')
-    _builds_root_url = urljoin(_root_url, 'builds')
+    _public_root_url = r'http://mediasdk.intel.com'
+    _private_root_url = r'http://bb.msdk.intel.com'
+
+    _public_tests_root_url = urljoin(_public_root_url, 'tests')
+    _public_builds_root_url = urljoin(_public_root_url, 'builds')
+
+    _private_tests_root_url = urljoin(_private_root_url, 'private_tests')
+    _private_builds_root_url = urljoin(_private_root_url, 'private_builds')
+
+    _next_gen_tests_root_url = urljoin(_private_root_url, 'next_gen_tests')
+    _next_gen_builds_root_url = urljoin(_private_root_url, 'next_gen_builds')
 
     _repositories = {
         # TODO split this part
@@ -97,7 +105,7 @@ class MediaSdkDirectories(object):
         return cls._builds_root_path
 
     @classmethod
-    def get_tests_dir(cls, branch, build_event, commit_id, product_type, build_type, url=False):
+    def get_tests_dir(cls, branch, build_event, commit_id, product_type, build_type):
         """
         Get path to artifacts of tests results
 
@@ -116,22 +124,17 @@ class MediaSdkDirectories(object):
         :param build_type: Type of build (release|debug)
         :type build_type: String
 
-        :param url: Flag of return type (url|dir_path)
-        :type url: Boolean
-
         :return: Path to artifacts of build
         :rtype: String
         """
-        if url:
-            return '/'.join((cls._tests_root_url, branch, build_event, commit_id, f'{product_type}_{build_type}'))
-        else:
-            return pathlib.Path(cls._tests_root_path) / branch / build_event / commit_id / f'{product_type}_{build_type}'
+
+        return pathlib.Path(cls._tests_root_path) / branch / build_event / commit_id / f'{product_type}_{build_type}'
 
     @classmethod
-    def get_build_dir(cls, branch, build_event, commit_id, product_type, build_type, url=False):
+    def get_tests_url(cls, branch, build_event, commit_id, product_type, build_type):
         """
-        Get path to artifacts of build 
-        
+        Get path to artifacts of tests results
+
         :param branch: Branch of repo
         :type branch: String
 
@@ -147,19 +150,59 @@ class MediaSdkDirectories(object):
         :param build_type: Type of build (release|debug)
         :type build_type: String
 
-        :param url: Flag of return type (url|dir_path)
-        :type url: Boolean
+        :return: Path to artifacts of build
+        :rtype: String
+        """
+
+        return '/'.join(
+            (cls.get_tests_root_url(product_type), branch, build_event, commit_id, f'{product_type}_{build_type}'))
+
+    @classmethod
+    def get_tests_root_url(cls, product_type):
+        """
+        Get root url to artifacts of build
+
+        :param product_type: Type of product (linux|android|embedded_private)
+        :type product_type: String
+
+        :return: Root url to artifacts of build
+        :rtype: String
+        """
+        if product_type == 'android':
+            return cls._public_tests_root_url
+        elif product_type == 'linux_next_gen':
+            return cls._next_gen_tests_root_url
+        else:
+            return cls._public_tests_root_url
+
+    @classmethod
+    def get_build_dir(cls, branch, build_event, commit_id, product_type, build_type):
+        """
+        Get path to artifacts of build
+
+        :param branch: Branch of repo
+        :type branch: String
+
+        :param build_event: Event of build (pre_commit|commit|nightly|weekly)
+        :type build_event: String
+
+        :param commit_id: SHA sum of commit
+        :type commit_id: String
+
+        :param product_type: Type of product (linux|windows|embedded|pre_si)
+        :type product_type: String
+
+        :param build_type: Type of build (release|debug)
+        :type build_type: String
 
         :return: Path to artifacts of build
         :rtype: String
         """
-        if url:
-            return '/'.join((cls.get_commit_dir(branch, build_event, commit_id, url), f'{product_type}_{build_type}'))
-        else:
-            return cls.get_commit_dir(branch, build_event, commit_id, url) / f'{product_type}_{build_type}'
+
+        return cls.get_commit_dir(branch, build_event, commit_id) / f'{product_type}_{build_type}'
 
     @classmethod
-    def get_commit_dir(cls, branch, build_event, commit_id, url):
+    def get_commit_dir(cls, branch, build_event, commit_id):
         """
         Get path to artifacts of builds on all OSes
 
@@ -172,9 +215,6 @@ class MediaSdkDirectories(object):
         :param commit_id: SHA sum of commit
         :type commit_id: String
 
-        :param url: Flag of return value (url|dir_path)
-        :type url: Boolean
-
         :return: Path to artifacts of build
         :rtype: String
         """
@@ -183,10 +223,57 @@ class MediaSdkDirectories(object):
         # ex: refs/changes/25/52345/1 -> 52345/1
         if branch.startswith('refs/changes/'):
             branch = branch.split('/', 3)[-1]
-        if url:
-            return '/'.join((cls._builds_root_url, branch, build_event, commit_id))
+
+        return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id
+
+    @classmethod
+    def get_build_url(cls, branch, build_event, commit_id, product_type, build_type):
+        """
+        Get path to artifacts of build
+
+        :param branch: Branch of repo
+        :type branch: String
+
+        :param build_event: Event of build (pre_commit|commit|nightly|weekly)
+        :type build_event: String
+
+        :param commit_id: SHA sum of commit
+        :type commit_id: String
+
+        :param product_type: Type of product (linux|windows|embedded|pre_si)
+        :type product_type: String
+
+        :param build_type: Type of build (release|debug)
+        :type build_type: String
+
+        :return: Url to artifacts of build
+        :rtype: String
+        """
+        # only for Gerrit
+        # ex: refs/changes/25/52345/1 -> 52345/1
+        if branch.startswith('refs/changes/'):
+            branch = branch.split('/', 3)[-1]
+
+        return '/'.join((cls.get_build_root_url(product_type), branch, build_event, commit_id,
+                         f'{product_type}_{build_type}'))
+
+    @classmethod
+    def get_build_root_url(cls, product_type):
+        """
+        Get root url to artifacts of build
+
+        :param product_type: Type of product (linux|android|embedded_private)
+        :type product_type: String
+
+        :return: Root url to artifacts of build
+        :rtype: String
+        """
+        if product_type == 'android':
+            return cls._public_builds_root_url
+        elif product_type == 'linux_next_gen':
+            return cls._next_gen_builds_root_url
         else:
-            return pathlib.Path(cls._builds_root_path) / branch / build_event / commit_id
+            return cls._public_builds_root_url
 
     @classmethod
     def get_repo_url_by_name(cls, name='MediaSDK'):
