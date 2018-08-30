@@ -75,8 +75,6 @@ class MediaSdkDirectories(object):
         # TODO split this part
         # linux_open_source
         'MediaSDK': 'https://github.com/Intel-Media-SDK/MediaSDK',
-        'mdp_msdk-c2-plugins': 'https://git-ccr-1.devtools.intel.com/gerrit/mdp_msdk-c2-plugins',
-        'mdp_msdk-omx-plugins': 'https://git-ccr-1.devtools.intel.com/gerrit/mdp_msdk-omx-plugins',
         'libva': 'https://github.com/intel/libva',
         # test_repositories
         'flow_test': 'https://github.com/Intel-Media-SDK/flow_test',
