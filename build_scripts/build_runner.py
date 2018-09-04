@@ -891,13 +891,18 @@ which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
                         help='Type of build')
-    parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'open_source', 'windows',
-                                 'windows_sw_lib', 'windows_hw_lib', 'windows_tools', 'windows_mfts',
-                                 'windows_uwp', 'api_latest', 'linux_next_gen', 'android',
-                                 'linux_gcc_latest', 'linux_clang_latest',
-                                 'linux_fastboot', 'linux_fastboot_gcc_latest',
-                                 'linux_api_latest_no_x11'],
+    parser.add_argument('-p', "--product-type", default='closed_linux',
+                        choices=[
+                            # closed
+                            'closed_windows', 'closed_windows_hw_lib', 'closed_windows_tools',
+                            'closed_windows_sw_lib', 'closed_windows_mfts', 'closed_windows_uwp',
+                            'closed_linux', 'closed_linux_open_source', 'closed_embedded', 'closed_android',
+                            # private
+                            'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_latest',
+                            # public
+                            'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.1',
+                            'public_linux_api_next', 'public_linux_api_next_no_x11',
+                            'public_linux_fastboot', 'public_linux_fastboot_gcc_8.1', ],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
