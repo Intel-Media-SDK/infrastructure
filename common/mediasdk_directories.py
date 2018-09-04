@@ -167,7 +167,7 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
         if product_type == 'android':
-            return cls._public_tests_root_url
+            return cls._private_tests_root_url
         elif product_type == 'linux_next_gen':
             return cls._next_gen_tests_root_url
         else:
@@ -267,7 +267,7 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
         if product_type == 'android':
-            return cls._public_builds_root_url
+            return cls._private_builds_root_url
         elif product_type == 'linux_next_gen':
             return cls._next_gen_builds_root_url
         else:
