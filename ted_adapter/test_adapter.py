@@ -196,7 +196,7 @@ def main():
                             'closed_windows_sw_lib', 'closed_windows_mfts', 'closed_windows_uwp',
                             'closed_linux', 'closed_linux_open_source', 'closed_embedded', 'closed_android',
                             # private
-                            'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_latest',
+                            'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_next',
                             # public
                             'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.1',
                             'public_linux_api_next', 'public_linux_api_next_no_x11',
