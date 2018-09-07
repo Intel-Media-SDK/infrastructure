@@ -54,7 +54,7 @@ def find_folder_on_disks(folder):
 
 
 def is_closed_source():
-    if importlib.util.find_spec('static_closed_data'):
+    if importlib.util.find_spec('common.static_closed_data'):
         return True
     return False
 
