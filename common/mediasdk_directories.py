@@ -60,9 +60,9 @@ def is_closed_source():
 
 
 if is_closed_source():
-    import static_closed_data as static_data
+    import common.static_closed_data as static_data
 else:
-    import static_public_data as static_data
+    import common.static_public_data as static_data
 
 
 class OsType:
