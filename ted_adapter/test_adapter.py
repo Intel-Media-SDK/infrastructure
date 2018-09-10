@@ -189,8 +189,18 @@ def main():
                         help='Event of commit')
     parser.add_argument('-c', "--commit-id", metavar="String", required=True,
                         help="SHA of triggered commit")
-    parser.add_argument('-p', "--product-type", default='linux',
-                        choices=['linux', 'embedded', 'open_source', 'windows', 'api_latest'],
+    parser.add_argument('-p', "--product-type", default='closed_linux',
+                        choices=[
+                            # closed
+                            'closed_windows', 'closed_windows_hw_lib', 'closed_windows_tools',
+                            'closed_windows_sw_lib', 'closed_windows_mfts', 'closed_windows_uwp',
+                            'closed_linux', 'closed_linux_open_source', 'closed_embedded', 'closed_android',
+                            # private
+                            'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_next',
+                            # public
+                            'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.1',
+                            'public_linux_api_next', 'public_linux_api_next_no_x11',
+                            'public_linux_fastboot', 'public_linux_fastboot_gcc_8.1', ],
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
                         choices=['release', 'debug'],
@@ -208,8 +218,8 @@ def main():
     ]
 
     build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
-    tests_artifacts_dir = MediaSdkDirectories.get_tests_dir(*directories_layout)
-    tests_artifacts_url = MediaSdkDirectories.get_tests_url(*directories_layout)
+    tests_artifacts_dir = MediaSdkDirectories.get_test_dir(*directories_layout)
+    tests_artifacts_url = MediaSdkDirectories.get_test_url(*directories_layout)
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
     try:
