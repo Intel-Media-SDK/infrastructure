@@ -179,7 +179,7 @@ def main():
     check_driver()
 
 
-    parser = argparse.ArgumentParser(prog="build_runner.py",
+    parser = argparse.ArgumentParser(prog="test_adapter.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
     parser.add_argument('-br', "--branch", metavar="String", required=True,
