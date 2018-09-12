@@ -900,9 +900,9 @@ which is not present in mediasdk_directories.''')
                             # private
                             'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_next',
                             # public
-                            'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.1',
+                            'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.2',
                             'public_linux_api_next', 'public_linux_api_next_no_x11',
-                            'public_linux_fastboot', 'public_linux_fastboot_gcc_8.1', ],
+                            'public_linux_fastboot', 'public_linux_fastboot_gcc_8.2', ],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
                         choices=['pre_commit', 'commit', 'nightly', 'weekly'],
