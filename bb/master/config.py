@@ -86,14 +86,14 @@ BUILDERS = [
     },
 
     {
-        "name": "build-gcc-8.1.0",
+        "name": "build-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_gcc_8.1",
+        "product_type": "public_linux_gcc_8.2",
         "build_type": "release",
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
-        "compiler_version": "8.1.0",
+        "compiler_version": "8.2.0",
         "branch": ".+?",
         "worker": "ubuntu"
     },
@@ -129,14 +129,14 @@ BUILDERS = [
     },
 
     {
-        "name": "build-fastboot-gcc-8.1.0",
+        "name": "build-fastboot-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_fastboot_gcc_8.1",
+        "product_type": "public_linux_fastboot_gcc_8.2",
         "build_type": "release",
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
-        "compiler_version": "8.1.0",
+        "compiler_version": "8.2.0",
         "branch": ".+?",
         "worker": "ubuntu"
     },
