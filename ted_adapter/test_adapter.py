@@ -209,17 +209,16 @@ def main():
                         help="Path to worker directory")
     args = parser.parse_args()
 
-    directories_layout = [
-        args.branch,
-        args.build_event,
-        args.commit_id,
-        args.product_type,
-        args.build_type
-    ]
-
-    build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
-    tests_artifacts_dir = MediaSdkDirectories.get_test_dir(*directories_layout)
-    tests_artifacts_url = MediaSdkDirectories.get_test_url(*directories_layout)
+    directories_layout = {
+        'branch': args.branch,
+        'build_event': args.build_event,
+        'commit_id': args.commit_id,
+        'product_type': args.product_type,
+        'build_type': args.build_type,
+    }
+    build_artifacts_dir = MediaSdkDirectories.get_build_dir(**directories_layout)
+    tests_artifacts_dir = MediaSdkDirectories.get_test_dir(**directories_layout)
+    tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
     try:
