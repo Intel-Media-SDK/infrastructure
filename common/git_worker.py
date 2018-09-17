@@ -178,7 +178,8 @@ class GitRepo(object):
         :return: None
         """
 
-        self.commit_id = str(next(self.repo.iter_commits(rev='master', until=commit_time, max_count=1)))
+        self.commit_id = str(next(self.repo.iter_commits(
+            rev='master', until=commit_time, max_count=1)))
 
     def get_time(self, commit_id=None):
         """
@@ -272,3 +273,24 @@ class ProductState(object):
         """
 
         return str(git.Repo(str(repo_dir)).head.commit)
+
+    @staticmethod
+    def get_last_committer_of_file(repo, file_path):
+        """
+            Get e-mail of last committer in chosen file
+
+            :param repo: path to a repository
+            :type repo: git.Git
+            :param file_path: path to a file from repo
+            :return file_path: pathlib.Path
+
+            :return file path, email of last committer
+            :rtype Tuple | None
+        """
+
+        if not file_path.is_dir():
+            rel_file_path = str(file_path.relative_to(repo.working_dir))
+            abs_file_path = str(file_path.absolute().resolve())
+            committer_email = repo.log('--format=%ae', '-1', rel_file_path)
+            return abs_file_path, committer_email
+        return None
