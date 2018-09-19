@@ -142,7 +142,7 @@ BUILDERS = [
     },
 
     {
-        "name": "build-api-next-no-x11",
+        "name": "build-api-next-defconfig",
         "product_conf_file": "conf_linux_public.py",
         "product_type": "public_linux_api_next_no_x11",
         "build_type": "release",
