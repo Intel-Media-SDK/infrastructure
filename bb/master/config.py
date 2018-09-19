@@ -262,4 +262,3 @@ else:
 GITHUB_REPOSITORY = f"{GITHUB_OWNER}/{GITHUB_OWNERS_REPO}"
 REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"
 PRODUCT_CONFIGS_REPO_URL = f"https://github.com/{GITHUB_OWNER}/{PRODUCT_CONFIGS_REPO}.git"
-REPO_INFO = f"{GITHUB_OWNERS_REPO}:%(prop:branch)s:%(prop:revision)s"
