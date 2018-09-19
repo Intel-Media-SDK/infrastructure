@@ -24,6 +24,8 @@ Module for working with Git
 
 import json
 import logging
+import concurrent.futures
+import multiprocessing
 from datetime import datetime
 
 import git
@@ -293,3 +295,39 @@ class ProductState(object):
             committer_email = repo.log('--format=%ae', '-1', rel_file_path)
             return rel_file_path, committer_email
         return None
+
+    @staticmethod
+    def get_files_owners(repos_dir, repo_states):
+        """
+            Get last committer e-mail of each file
+            of repositories from repo_states.json file
+
+            :param repos_dir: Root path to repositories
+            :type repos_dir: pathlib.Path
+            :param repo_states: List of repositories' names
+            :type repo_states: List
+
+            :return: ex: {<file_path>: <last_committer_email>, ...}
+            :rtype: Dict
+        """
+
+        repo_files = {}
+        max_workers = multiprocessing.cpu_count() * 2
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for repo_name in repo_states:
+                repo_path = repos_dir / repo_name
+                repo = git.Git(str(repo_path))
+                future_appends = {
+                    executor.submit(ProductState.get_last_committer_of_file, repo, file_path):
+                    file_path for file_path in repo_path.rglob('*')
+                    if '.git' not in str(file_path) and file_path.is_file()
+                }
+
+                for future in concurrent.futures.as_completed(future_appends):
+                    result = future.result()
+                    if result:
+                        rel_file_path, author_email = result
+                        file_path = repo_path / rel_file_path
+                        repo_files[str(file_path)] = author_email
+
+        return repo_files
