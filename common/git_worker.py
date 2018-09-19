@@ -290,7 +290,6 @@ class ProductState(object):
 
         if not file_path.is_dir():
             rel_file_path = str(file_path.relative_to(repo.working_dir))
-            abs_file_path = str(file_path.absolute().resolve())
             committer_email = repo.log('--format=%ae', '-1', rel_file_path)
-            return abs_file_path, committer_email
+            return rel_file_path, committer_email
         return None
