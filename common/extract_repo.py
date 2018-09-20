@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 """
-This module deploy infrastructure code on build\test machines
+This module deploys infrastructure code on build and test machines
 """
 
 import sys
