@@ -118,16 +118,34 @@ class TedAdapter(object):
                                  errors='backslashreplace')
         return process.returncode
 
+    def run_fei_tests(self):
+        """
+        'hevc_fei_smoke_test' runner
+
+        :return: SUCCESS = 0, ERROR_TEST_FAILED = 1, ERROR_ACCESS_DENIED = 2
+        :rtype: Integer | Exception
+        """
+        process = subprocess.run(f'python3 ../smoke_test/hevc_fei_smoke_test.py',
+                                 shell=True,
+                                 timeout=self.tests_timeout,
+                                 encoding='utf-8',
+                                 errors='backslashreplace')
+        return process.returncode
+
     def copy_logs_to_share(self):
         rotate_dir(self.tests_artifacts_dir)
         print(f'Copy results to {self.tests_artifacts_dir}')
 
         print(f'Artifacts are available by: {self.tests_artifacts_url}')
 
+        #TODO remove hardcode
+        fei_tests_log_file = '../smoke_test/hevc_fei_tests_res.log'
+
         # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
         shutil.copystat = lambda x, y, follow_symlinks=True: x
         shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
+        shutil.copyfile(fei_tests_log_file, str(self.tests_artifacts_dir / 'hevc_fei_tests_res.log'))
         shutil.copystat = _orig_copystat
 
 # Direct calls of rm, cp commands needs to use them with `sudo`
@@ -230,12 +248,19 @@ def main():
         failed_cases = 1
 
     try:
+        failed_cases_fei = adapter.run_fei_tests()
+    except:
+        print("Exception occurred:\n", traceback.format_exc())
+        # TODO return json string
+        failed_cases_fei = 1
+
+    try:
         adapter.copy_logs_to_share()
     except:
         print("Exception occurred while copying results:\n", traceback.format_exc())
         failed_cases = 1
 
-    exit(failed_cases)
+    exit(failed_cases | failed_cases_fei)
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

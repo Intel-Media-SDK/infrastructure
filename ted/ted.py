@@ -84,5 +84,7 @@ if __name__ == '__main__':
 
     print("\n{} of {} cases passed".format(passed, total))
 
-    # return code is number of failed cases
-    sys.exit(total - passed)
+    #return code is 1, if failed tests exist, else 0
+    if (total-passed) != 0:
+        sys.exit(1)
+    sys.exit(0)

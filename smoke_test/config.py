@@ -34,6 +34,7 @@ class ReturnCode(enum.Enum):
 
 
 def get_samples_folder():
+    print(f'Running hevc fei smoke tests...')
     for samples_folder in POSSIBLE_SAMPLES_FOLDER:
         if samples_folder.exists():
             print(f'Samples found in: {samples_folder}')
@@ -49,15 +50,16 @@ def get_samples_folder():
 PATH_DIR_NAME = Path(__file__).resolve().parent
 
 MEDIASDK_FOLDER = Path('/opt/intel/mediasdk')
+MEDISDK_SHARE = MEDIASDK_FOLDER / 'share' / 'mfx'
 
 POSSIBLE_SAMPLES_FOLDER = [
-    MEDIASDK_FOLDER / 'share' / 'mfx' / 'samples',
+    MEDISDK_SHARE / 'samples',
     MEDIASDK_FOLDER / 'samples',
 ]
 SAMPLES_FOLDER = get_samples_folder()
 
-ASG = PATH_DIR_NAME / 'asg-hevc'
-FEI_EXTRACTOR = PATH_DIR_NAME / 'hevc_fei_extractor'
+ASG = MEDISDK_SHARE / 'asg-hevc'
+FEI_EXTRACTOR = MEDISDK_SHARE / 'hevc_fei_extractor'
 SAMPLE_FEI = SAMPLES_FOLDER / 'sample_hevc_fei'
 
 PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
@@ -70,7 +72,7 @@ TEST_STREAM = STREAM(name='test_stream_176x96.yuv', w='176', h='96', frames='100
 PATH_TEST_STREAM = PATH_DIR_NAME.parent / f'ted/content/{TEST_STREAM.name}'
 
 # file for log
-LOG = hevc_fei_smoke_test.PathPlus(PATH_DIR_NAME / 'res.log')
+LOG = hevc_fei_smoke_test.PathPlus(PATH_DIR_NAME / 'hevc_fei_tests_res.log')
 
 # path for input and output files
 PATH_TO_IO = PATH_DIR_NAME / 'IOFiles'

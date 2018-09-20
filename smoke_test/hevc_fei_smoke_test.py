@@ -263,8 +263,7 @@ if __name__ == '__main__':
     if cfg.PATH_TO_IO.exists():
         shutil.rmtree(cfg.PATH_TO_IO)
 
-    print(f'See details in {cfg.LOG}')
-    print(f'Time:  {(time.time() - START_TIME):.5f} seconds')
+    print(f'Time:  {(time.time() - START_TIME):.5f} seconds\n\n')
 
     if RUNNER.failed != 0:
         sys.exit(cfg.ReturnCode.ERROR_TEST_FAILED.value)
