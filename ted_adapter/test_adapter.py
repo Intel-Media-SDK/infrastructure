@@ -185,25 +185,15 @@ def main():
     parser.add_argument('-br', "--branch", metavar="String", required=True,
                         help="Branch of triggered repository")
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=['pre_commit', 'commit', 'nightly', 'weekly'],
+                        choices=Build_event,
                         help='Event of commit')
     parser.add_argument('-c', "--commit-id", metavar="String", required=True,
                         help="SHA of triggered commit")
     parser.add_argument('-p', "--product-type", default='closed_linux',
-                        choices=[
-                            # closed
-                            'closed_windows', 'closed_windows_hw_lib', 'closed_windows_tools',
-                            'closed_windows_sw_lib', 'closed_windows_mfts', 'closed_windows_uwp',
-                            'closed_linux', 'closed_linux_open_source', 'closed_embedded', 'closed_android',
-                            # private
-                            'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_next',
-                            # public
-                            'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.2',
-                            'public_linux_api_next', 'public_linux_api_next_no_x11',
-                            'public_linux_fastboot', 'public_linux_fastboot_gcc_8.2', ],
+                        choices=Product_type,
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
-                        choices=['release', 'debug'],
+                        choices=Build_type,
                         help='Type of build')
     parser.add_argument('-d', "--root-dir", metavar="PATH", required=True,
                         help="Path to worker directory")
@@ -239,5 +229,5 @@ def main():
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from common import MediaSdkDirectories
-    from common.helper import rotate_dir
+    from common.helper import Product_type, Build_type, Build_event, rotate_dir
     main()
