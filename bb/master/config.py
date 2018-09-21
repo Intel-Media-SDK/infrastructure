@@ -205,6 +205,10 @@ DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 GITHUB_OWNER = "Intel-Media-SDK"
+PRODUCT_CONFIGS_REPO = "product-configs"
+
+# Give possibility to enable/disable auto deploying infrastructure on workers
+DEPLOYING_INFRASTRUCTURE = True
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
 #CURRENT_MODE = Mode.PRODUCTION_MODE_LINUX_NEXT_GEN
@@ -257,4 +261,4 @@ else:
 
 GITHUB_REPOSITORY = f"{GITHUB_OWNER}/{GITHUB_OWNERS_REPO}"
 REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"
-REPO_INFO = f"{GITHUB_OWNERS_REPO}:%(prop:branch)s:%(prop:revision)s"
+PRODUCT_CONFIGS_REPO_URL = f"https://github.com/{GITHUB_OWNER}/{PRODUCT_CONFIGS_REPO}.git"
