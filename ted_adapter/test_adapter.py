@@ -185,15 +185,15 @@ def main():
     parser.add_argument('-br', "--branch", metavar="String", required=True,
                         help="Branch of triggered repository")
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=Build_event,
+                        choices=[build_event.value for build_event in Build_event],
                         help='Event of commit')
     parser.add_argument('-c', "--commit-id", metavar="String", required=True,
                         help="SHA of triggered commit")
     parser.add_argument('-p', "--product-type", default='closed_linux',
-                        choices=Product_type,
+                        choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
-                        choices=Build_type,
+                        choices=[build_type.value for build_type in Build_type],
                         help='Type of build')
     parser.add_argument('-d', "--root-dir", metavar="PATH", required=True,
                         help="Path to worker directory")

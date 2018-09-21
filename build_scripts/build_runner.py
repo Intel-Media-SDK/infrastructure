@@ -889,13 +889,13 @@ In most cases used to specify link to the forked repositories.
 Use this argument if you want to specify repository
 which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default='release',
-                        choices=Build_type,
+                        choices=[build_type.value for build_type in Build_type],
                         help='Type of build')
     parser.add_argument('-p', "--product-type", default='closed_linux',
-                        choices=Product_type,
+                        choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=Build_event,
+                        choices=[build_event.value for build_event in Build_event],
                         help='Event of build')
     parser.add_argument("--stage", type=Stage, choices=Stage, default='build',
                         help="Current executable stage")

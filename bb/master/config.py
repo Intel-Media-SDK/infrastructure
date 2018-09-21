@@ -53,8 +53,8 @@ BUILDERS = [
     {
         "name": "build-master-branch",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
@@ -66,8 +66,8 @@ BUILDERS = [
     {
         "name": "build", #build all except master branch
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
@@ -79,8 +79,8 @@ BUILDERS = [
     {
         "name": "build-api-next",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_API_NEXT,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": True,
         "fastboot": False,
         "compiler": "gcc",
@@ -92,8 +92,8 @@ BUILDERS = [
     {
         "name": "build-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_GCC,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_GCC.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
@@ -105,8 +105,8 @@ BUILDERS = [
     {
         "name": "build-clang-6.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_CLANG,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "clang",
@@ -122,8 +122,8 @@ BUILDERS = [
     {
         "name": "build-fastboot",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
@@ -135,8 +135,8 @@ BUILDERS = [
     {
         "name": "build-fastboot-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
@@ -148,8 +148,8 @@ BUILDERS = [
     {
         "name": "build-api-next-defconfig",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": True,
         "fastboot": False,
         "compiler": "gcc",
@@ -162,15 +162,15 @@ BUILDERS = [
 TESTERS = [
     {
         "name": "test",
-        "product_type": Product_type.PUBLIC_LINUX,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
         "worker": "centos_test"
     },
 
     {
         "name": "test-api-next",
-        "product_type": Product_type.PUBLIC_LINUX_API_NEXT,
-        "build_type": Build_type.RELEASE,
+        "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
+        "build_type": Build_type.RELEASE.value,
         "worker": "centos_test"
     }
 ]
@@ -230,8 +230,8 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
         {
             "name": "build-master-branch",
             "product_conf_file": "conf_linux_public.py",
-            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN,
-            "build_type": Build_type.RELEASE,
+            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN.value,
+            "build_type": Build_type.RELEASE.value,
             "api_latest": False,
             "fastboot": False,
             "compiler": "gcc",
@@ -243,8 +243,8 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
         {
             "name": "build",  # build all except master branch
             "product_conf_file": "conf_linux_public.py",
-            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN,
-            "build_type": Build_type.RELEASE,
+            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN.value,
+            "build_type": Build_type.RELEASE.value,
             "api_latest": False,
             "fastboot": False,
             "compiler": "gcc",
