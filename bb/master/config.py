@@ -24,7 +24,7 @@ from enum import Enum
 
 import msdk_secrets
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from common.helper import Product_type, Build_type
 
 class Mode(Enum):
@@ -92,7 +92,7 @@ BUILDERS = [
     {
         "name": "build-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_GCC.value,
+        "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
         "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
@@ -135,7 +135,7 @@ BUILDERS = [
     {
         "name": "build-fastboot-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC.value,
+        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
         "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": True,

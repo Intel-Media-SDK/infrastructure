@@ -92,12 +92,13 @@ class Product_type(Enum):
     #public
     PUBLIC_LINUX = 'public_linux'
     PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
-    PUBLIC_LINUX_GCC = 'public_linux_gcc_8.2'
+    PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
     PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
-    #no_x11
+    #DEFCONFIG means that "enabled all" is not set and
+    #build environment doesn't include X11 and Wayland
     PUBLIC_LINUX_API_NEXT_DEFCONFIG = 'public_linux_api_next_defconfig'
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
-    PUBLIC_LINUX_FASTBOOT_GCC = 'public_linux_fastboot_gcc_8.2'
+    PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
 
 class Build_type(Enum):
     """
