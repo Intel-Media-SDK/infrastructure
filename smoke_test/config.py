@@ -21,20 +21,17 @@
 # SOFTWARE.
 
 
-import enum
+import sys
+import os
 from pathlib import Path
 from collections import namedtuple
 import hevc_fei_smoke_test
 
-
-class ReturnCode(enum.Enum):
-    ERROR_SUCCESS = 0
-    ERROR_TEST_FAILED = 1
-    ERROR_ACCESS_DENIED = 2
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.helper import TestReturnCodes
 
 
 def get_samples_folder():
-    print(f'Running hevc fei smoke tests...')
     for samples_folder in POSSIBLE_SAMPLES_FOLDER:
         if samples_folder.exists():
             print(f'Samples found in: {samples_folder}')
@@ -43,7 +40,7 @@ def get_samples_folder():
     print(f'Samples were not found.')
     print(f'Put samples to the one of the following locations and restart:')
     print(POSSIBLE_SAMPLES_FOLDER)
-    exit(ReturnCode.ERROR_ACCESS_DENIED.value)
+    exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
 
 # constants
@@ -71,8 +68,11 @@ TEST_STREAM = STREAM(name='test_stream_176x96.yuv', w='176', h='96', frames='100
 
 PATH_TEST_STREAM = PATH_DIR_NAME.parent / f'ted/content/{TEST_STREAM.name}'
 
+LOG_NAME = 'hevc_fei_tests_res.log'
+LOG_PATH = PATH_DIR_NAME / LOG_NAME
 # file for log
-LOG = hevc_fei_smoke_test.PathPlus(PATH_DIR_NAME / 'hevc_fei_tests_res.log')
+LOG = hevc_fei_smoke_test.PathPlus(LOG_PATH)
+
 
 # path for input and output files
 PATH_TO_IO = PATH_DIR_NAME / 'IOFiles'

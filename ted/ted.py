@@ -25,6 +25,7 @@ import sys
 import json
 import argparse
 import collections
+import os
 from pathlib import Path
 
 from ted import discover
@@ -84,7 +85,9 @@ if __name__ == '__main__':
 
     print("\n{} of {} cases passed".format(passed, total))
 
-    #return code is 1, if failed tests exist, else 0
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from common.helper import TestReturnCodes
+
     if (total-passed) != 0:
-        sys.exit(1)
-    sys.exit(0)
+        sys.exit(TestReturnCodes.SUCCESS.value)
+    sys.exit(TestReturnCodes.TEST_FAILED.value)
