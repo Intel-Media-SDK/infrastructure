@@ -19,9 +19,13 @@
 # SOFTWARE.
 
 import sys
+import os
 from enum import Enum
 
 import msdk_secrets
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from common.helper import Product_type, Build_type
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
@@ -32,10 +36,10 @@ class Mode(Enum):
 Specification of BUILDERS:
 "name"              - name of build in Buildbot UI
 "product_conf_file" - product_config which should be used
-"product_type"      - Product type (all available types can be found in `build_runner.py`)
+"product_type"      - Product type (all available types can be found in `common/helper.py`)
 "build_type"        - type of build (for example: "release")
 "api_latest"        - if `True` it will enable product`s `api_latest` feature
-"compiler"          - compiler which should be used (env and product_config schould support this key)
+"compiler"          - compiler which should be used (env and product_config should support this key)
 "compiler_version"  - version of compiler
 "branch"            - on this branch pattern(!) the build will be activated (use Python re)
 "worker"            - worker(s) which should be used from `WORKERS`
@@ -49,8 +53,8 @@ BUILDERS = [
     {
         "name": "build-master-branch",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
@@ -62,8 +66,8 @@ BUILDERS = [
     {
         "name": "build", #build all except master branch
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
@@ -75,8 +79,8 @@ BUILDERS = [
     {
         "name": "build-api-next",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_api_next",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": True,
         "fastboot": False,
         "compiler": "gcc",
@@ -88,8 +92,8 @@ BUILDERS = [
     {
         "name": "build-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_gcc_8.2",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
@@ -101,8 +105,8 @@ BUILDERS = [
     {
         "name": "build-clang-6.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_clang_6.0",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": False,
         "compiler": "clang",
@@ -118,8 +122,8 @@ BUILDERS = [
     {
         "name": "build-fastboot",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_fastboot",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
@@ -131,8 +135,8 @@ BUILDERS = [
     {
         "name": "build-fastboot-gcc-8.2.0",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_fastboot_gcc_8.2",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
@@ -144,29 +148,29 @@ BUILDERS = [
     {
         "name": "build-api-next-defconfig",
         "product_conf_file": "conf_linux_public.py",
-        "product_type": "public_linux_api_next_no_x11",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
+        "build_type": Build_type.RELEASE.value,
         "api_latest": True,
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "branch": ".+?",
-        "worker": "centos_no_x11"
+        "worker": "centos_defconfig"
     },
 ]
 
 TESTERS = [
     {
         "name": "test",
-        "product_type": "public_linux",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
         "worker": "centos_test"
     },
 
     {
         "name": "test-api-next",
-        "product_type": "public_linux_api_next",
-        "build_type": "release",
+        "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
+        "build_type": Build_type.RELEASE.value,
         "worker": "centos_test"
     }
 ]
@@ -177,7 +181,7 @@ WORKERS = {
         "b-1-10": {},
         "b-1-14": {}
     },
-    "centos_no_x11": {
+    "centos_defconfig": {
         "b-1-20": {},
     },
     "ubuntu": {
@@ -230,8 +234,8 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
         {
             "name": "build-master-branch",
             "product_conf_file": "conf_linux_public.py",
-            "product_type": "private_linux_next_gen",
-            "build_type": "release",
+            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN.value,
+            "build_type": Build_type.RELEASE.value,
             "api_latest": False,
             "fastboot": False,
             "compiler": "gcc",
@@ -243,8 +247,8 @@ elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
         {
             "name": "build",  # build all except master branch
             "product_conf_file": "conf_linux_public.py",
-            "product_type": "private_linux_next_gen",
-            "build_type": "release",
+            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN.value,
+            "build_type": Build_type.RELEASE.value,
             "api_latest": False,
             "fastboot": False,
             "compiler": "gcc",

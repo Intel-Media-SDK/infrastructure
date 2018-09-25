@@ -67,6 +67,57 @@ class Stage(Enum):
     PACK = "pack"
     COPY = "copy"
 
+class Product_type(Enum):
+    """
+    Constants for defining type of product
+    """
+
+    #closed
+    CLOSED_WINDOWS = 'closed_windows'
+    CLOSED_WINDOWS_HW_LIB = 'closed_windows_hw_lib'
+    CLOSED_WINDOW_TOOLS = 'closed_windows_tools'
+    CLOSED_WINDOWS_SW_LIB = 'closed_windows_sw_lib'
+    CLOSED_WINDOWS_MFTS = 'closed_windows_mfts'
+    CLOSED_WINDOWS_UWP = 'closed_windows_uwp'
+    CLOSED_LINUX = 'closed_linux'
+    CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
+    CLOSED_EMBEDDED = 'closed_embedded'
+    CLOSED_ANDROID = 'closed_android'
+
+    #private
+    PRIVATE_ANDROID = 'private_android'
+    PRIVATE_LINUX_NEXT_GEN = 'private_linux_next_gen'
+    PRIVATE_LINUX_NEXT_GEN_API_NEXT = 'private_linux_next_gen_api_next'
+
+    #public
+    PUBLIC_LINUX = 'public_linux'
+    PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
+    PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
+    PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
+    #DEFCONFIG means that "enabled all" is not set and
+    #build environment doesn't include X11 and Wayland
+    PUBLIC_LINUX_API_NEXT_DEFCONFIG = 'public_linux_api_next_defconfig'
+    PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
+    PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
+
+class Build_type(Enum):
+    """
+    Constants for defining type of build
+    """
+
+    RELEASE = 'release'
+    DEBUG = 'debug'
+
+class Build_event(Enum):
+    """
+    Constants for defining type of build event
+    """
+
+    PRE_COMMIT = 'pre_commit'
+    COMMIT = 'commit'
+    NIGHTLY = 'nightly'
+    WEEKLY = 'weekly'
+
 
 def make_archive(path, data_to_archive):
     """
