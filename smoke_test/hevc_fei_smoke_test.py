@@ -32,6 +32,7 @@ from string import Template
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.helper import TestReturnCodes
+from smoke_test import config as cfg
 
 # classes definition
 class PathPlus(type(Path())):
@@ -229,8 +230,6 @@ def nested_dict_iter(nested_dict, path=None):
             yield parents, key, v
             path.pop()
 
-
-import config as cfg
 
 if __name__ == '__main__':
 
