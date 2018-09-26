@@ -226,7 +226,7 @@ class VsComponent(Action):
         if vs_version not in self._vs_paths:
             raise UnsupportedVSError(f"{vs_version} is not supported")
 
-        super().__init__(name, Stage.BUILD, None, None, env, None, verbose)
+        super().__init__(name, Stage.BUILD.value, None, None, env, None, verbose)
 
         self.solution_path = solution_path
         self.vs_version = vs_version
@@ -447,12 +447,12 @@ class BuildGenerator(object):
         :type stage: Stage
         """
 
-        stage_value = f'_{stage.value}'
+        stage_value = f'_{stage}'
 
         if hasattr(self, stage_value):
             return self.__getattribute__(stage_value)()
 
-        self.log.error(f'Stage {stage.value} does not support')
+        self.log.error(f'Stage {stage} does not support')
         return False
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
@@ -481,11 +481,11 @@ class BuildGenerator(object):
         """
 
         if not stage:
-            stage = Stage.BUILD
+            stage = Stage.BUILD.value
 
         if not work_dir:
             work_dir = self.options["ROOT_DIR"]
-            if stage in [Stage.BUILD, Stage.INSTALL]:
+            if stage in [Stage.BUILD.value, Stage.INSTALL.value]:
                 work_dir = self.options["BUILD_DIR"]
         self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
@@ -523,7 +523,7 @@ class BuildGenerator(object):
                 else:
                     ms_arguments[key] = msbuild_args[key]
 
-        self.actions[Stage.BUILD].append(VsComponent(name, solution_path, ms_arguments, vs_version,
+        self.actions[Stage.BUILD.value].append(VsComponent(name, solution_path, ms_arguments, vs_version,
                                                      dependencies, env, verbose))
 
     def _run_build_config_actions(self, stage):
@@ -561,7 +561,7 @@ class BuildGenerator(object):
         for dir_path in remove_dirs:
             self.log.info('remove directory %s', self.options.get(dir_path))
 
-        if not self._run_build_config_actions(Stage.CLEAN):
+        if not self._run_build_config_actions(Stage.CLEAN.value):
             return False
 
         return True
@@ -618,7 +618,7 @@ class BuildGenerator(object):
         shutil.copyfile(self.build_config_path,
                         self.options["PACK_DIR"] / self.build_config_path.name)
 
-        if not self._run_build_config_actions(Stage.EXTRACT):
+        if not self._run_build_config_actions(Stage.EXTRACT.value):
             return False
 
         return True
@@ -637,7 +637,7 @@ class BuildGenerator(object):
 
         self.options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
 
-        if not self._run_build_config_actions(Stage.BUILD):
+        if not self._run_build_config_actions(Stage.BUILD.value):
             return False
 
         if self.options['STRIP_BINARIES']:
@@ -660,7 +660,7 @@ class BuildGenerator(object):
 
         self.options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
 
-        if not self._run_build_config_actions(Stage.INSTALL):
+        if not self._run_build_config_actions(Stage.INSTALL.value):
             return False
 
         return True
@@ -687,7 +687,7 @@ class BuildGenerator(object):
 
         self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
-        if not self._run_build_config_actions(Stage.PACK):
+        if not self._run_build_config_actions(Stage.PACK.value):
             return False
 
         if platform.system() == 'Windows':
@@ -783,7 +783,7 @@ class BuildGenerator(object):
         shutil.copytree(self.options['PACK_DIR'], build_dir)
         shutil.copystat = _orig_copystat
 
-        if not self._run_build_config_actions(Stage.COPY):
+        if not self._run_build_config_actions(Stage.COPY.value):
             return False
 
         if self.build_state_file.exists():
@@ -888,16 +888,17 @@ in format: <repo_name>:<branch>:<commit_id>
 In most cases used to specify link to the forked repositories.
 Use this argument if you want to specify repository
 which is not present in mediasdk_directories.''')
-    parser.add_argument('-b', "--build-type", default='release',
+    parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
                         choices=[build_type.value for build_type in Build_type],
                         help='Type of build')
-    parser.add_argument('-p', "--product-type", default='closed_linux',
+    parser.add_argument('-p', "--product-type", default=Product_type.CLOSED_LINUX.value,
                         choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
-    parser.add_argument('-e', "--build-event", default='commit',
+    parser.add_argument('-e', "--build-event", default=Build_event.PRE_COMMIT.value,
                         choices=[build_event.value for build_event in Build_event],
                         help='Event of build')
-    parser.add_argument("--stage", type=Stage, choices=Stage, default='build',
+    parser.add_argument("--stage", default=Stage.BUILD.value,
+                        choices=[stage.value for stage in Stage],
                         help="Current executable stage")
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
