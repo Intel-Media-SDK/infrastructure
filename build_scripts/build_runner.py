@@ -963,12 +963,13 @@ which is not present in mediasdk_directories.''')
         if not build_state_file.exists():
             build_state_file.write_text(json.dumps({'status': "PASS"}))
         log.info('-' * 50)
-        log.info("%sING COMPLETED", parsed_args.stage.name)
+        log.info("%sING COMPLETED", parsed_args.stage.upper())
     else:
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
         log.error('-' * 50)
-        log.error("%sING FAILED", parsed_args.stage.name)
+        log.error("%sING FAILED", parsed_args.stage.upper())
         exit(ErrorCode.CRITICAL.value)
+
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
