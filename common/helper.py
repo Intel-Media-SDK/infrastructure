@@ -54,6 +54,15 @@ class ErrorCode(Enum):
 
     CRITICAL = 1
 
+class TestReturnCodes(Enum):
+    """
+    Container for tests return codes
+    """
+
+    SUCCESS = 0
+    TEST_FAILED = 1
+    INFRASTRUCTURE_ERROR = 2
+
 
 class Stage(Enum):
     """

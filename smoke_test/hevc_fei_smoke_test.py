@@ -30,6 +30,9 @@ import filecmp
 from pathlib import Path
 from string import Template
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.helper import TestReturnCodes
+from smoke_test import config as cfg
 
 # classes definition
 class PathPlus(type(Path())):
@@ -228,8 +231,6 @@ def nested_dict_iter(nested_dict, path=None):
             path.pop()
 
 
-import config as cfg
-
 if __name__ == '__main__':
 
     START_TIME = time.time()
@@ -244,7 +245,7 @@ if __name__ == '__main__':
     for name, path in cfg.PATH_DICT.items():
         if not os.access(path, os.X_OK):
             print(f'No {name} or it cannot be executed')
-            sys.exit(cfg.ReturnCode.ERROR_ACCESS_DENIED.value)
+            sys.exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     TEST_CASES_CREATOR = TestCasesCreator(cfg.TEST_CASES_DICT)
     TEST_CASES = TEST_CASES_CREATOR.test_cases
@@ -263,9 +264,8 @@ if __name__ == '__main__':
     if cfg.PATH_TO_IO.exists():
         shutil.rmtree(cfg.PATH_TO_IO)
 
-    print(f'See details in {cfg.LOG}')
-    print(f'Time:  {(time.time() - START_TIME):.5f} seconds')
+    print(f'Time:  {(time.time() - START_TIME):.5f} seconds\n\n')
 
     if RUNNER.failed != 0:
-        sys.exit(cfg.ReturnCode.ERROR_TEST_FAILED.value)
-    sys.exit(cfg.ReturnCode.ERROR_SUCCESS.value)
+        sys.exit(TestReturnCodes.TEST_FAILED.value)
+    sys.exit(TestReturnCodes.SUCCESS.value)

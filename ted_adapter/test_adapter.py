@@ -118,6 +118,21 @@ class TedAdapter(object):
                                  errors='backslashreplace')
         return process.returncode
 
+    def run_fei_tests(self):
+        """
+        'hevc_fei_smoke_test' runner
+
+        :return: SUCCESS = 0, ERROR_TEST_FAILED = 1, ERROR_ACCESS_DENIED = 2
+        :rtype: Integer | Exception
+        """
+        print(f'Running hevc fei smoke tests...')
+        process = subprocess.run(f'python3 ../smoke_test/hevc_fei_smoke_test.py',
+                                 shell=True,
+                                 timeout=self.tests_timeout,
+                                 encoding='utf-8',
+                                 errors='backslashreplace')
+        return process.returncode
+
     def copy_logs_to_share(self):
         rotate_dir(self.tests_artifacts_dir)
         print(f'Copy results to {self.tests_artifacts_dir}')
@@ -128,6 +143,7 @@ class TedAdapter(object):
         _orig_copystat = shutil.copystat
         shutil.copystat = lambda x, y, follow_symlinks=True: x
         shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
+        shutil.copyfile(LOG_PATH, str(self.tests_artifacts_dir / LOG_NAME))
         shutil.copystat = _orig_copystat
 
 # Direct calls of rm, cp commands needs to use them with `sudo`
@@ -212,22 +228,30 @@ def main():
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
     try:
-        failed_cases = adapter.run_test()
-    except:
+        tests_return_code = adapter.run_test()
+    except Exception:
         print("Exception occurred:\n", traceback.format_exc())
         # TODO return json string
-        failed_cases = 1
+        tests_return_code = TestReturnCodes.INFRASTRUCTURE_ERROR.value
+
+    try:
+        tests_return_code |= adapter.run_fei_tests()
+    except Exception:
+        print("Exception occurred:\n", traceback.format_exc())
+        # TODO return json string
+        tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
 
     try:
         adapter.copy_logs_to_share()
-    except:
+    except Exception:
         print("Exception occurred while copying results:\n", traceback.format_exc())
-        failed_cases = 1
+        tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
 
-    exit(failed_cases)
+    exit(tests_return_code)
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from common import MediaSdkDirectories
-    from common.helper import Product_type, Build_type, Build_event, rotate_dir
+    from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
+    from smoke_test.config import LOG_PATH, LOG_NAME
     main()
