@@ -75,7 +75,7 @@ class Product_type(Enum):
     #closed
     CLOSED_WINDOWS = 'closed_windows'
     CLOSED_WINDOWS_HW_LIB = 'closed_windows_hw_lib'
-    CLOSED_WINDOW_TOOLS = 'closed_windows_tools'
+    CLOSED_WINDOWS_TOOLS = 'closed_windows_tools'
     CLOSED_WINDOWS_SW_LIB = 'closed_windows_sw_lib'
     CLOSED_WINDOWS_MFTS = 'closed_windows_mfts'
     CLOSED_WINDOWS_UWP = 'closed_windows_uwp'
