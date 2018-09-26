@@ -227,7 +227,7 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
 
-        if product_type.startswith("private_linux_next_gen_"):
+        if product_type.startswith("private_linux_next_gen"):
             build_root_dir = 'next_gen_builds'
         elif product_type.startswith("private_"):
             build_root_dir = 'private_builds'
@@ -348,7 +348,7 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
 
-        if product_type.startswith("private_linux_next_gen_"):
+        if product_type.startswith("private_linux_next_gen"):
             test_root_dir = 'next_gen_tests'
         elif product_type.startswith("private_"):
             test_root_dir = 'private_tests'
