@@ -201,41 +201,30 @@ def main():
     parser.add_argument('-br', "--branch", metavar="String", required=True,
                         help="Branch of triggered repository")
     parser.add_argument('-e', "--build-event", default='commit',
-                        choices=['pre_commit', 'commit', 'nightly', 'weekly'],
+                        choices=[build_event.value for build_event in Build_event],
                         help='Event of commit')
     parser.add_argument('-c', "--commit-id", metavar="String", required=True,
                         help="SHA of triggered commit")
     parser.add_argument('-p', "--product-type", default='closed_linux',
-                        choices=[
-                            # closed
-                            'closed_windows', 'closed_windows_hw_lib', 'closed_windows_tools',
-                            'closed_windows_sw_lib', 'closed_windows_mfts', 'closed_windows_uwp',
-                            'closed_linux', 'closed_linux_open_source', 'closed_embedded', 'closed_android',
-                            # private
-                            'private_android', 'private_linux_next_gen', 'private_linux_next_gen_api_next',
-                            # public
-                            'public_linux', 'public_linux_clang_6.0', 'public_linux_gcc_8.1',
-                            'public_linux_api_next', 'public_linux_api_next_no_x11',
-                            'public_linux_fastboot', 'public_linux_fastboot_gcc_8.1', ],
+                        choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
     parser.add_argument('-b', "--build-type", default='release',
-                        choices=['release', 'debug'],
+                        choices=[build_type.value for build_type in Build_type],
                         help='Type of build')
     parser.add_argument('-d', "--root-dir", metavar="PATH", required=True,
                         help="Path to worker directory")
     args = parser.parse_args()
 
-    directories_layout = [
-        args.branch,
-        args.build_event,
-        args.commit_id,
-        args.product_type,
-        args.build_type
-    ]
-
-    build_artifacts_dir = MediaSdkDirectories.get_build_dir(*directories_layout)
-    tests_artifacts_dir = MediaSdkDirectories.get_test_dir(*directories_layout)
-    tests_artifacts_url = MediaSdkDirectories.get_test_url(*directories_layout)
+    directories_layout = {
+        'branch': args.branch,
+        'build_event': args.build_event,
+        'commit_id': args.commit_id,
+        'product_type': args.product_type,
+        'build_type': args.build_type,
+    }
+    build_artifacts_dir = MediaSdkDirectories.get_build_dir(**directories_layout)
+    tests_artifacts_dir = MediaSdkDirectories.get_test_dir(**directories_layout)
+    tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
     try:
@@ -263,6 +252,6 @@ def main():
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from common import MediaSdkDirectories
-    from common.helper import TestReturnCodes, rotate_dir
+    from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
     from smoke_test.config import LOG_PATH, LOG_NAME
     main()
