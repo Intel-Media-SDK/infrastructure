@@ -482,6 +482,8 @@ class BuildGenerator(object):
 
         if not stage:
             stage = Stage.BUILD.value
+        else:
+            stage = stage.value
 
         if not work_dir:
             work_dir = self.options["ROOT_DIR"]
