@@ -126,6 +126,7 @@ class Build_event(Enum):
     COMMIT = 'commit'
     NIGHTLY = 'nightly'
     WEEKLY = 'weekly'
+    KLOCWORK = 'klocwork'
 
 
 def make_archive(path, data_to_archive):
