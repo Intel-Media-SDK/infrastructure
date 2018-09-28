@@ -127,6 +127,7 @@ class Build_event(Enum):
     NIGHTLY = 'nightly'
     WEEKLY = 'weekly'
     KLOCWORK = 'klocwork'
+    CUSTOM_BUILD = 'custom_build'
 
 
 def make_archive(path, data_to_archive):
