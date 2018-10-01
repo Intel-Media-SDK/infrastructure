@@ -42,21 +42,32 @@ def get_samples_folder():
     print(POSSIBLE_SAMPLES_FOLDER)
     exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
-
+def get_tool_path(tool_name):
+    for tool_folder in POSSIBLE_TOOLS_FOLDER:
+        tool_path = tool_folder / tool_name
+        if tool_path.exists():
+            return tool_path
+    print(f'No {tool_name} found')
+    sys.exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 # constants
 PATH_DIR_NAME = Path(__file__).resolve().parent
 
 MEDIASDK_FOLDER = Path('/opt/intel/mediasdk')
-MEDISDK_SHARE = MEDIASDK_FOLDER / 'share' / 'mfx'
+MEDIASDK_SHARE = MEDIASDK_FOLDER / 'share' / 'mfx'
 
 POSSIBLE_SAMPLES_FOLDER = [
-    MEDISDK_SHARE / 'samples',
+    MEDIASDK_SHARE / 'samples',
     MEDIASDK_FOLDER / 'samples',
+]
+
+POSSIBLE_TOOLS_FOLDER = [
+    MEDIASDK_SHARE,
+    MEDIASDK_FOLDER / 'bin',
 ]
 SAMPLES_FOLDER = get_samples_folder()
 
-ASG = MEDISDK_SHARE / 'asg-hevc'
-FEI_EXTRACTOR = MEDISDK_SHARE / 'hevc_fei_extractor'
+ASG = get_tool_path('asg-hevc')
+FEI_EXTRACTOR = get_tool_path('hevc_fei_extractor')
 SAMPLE_FEI = SAMPLES_FOLDER / 'sample_hevc_fei'
 
 PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
