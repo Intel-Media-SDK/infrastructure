@@ -42,21 +42,22 @@ def get_samples_folder():
     print(POSSIBLE_SAMPLES_FOLDER)
     exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
-
 # constants
 PATH_DIR_NAME = Path(__file__).resolve().parent
 
 MEDIASDK_FOLDER = Path('/opt/intel/mediasdk')
-MEDISDK_SHARE = MEDIASDK_FOLDER / 'share' / 'mfx'
+MEDIASDK_SHARE = MEDIASDK_FOLDER / 'share' / 'mfx'
 
 POSSIBLE_SAMPLES_FOLDER = [
-    MEDISDK_SHARE / 'samples',
+    MEDIASDK_SHARE / 'samples',
     MEDIASDK_FOLDER / 'samples',
 ]
+
+MEDIASDK_TOOLS_DIR = MEDIASDK_FOLDER / 'bin'
 SAMPLES_FOLDER = get_samples_folder()
 
-ASG = MEDISDK_SHARE / 'asg-hevc'
-FEI_EXTRACTOR = MEDISDK_SHARE / 'hevc_fei_extractor'
+ASG = MEDIASDK_TOOLS_DIR / 'asg-hevc'
+FEI_EXTRACTOR = MEDIASDK_TOOLS_DIR / 'hevc_fei_extractor'
 SAMPLE_FEI = SAMPLES_FOLDER / 'sample_hevc_fei'
 
 PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}

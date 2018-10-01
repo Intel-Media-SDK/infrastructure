@@ -125,7 +125,7 @@ class TedAdapter(object):
         :return: SUCCESS = 0, ERROR_TEST_FAILED = 1, ERROR_ACCESS_DENIED = 2
         :rtype: Integer | Exception
         """
-        print(f'Running hevc fei smoke tests...')
+        print(f'Running hevc fei smoke tests...', flush=True)
         process = subprocess.run(f'python3 ../smoke_test/hevc_fei_smoke_test.py',
                                  shell=True,
                                  timeout=self.tests_timeout,
