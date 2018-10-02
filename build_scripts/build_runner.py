@@ -759,7 +759,7 @@ class BuildGenerator(object):
             if commit_id == 'HEAD':
                 commit_id = ProductState.get_head_revision(self.options['REPOS_DIR'] / repo_name)
         elif self.repo_states:
-            for repo in self.repo_states:
+            for repo in self.repo_states.values():
                 if repo['trigger']:
                     branch = repo['branch']
                     commit_id = repo['commit_id']
