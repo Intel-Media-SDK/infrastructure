@@ -26,16 +26,12 @@ import os
 import pathlib
 import shutil
 import stat
-import sys
 import tarfile
 import subprocess
 from enum import Enum
-from logging.config import dictConfig
 from shutil import copystat, Error, copy2
 from zipfile import ZipFile, ZIP_DEFLATED
 import json
-
-from .logger_conf import LOG_CONFIG
 
 
 class UnsupportedArchiveError(Exception):
@@ -53,6 +49,7 @@ class ErrorCode(Enum):
     """
 
     CRITICAL = 1
+
 
 class TestReturnCodes(Enum):
     """
@@ -76,12 +73,13 @@ class Stage(Enum):
     PACK = "pack"
     COPY = "copy"
 
+
 class Product_type(Enum):
     """
     Constants for defining type of product
     """
 
-    #closed
+    # closed
     CLOSED_WINDOWS = 'closed_windows'
     CLOSED_WINDOWS_HW_LIB = 'closed_windows_hw_lib'
     CLOSED_WINDOWS_TOOLS = 'closed_windows_tools'
@@ -93,21 +91,22 @@ class Product_type(Enum):
     CLOSED_EMBEDDED = 'closed_embedded'
     CLOSED_ANDROID = 'closed_android'
 
-    #private
+    # private
     PRIVATE_ANDROID = 'private_android'
     PRIVATE_LINUX_NEXT_GEN = 'private_linux_next_gen'
     PRIVATE_LINUX_NEXT_GEN_API_NEXT = 'private_linux_next_gen_api_next'
 
-    #public
+    # public
     PUBLIC_LINUX = 'public_linux'
     PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
     PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
     PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
-    #DEFCONFIG means that "enabled all" is not set and
-    #build environment doesn't include X11 and Wayland
+    # DEFCONFIG means that "enabled all" is not set and
+    # build environment doesn't include X11 and Wayland
     PUBLIC_LINUX_API_NEXT_DEFCONFIG = 'public_linux_api_next_defconfig'
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
     PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
+
 
 class Build_type(Enum):
     """
@@ -116,6 +115,7 @@ class Build_type(Enum):
 
     RELEASE = 'release'
     DEBUG = 'debug'
+
 
 class Build_event(Enum):
     """
@@ -171,7 +171,7 @@ def make_archive(path, data_to_archive):
 
     no_errors = True
 
-    log = logging.getLogger()
+    log = logging.getLogger('helper.make_archive')
 
     log.info('-' * 50)
     log.info('create archive %s', path)
@@ -200,9 +200,7 @@ def make_archive(path, data_to_archive):
                 elif path.suffix == '.zip':
                     _zip_data(path_to_archive, pack_as, pkg)
             except:
-                set_output_stream('err')
                 log.exception("Can not pack results")
-                set_output_stream()
                 no_errors = False
 
     pkg.close()
@@ -235,41 +233,6 @@ def _zip_data(root_path, pack_as, archive):
                 _zip_data(root_path / sub_path, arc_name, archive)
     else:
         archive.write(root_path, arcname=pack_as)
-
-
-def set_log_file(log_path):
-    """
-    Set file path for logging
-
-    :param log_path: Path to log file
-    :type log_path pathlib.Path
-
-    :return: None
-    """
-
-    log_dir = log_path.parent
-    log_dir.mkdir(parents=True, exist_ok=True)
-    LOG_CONFIG['handlers']['file_handler']['filename'] = str(log_path)
-    dictConfig(LOG_CONFIG)
-
-
-def set_output_stream(stream='out'):
-    """
-    Set output stream of logging
-
-    :param stream: Type of stream (out|err)
-    :type stream: String
-
-    :return: None
-    """
-
-    if stream == 'out':
-        LOG_CONFIG['handlers']['stream_handler']['stream'] = sys.stdout
-    elif stream == 'err':
-        LOG_CONFIG['handlers']['stream_handler']['stream'] = sys.stderr
-    else:
-        pass
-    dictConfig(LOG_CONFIG)
 
 
 def extract_archive(archive_path, extract_to):
@@ -540,7 +503,8 @@ def rotate_dir(directory: pathlib.Path) -> bool:
     Renames directory if exists:
     dir -> dir_1
     """
-    log = logging.getLogger()
+
+    log = logging.getLogger('helper.rotate_dir')
 
     dir_parent = directory.parent
     dir_name = directory.name

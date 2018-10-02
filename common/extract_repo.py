@@ -29,19 +29,18 @@ import logging
 import shutil
 from distutils.dir_util import copy_tree
 from datetime import datetime
-from logging.config import dictConfig
 
 import git_worker
 from mediasdk_directories import MediaSdkDirectories, Proxy
 from helper import ErrorCode, remove_directory
-from logger_conf import LOG_CONFIG
+from logger_conf import configure_logger
 
 OPEN_SOURCE_KEY = 'OPEN_SOURCE_INFRA'
 CLOSED_SOURCE_KEY = 'CLOSED_SOURCE_INFRA'
 
 
 def exit_script(error_code=None):
-    log = logging.getLogger()
+    log = logging.getLogger('extract_repo.exit_script')
     log.info('-' * 50)
     if error_code:
         log.info("EXTRACTING FAILED")
@@ -52,7 +51,7 @@ def exit_script(error_code=None):
 
 @Proxy.with_proxies
 def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=None, proxy=False):
-    log = logging.getLogger()
+    log = logging.getLogger('extract_repo.extract_repo')
     try:
         repo_url = MediaSdkDirectories.get_repo_url_by_name(repo_name)
         if commit_id:
@@ -80,7 +79,7 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
 
 
 def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_time):
-    log = logging.getLogger()
+    log = logging.getLogger('extract_repo.extract_closed_source_infrastructure')
 
     infrastructure_root_dir = root_dir / 'infrastructure'
 
@@ -189,8 +188,8 @@ def main():
                             help='Will switch to the commit before specified time')
     args = parser.parse_args()
 
-    log = logging.getLogger()
-    dictConfig(LOG_CONFIG)
+    configure_logger()
+    log = logging.getLogger('extract_repo.main')
 
     root_dir = pathlib.Path(args.root_dir).absolute()
 
