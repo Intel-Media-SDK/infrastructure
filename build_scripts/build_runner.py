@@ -543,7 +543,7 @@ class BuildGenerator(object):
 
         return True
 
-    # @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
     def _clean(self):
         """
         Clean build directories
