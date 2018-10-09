@@ -22,7 +22,6 @@
 Logging configuration function.
 Using:
     if there are no arguments - configure stream handler for logger root
-    else if logger_name and logs_path
 """
 
 import sys
