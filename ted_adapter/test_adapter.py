@@ -109,6 +109,7 @@ class TedAdapter(object):
         #Path to the folder lib64 where located driver
         env['LIBVA_DRIVERS_PATH'] = str(adapter_conf.DRIVER_PATH)
 
+        # Dispatcher output should be in the libraries search path
         env['LD_LIBRARY_PATH'] = str(adapter_conf.MEDIASDK_PATH / 'lib64')
 
         process = subprocess.run('python3 ted/ted.py',
