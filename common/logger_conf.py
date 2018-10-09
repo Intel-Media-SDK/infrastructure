@@ -26,33 +26,7 @@ Using:
 """
 
 import sys
-import pathlib
 import logging
-
-
-LOG_CONFIG = {
-    'version': 1,
-    'formatters': {
-        'custom': {
-            'format': '[%(asctime)s] %(levelname)s: %(message)s'
-        }
-    },
-    'handlers': {
-        'stream_handler': {'class': 'logging.StreamHandler',
-                           'formatter': 'custom',
-                           'stream': sys.stdout,
-                           'level': logging.INFO},
-        'file_handler': {'class': 'logging.FileHandler',
-                         'formatter': 'custom',
-                         'filename': str(pathlib.Path.cwd() / '_all.log'),
-                         'level': logging.DEBUG,
-                         'delay': True}
-    },
-    'root': {
-        'handlers': ['stream_handler', 'file_handler'],
-        'level': logging.DEBUG
-    }
-}
 
 
 def configure_logger(logger_name='root', logs_path=None):
