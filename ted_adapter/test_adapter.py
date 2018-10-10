@@ -45,6 +45,7 @@ class TedAdapter(object):
     #TODO: add relevant path and delete it
     test_driver_dir = pathlib.Path('/localdisk/bb/worker/infrastructure') #TODO: hardcoded path
     test_results_dir = test_driver_dir / 'ted/results'
+    dispatcher_dir = adapter_conf.MEDIASDK_PATH / 'lib64'
     tests_timeout = 300  # 5 minutes
 
     def __init__(self, build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir):
@@ -66,6 +67,10 @@ class TedAdapter(object):
         self.tests_artifacts_dir = tests_artifacts_dir
         self.tests_artifacts_url = tests_artifacts_url
         self.root_dir = root_dir
+
+        self.env = os.environ.copy()
+        # Path to dispatcher lib should be in the libraries search path
+        self.env['LD_LIBRARY_PATH'] = self.dispatcher_dir
 
     def _get_artifacts(self):
         """
@@ -103,19 +108,15 @@ class TedAdapter(object):
 
         self._get_artifacts()
 
-        env = os.environ.copy()
-        #Path to mediasdk fodler which will be tested
-        env['MFX_HOME'] = str(adapter_conf.MEDIASDK_PATH)
-        #Path to the folder lib64 where located driver
-        env['LIBVA_DRIVERS_PATH'] = str(adapter_conf.DRIVER_PATH)
-
-        # Dispatcher output should be in the libraries search path
-        env['LD_LIBRARY_PATH'] = str(adapter_conf.MEDIASDK_PATH / 'lib64')
+        # Path to mediasdk fodler which will be tested
+        self.env['MFX_HOME'] = adapter_conf.MEDIASDK_PATH
+        # Path to the folder lib64 where located driver
+        self.env['LIBVA_DRIVERS_PATH'] = adapter_conf.DRIVER_PATH
 
         process = subprocess.run('python3 ted/ted.py',
                                  shell=True,
                                  cwd=self.test_driver_dir,
-                                 env=env,
+                                 env=self.env,
                                  timeout=self.tests_timeout,
                                  encoding='utf-8',
                                  errors='backslashreplace')
@@ -131,6 +132,7 @@ class TedAdapter(object):
         print(f'Running hevc fei smoke tests...', flush=True)
         process = subprocess.run(f'python3 ../smoke_test/hevc_fei_smoke_test.py',
                                  shell=True,
+                                 env=self.env,
                                  timeout=self.tests_timeout,
                                  encoding='utf-8',
                                  errors='backslashreplace')
