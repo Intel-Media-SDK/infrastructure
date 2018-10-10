@@ -56,7 +56,7 @@ def configure_logger(logger_name='root', logs_path=None):
 
     if logs_path:
         logs_path.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(logs_path)
+        file_handler = logging.FileHandler(logs_path, delay=True)
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
