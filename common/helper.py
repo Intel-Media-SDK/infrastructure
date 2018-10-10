@@ -250,11 +250,11 @@ def extract_archive(archive_path, extract_to):
     extract_to = pathlib.Path(extract_to)
 
     if archive_path.suffix == '.tar':
-        package = tarfile.open(archive_path, 'r')
+        package = tarfile.open(str(archive_path), 'r')
     elif archive_path.suffix == '.gz':
-        package = tarfile.open(archive_path, 'r:gz')
+        package = tarfile.open(str(archive_path), 'r:gz')
     elif archive_path.suffix == '.zip':
-        package = ZipFile(archive_path)
+        package = ZipFile(str(archive_path))
     else:
         raise UnsupportedArchiveError(
             f"Unsupported archive extension {archive_path.suffix}")
