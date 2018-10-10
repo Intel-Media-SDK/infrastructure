@@ -69,7 +69,7 @@ class TedAdapter(object):
         self.root_dir = root_dir
 
         self.env = os.environ.copy()
-        # Dispatcher output should be in the libraries search path for all tests
+        # Dispatcher lib path should be in the libraries search path
         self.env['LD_LIBRARY_PATH'] = self.dispatcher_dir
 
     def _get_artifacts(self):
