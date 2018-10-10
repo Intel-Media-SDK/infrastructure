@@ -54,7 +54,7 @@ class GitRepo(object):
         self.local_repo_dir = root_repo_dir / repo_name
         self.repo = None
 
-        self.log = logging.getLogger()
+        self.log = logging.getLogger(self.__class__.__name__)
 
     def prepare_repo(self):
         """

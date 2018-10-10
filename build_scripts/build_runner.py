@@ -94,7 +94,7 @@ class Action(object):
         self.callfunc = callfunc
         self.verbose = verbose
 
-        self.log = logging.getLogger()
+        self.log = logging.getLogger(name)
 
     def run(self, options=None):
         """
@@ -104,7 +104,6 @@ class Action(object):
         """
 
         self.log.info('-' * 50)
-        self.log.info('action: %s', self.name)
 
         if self.callfunc:
             func, args, kwargs = self.callfunc
@@ -139,8 +138,10 @@ class Action(object):
             else:
                 if self.verbose:
                     self.log.info(out)
+                    self.log.info('completed')
                 else:
                     self.log.debug(out)
+                    self.log.debug('completed')
 
             return error_code
 
@@ -321,7 +322,7 @@ class BuildGenerator(object):
     Contains commands for building product.
     """
 
-    def __init__(self, build_config_path, root_dir, build_type, product_type, build_event,
+    def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
                  commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, custom_cli_args=None):
         """
         :param build_config_path: Path to build configuration file
@@ -338,6 +339,9 @@ class BuildGenerator(object):
 
         :param build_event: Event of build (pre_commit|commit|nightly|weekly)
         :type build_event: String
+
+        :param stage: Build stage
+        :type stage: String
 
         :param commit_time: Time for getting slice of commits of repositories
         :type commit_time: datetime
@@ -385,9 +389,9 @@ class BuildGenerator(object):
         self.install_pkg_data_to_archive = []
         self.config_variables = {}
         self.custom_cli_args = custom_cli_args
+        self.current_stage = stage
 
-        self.log = logging.getLogger()
-
+        self.log = logging.getLogger(self.__class__.__name__)
 
         # Build and extract in directory for forked repositories
         # in case of commit from forked repository
@@ -489,6 +493,8 @@ class BuildGenerator(object):
             work_dir = self.options["ROOT_DIR"]
             if stage in [Stage.BUILD.value, Stage.INSTALL.value]:
                 work_dir = self.options["BUILD_DIR"]
+        if stage == Stage.BUILD.value and self.current_stage == Stage.BUILD.value:
+            configure_logger(name, self.options['LOGS_DIR'] / 'build' / f'{name}.log')
         self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
     def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2017",
@@ -524,7 +530,8 @@ class BuildGenerator(object):
                     ms_arguments[key] = {**ms_arguments.get(key, {}), **msbuild_args[key]}
                 else:
                     ms_arguments[key] = msbuild_args[key]
-
+        if self.current_stage == Stage.BUILD.value:
+            configure_logger(name, self.options['LOGS_DIR'] / 'build' / f'{name}.log')
         self.actions[Stage.BUILD.value].append(VsComponent(name, solution_path, ms_arguments, vs_version,
                                                      dependencies, env, verbose))
 
@@ -575,8 +582,6 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
-
-        set_log_file(self.options["LOGS_DIR"] / 'extract.log')
 
         print('-' * 50)
         self.log.info("EXTRACTING")
@@ -632,8 +637,6 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        set_log_file(self.options["LOGS_DIR"] / 'build.log')
-
         print('-' * 50)
         self.log.info("BUILDING")
 
@@ -654,8 +657,6 @@ class BuildGenerator(object):
 
         :return: None | Exception
         """
-
-        set_log_file(self.options["LOGS_DIR"] / 'install.log')
 
         print('-' * 50)
         self.log.info("INSTALLING")
@@ -682,15 +683,15 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        set_log_file(self.options["LOGS_DIR"] / 'pack.log')
-
         print('-' * 50)
         self.log.info("PACKING")
 
         self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
+        no_errors = True
+
         if not self._run_build_config_actions(Stage.PACK.value):
-            return False
+            no_errors = False
 
         if platform.system() == 'Windows':
             extension = "zip"
@@ -699,8 +700,6 @@ class BuildGenerator(object):
         else:
             self.log.critical(f'Can not pack data on this OS: {platform.system()}')
             return False
-
-        no_errors = True
 
         # creating install package
         if self.install_pkg_data_to_archive:
@@ -748,8 +747,6 @@ class BuildGenerator(object):
 
         print('-' * 50)
         self.log.info("COPYING")
-
-        set_log_file(self.options["LOGS_DIR"] / 'copy.log')
 
         branch = 'unknown'
         commit_id = 'unknown'
@@ -907,8 +904,10 @@ which is not present in mediasdk_directories.''')
 
     parsed_args, unknown_args = parser.parse_known_args()
 
-    log = logging.getLogger()
-    dictConfig(LOG_CONFIG)
+    configure_logger()
+    if parsed_args.stage != Stage.CLEAN.value:
+        configure_logger(logs_path=pathlib.Path(parsed_args.root_dir) / 'logs' / f'{parsed_args.stage}.log')
+    log = logging.getLogger('build_runner.main')
 
     custom_cli_args = {}
     if unknown_args:
@@ -935,7 +934,8 @@ which is not present in mediasdk_directories.''')
         changed_repo=parsed_args.changed_repo,
         repo_states_file_path=parsed_args.repo_states,
         repo_url=parsed_args.repo_url,
-        custom_cli_args=custom_cli_args
+        custom_cli_args=custom_cli_args,
+        stage=parsed_args.stage
     )
 
     # We must create BuildGenerator anyway.
@@ -981,9 +981,9 @@ if __name__ == '__main__':
         print('\nERROR: Python 3.6 or higher is required')
         exit(ErrorCode.CRITICAL)
     else:
-        from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, set_log_file, \
+        from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
             copy_win_files, rotate_dir, cmd_exec
-        from common.logger_conf import LOG_CONFIG
+        from common.logger_conf import configure_logger
         from common.git_worker import ProductState
         from common.mediasdk_directories import MediaSdkDirectories
 

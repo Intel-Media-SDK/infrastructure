@@ -19,37 +19,44 @@
 # SOFTWARE.
 
 """
-Logging configuration dictionary.
+Logging configuration function.
 Using:
-    from logging.config import dictConfig
-    dictConfig(LOG_CONFIG)
+    if there are no arguments - configure stream handler for logger root
 """
 
 import sys
-import pathlib
 import logging
 
 
-LOG_CONFIG = {
-    'version': 1,
-    'formatters': {
-        'custom': {
-            'format': '[%(asctime)s] %(levelname)s: %(message)s'
-        }
-    },
-    'handlers': {
-        'stream_handler': {'class': 'logging.StreamHandler',
-                           'formatter': 'custom',
-                           'stream': sys.stdout,
-                           'level': logging.INFO},
-        'file_handler': {'class': 'logging.FileHandler',
-                         'formatter': 'custom',
-                         'filename': str(pathlib.Path.cwd() / '_all.log'),
-                         'level': logging.DEBUG,
-                         'delay': True}
-    },
-    'root': {
-        'handlers': ['stream_handler', 'file_handler'],
-        'level': logging.DEBUG
-    }
-}
+def configure_logger(logger_name='root', logs_path=None):
+    """
+        Preparing logger
+
+        :param logger_name: Name of logger
+        :type logger_name: String
+        :param logs_path: Path to log file
+        :type logs_path: pathlib.Path
+
+        :return: None
+    """
+
+    if logger_name == 'root':
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger = logging.getLogger(logger_name)
+
+    formatter = logging.Formatter('[%(asctime)s] %(name)s %(levelname)s: %(message)s')
+
+    if not logger.hasHandlers():
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
+        stream_handler.setLevel(logging.INFO)
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    if logs_path:
+        logs_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(logs_path)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
