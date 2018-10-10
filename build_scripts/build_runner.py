@@ -688,8 +688,10 @@ class BuildGenerator(object):
 
         self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
+        no_errors = True
+
         if not self._run_build_config_actions(Stage.PACK.value):
-            return False
+            no_errors = False
 
         if platform.system() == 'Windows':
             extension = "zip"
@@ -698,8 +700,6 @@ class BuildGenerator(object):
         else:
             self.log.critical(f'Can not pack data on this OS: {platform.system()}')
             return False
-
-        no_errors = True
 
         # creating install package
         if self.install_pkg_data_to_archive:
