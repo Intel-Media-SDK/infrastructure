@@ -28,6 +28,14 @@ import sys
 import logging
 
 
+def _is_same_handler(logger, logs_path):
+    for handler in logger.handlers:
+        if isinstance(handler, (logging.FileHandler,)):
+            if handler.baseFilename == str(logs_path.absolute()):
+                return True
+    return False
+
+
 def configure_logger(logger_name='root', logs_path=None):
     """
         Preparing logger
@@ -54,7 +62,7 @@ def configure_logger(logger_name='root', logs_path=None):
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
 
-    if logs_path:
+    if logs_path and not _is_same_handler(logger, logs_path):
         logs_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(logs_path, delay=True)
         file_handler.setLevel(logging.DEBUG)
