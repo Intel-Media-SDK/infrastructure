@@ -27,20 +27,8 @@ from pathlib import Path
 from collections import namedtuple
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from common.helper import TestReturnCodes
 from smoke_test import hevc_fei_smoke_test
 
-
-def get_samples_folder():
-    for samples_folder in POSSIBLE_SAMPLES_FOLDER:
-        if samples_folder.exists():
-            print(f'Samples found in: {samples_folder}')
-            return samples_folder #success
-
-    print(f'Samples were not found.')
-    print(f'Put samples to the one of the following locations and restart:')
-    print(POSSIBLE_SAMPLES_FOLDER)
-    exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
 # constants
 PATH_DIR_NAME = Path(__file__).resolve().parent
@@ -54,13 +42,9 @@ POSSIBLE_SAMPLES_FOLDER = [
 ]
 
 MEDIASDK_TOOLS_DIR = MEDIASDK_FOLDER / 'bin'
-SAMPLES_FOLDER = get_samples_folder()
 
 ASG = MEDIASDK_TOOLS_DIR / 'asg-hevc'
 FEI_EXTRACTOR = MEDIASDK_TOOLS_DIR / 'hevc_fei_extractor'
-SAMPLE_FEI = SAMPLES_FOLDER / 'sample_hevc_fei'
-
-PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
 
 # parameters of the test stream (key=value)
 STREAM = namedtuple('STREAM', ['name', 'w', 'h', 'frames', 'picstruct'])
