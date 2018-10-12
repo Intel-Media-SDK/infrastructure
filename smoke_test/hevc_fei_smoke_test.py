@@ -231,6 +231,17 @@ def nested_dict_iter(nested_dict, path=None):
             path.pop()
 
 
+def get_samples_folder():
+    for samples_folder in cfg.POSSIBLE_SAMPLES_FOLDER:
+         if samples_folder.exists():
+            print(f'Samples found in: {samples_folder}')
+            return samples_folder #success
+
+    print(f'Samples were not found.')
+    print(f'Put samples to the one of the following locations and restart:')
+    print(cfg.POSSIBLE_SAMPLES_FOLDER)
+    exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
+
 if __name__ == '__main__':
 
     START_TIME = time.time()
@@ -242,7 +253,13 @@ if __name__ == '__main__':
 
     cfg.LOG.clear_text_file()
 
-    for name, path in cfg.PATH_DICT.items():
+    # TODO: change getting folder
+    samples_folder = get_samples_folder()
+    SAMPLE_FEI = samples_folder / 'sample_hevc_fei'
+
+    PATH_DICT = {'ASG': cfg.ASG, 'FEI_EXTRACTOR': cfg.FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
+
+    for name, path in PATH_DICT.items():
         if not os.access(path, os.X_OK):
             print(f'No {name} or it cannot be executed')
             sys.exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
