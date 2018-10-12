@@ -46,6 +46,8 @@ MEDIASDK_TOOLS_DIR = MEDIASDK_FOLDER / 'bin'
 ASG = MEDIASDK_TOOLS_DIR / 'asg-hevc'
 FEI_EXTRACTOR = MEDIASDK_TOOLS_DIR / 'hevc_fei_extractor'
 
+PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR}
+
 # parameters of the test stream (key=value)
 STREAM = namedtuple('STREAM', ['name', 'w', 'h', 'frames', 'picstruct'])
 TEST_STREAM = STREAM(name='test_stream_176x96.yuv', w='176', h='96', frames='100',
