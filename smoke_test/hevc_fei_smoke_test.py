@@ -252,14 +252,13 @@ if __name__ == '__main__':
     cfg.PATH_TO_IO.mkdir()
 
     cfg.LOG.clear_text_file()
-
     # TODO: change getting folder
     samples_folder = get_samples_folder()
     SAMPLE_FEI = samples_folder / 'sample_hevc_fei'
 
-    PATH_DICT = {'ASG': cfg.ASG, 'FEI_EXTRACTOR': cfg.FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
+    cfg.PATH_DICT['SAMPLE_FEI'] = SAMPLE_FEI
 
-    for name, path in PATH_DICT.items():
+    for name, path in cfg.PATH_DICT.items():
         if not os.access(path, os.X_OK):
             print(f'No {name} or it cannot be executed')
             sys.exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
