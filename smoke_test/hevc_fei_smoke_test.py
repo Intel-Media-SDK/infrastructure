@@ -252,7 +252,6 @@ if __name__ == '__main__':
     cfg.PATH_TO_IO.mkdir()
 
     cfg.LOG.clear_text_file()
-
     # TODO: change getting folder
     samples_folder = get_samples_folder()
     SAMPLE_FEI = samples_folder / 'sample_hevc_fei'
