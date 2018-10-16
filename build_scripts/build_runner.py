@@ -38,10 +38,10 @@ import multiprocessing
 import os
 import pathlib
 import platform
+import re
 import shutil
 import sys
 import logging
-from logging.config import dictConfig
 from collections import defaultdict, OrderedDict
 from copy import deepcopy
 from datetime import datetime
@@ -396,15 +396,21 @@ class BuildGenerator(object):
         # Build and extract in directory for forked repositories
         # in case of commit from forked repository
         if changed_repo:
-            changed_repo_name = changed_repo.split(':')[0]
-            changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_name)}.git"
+            changed_repo_dict = changed_repo.split(':')
+            changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_dict[0])}.git"
             if self.repo_url and self.repo_url != changed_repo_url:
                 self.options["REPOS_DIR"] = self.options["REPOS_FORKED_DIR"]
+            self.branch_name = changed_repo_dict[1]
         elif repo_states_file_path:
+            self.branch_name = 'master'
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
                 with repo_states_file.open() as repo_states_json:
                     self.repo_states = json.load(repo_states_json)
+                    for repo_state in self.repo_states.values():
+                        if repo_state['trigger']:
+                            self.branch_name = repo_state['branch']
+                            break
             else:
                 raise Exception(f'{repo_states_file} does not exist')
 
@@ -427,7 +433,10 @@ class BuildGenerator(object):
             'build_event': self.build_event,
             # TODO should be in lower case
             'DEV_PKG_DATA_TO_ARCHIVE': self.dev_pkg_data_to_archive,
-            'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive
+            'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive,
+            'get_build_number': get_build_number,
+            'get_api_version': self._get_api_version,
+            'branch_name': self.branch_name
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -863,6 +872,51 @@ class BuildGenerator(object):
 
         return True
 
+    def _get_api_version(self, repo_name):
+        """
+            Get major and minor API version for Windows build from mfxdefs.h
+            Used for windows weekly build
+
+            :param repo_name: name of repository
+            :type repo_name: string
+
+            :return: minor API version, major API version
+            :rtype: Tuple
+        """
+
+        # TODO: update for using in linux closed and open source builds
+        major_version = minor_version = "0"
+        header_name = 'mfxdefs.h'
+
+        mfxdefs_path = self.options['REPOS_DIR'] / repo_name / 'include' / header_name
+        if mfxdefs_path.exists():
+            is_major_version_found = False
+            is_minor_version_found = False
+
+            with open(mfxdefs_path, 'r') as lines:
+                for line in lines:
+                    major_version_pattern = re.search("MFX_VERSION_MAJOR\s(\d+)", line)
+                    if major_version_pattern:
+                        major_version = major_version_pattern.group(1)
+                        is_major_version_found = True
+                        continue
+
+                    minor_version_pattern = re.search("MFX_VERSION_MINOR\s(\d+)", line)
+                    if minor_version_pattern:
+                        minor_version = minor_version_pattern.group(1)
+                        is_minor_version_found = True
+
+            if not is_major_version_found:
+                self.log.warning(f'MFX_VERSION_MAJOR does not exist')
+
+            if not is_minor_version_found:
+                self.log.warning(f'MFX_VERSION_MINOR does not exist')
+        else:
+            self.log.warning(f'{header_name} does not exist')
+
+        self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
+        return major_version, minor_version
+
 
 def main():
     """
@@ -986,5 +1040,6 @@ if __name__ == '__main__':
         from common.logger_conf import configure_logger
         from common.git_worker import ProductState
         from common.mediasdk_directories import MediaSdkDirectories
+        from common.build_number import get_build_number
 
         main()
