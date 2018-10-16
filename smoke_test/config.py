@@ -46,8 +46,6 @@ MEDIASDK_TOOLS_DIR = MEDIASDK_FOLDER / 'bin'
 ASG = MEDIASDK_TOOLS_DIR / 'asg-hevc'
 FEI_EXTRACTOR = MEDIASDK_TOOLS_DIR / 'hevc_fei_extractor'
 
-PATH_DICT = {'ASG': ASG, 'FEI_EXTRACTOR': FEI_EXTRACTOR}
-
 # parameters of the test stream (key=value)
 STREAM = namedtuple('STREAM', ['name', 'w', 'h', 'frames', 'picstruct'])
 TEST_STREAM = STREAM(name='test_stream_176x96.yuv', w='176', h='96', frames='100',
@@ -59,7 +57,6 @@ LOG_NAME = 'hevc_fei_tests_res.log'
 LOG_PATH = PATH_DIR_NAME / LOG_NAME
 # file for log
 LOG = hevc_fei_smoke_test.PathPlus(LOG_PATH)
-
 
 # path for input and output files
 PATH_TO_IO = PATH_DIR_NAME / 'IOFiles'

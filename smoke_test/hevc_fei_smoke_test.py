@@ -188,7 +188,7 @@ class TestCasesCreator:
                     case_type = cmd
 
                 else:
-                    stages.append(RunnableBinary(cfg.PATH_DICT[key],
+                    stages.append(RunnableBinary(PATH_DICT[key],
                                                  cmd.format(path_to_io=
                                                             f'{cfg.PATH_TO_IO / f"{num_of_case:04}"}')))
         if case_type is None:
@@ -233,9 +233,9 @@ def nested_dict_iter(nested_dict, path=None):
 
 def get_samples_folder():
     for samples_folder in cfg.POSSIBLE_SAMPLES_FOLDER:
-         if samples_folder.exists():
+        if samples_folder.exists():
             print(f'Samples found in: {samples_folder}')
-            return samples_folder #success
+            return samples_folder
 
     print(f'Samples were not found.')
     print(f'Put samples to the one of the following locations and restart:')
@@ -256,9 +256,9 @@ if __name__ == '__main__':
     samples_folder = get_samples_folder()
     SAMPLE_FEI = samples_folder / 'sample_hevc_fei'
 
-    cfg.PATH_DICT['SAMPLE_FEI'] = SAMPLE_FEI
+    PATH_DICT = {'ASG': cfg.ASG, 'FEI_EXTRACTOR': cfg.FEI_EXTRACTOR, 'SAMPLE_FEI': SAMPLE_FEI}
 
-    for name, path in cfg.PATH_DICT.items():
+    for name, path in PATH_DICT.items():
         if not os.access(path, os.X_OK):
             print(f'No {name} or it cannot be executed')
             sys.exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
