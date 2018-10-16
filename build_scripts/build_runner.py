@@ -872,22 +872,23 @@ class BuildGenerator(object):
 
         return True
 
-    def _get_api_version(self):
+    def _get_api_version(self, repo_name):
         """
             Get major and minor API version for Windows build from mfxdefs.h
             Used for windows weekly build
+
+            :param repo_name: name of repository
+            :type repo_name: string
 
             :return: minor API version, major API version
             :rtype: Tuple
         """
 
         # TODO: update for using in linux closed and open source builds
-        major_version = "1"
-        minor_version = "27"
-
+        major_version = minor_version = "0"
         header_name = 'mfxdefs.h'
 
-        mfxdefs_path = self.options['REPOS_DIR'] / 'mdp_msdk-api' / 'include' / header_name
+        mfxdefs_path = self.options['REPOS_DIR'] / repo_name / 'include' / header_name
         if mfxdefs_path.exists():
             is_major_version_found = False
             is_minor_version_found = False
