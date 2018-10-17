@@ -90,6 +90,7 @@ class Product_type(Enum):
     CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
     CLOSED_EMBEDDED = 'closed_embedded'
     CLOSED_ANDROID = 'closed_android'
+    CLOSED_WINDOWS_TITAN = 'closed_windows_titan'
 
     # private
     PRIVATE_ANDROID = 'private_android'
