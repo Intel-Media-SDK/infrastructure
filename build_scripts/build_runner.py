@@ -413,6 +413,8 @@ class BuildGenerator(object):
                             break
             else:
                 raise Exception(f'{repo_states_file} does not exist')
+        else:
+            self.branch_name = 'master'
 
     def generate_build_config(self):
         """
@@ -769,6 +771,10 @@ class BuildGenerator(object):
                 if repo['trigger']:
                     branch = repo['branch']
                     commit_id = repo['commit_id']
+        else:
+            # "--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and "master" branch are used
+            branch = 'master'
+            commit_id = 'HEAD'
 
         build_dir = MediaSdkDirectories.get_build_dir(
             branch, self.build_event, commit_id,
@@ -997,8 +1003,8 @@ which is not present in mediasdk_directories.''')
     # and fails, class will not be created.
     try:
         if not parsed_args.changed_repo and not parsed_args.repo_states:
-            log.error('"--changed-repo" or "--repo-states" argument bust be added')
-            exit(ErrorCode.CRITICAL.value)
+            log.warning('"--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and '
+                        '"master" branch be used')
         elif parsed_args.changed_repo and parsed_args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 

@@ -239,8 +239,11 @@ class ProductState(object):
         for repo in self.repo_states:
             if not repo.commit_id:
                 repo.prepare_repo()
-                repo.revert_commit_by_time(commit_timestamp)
-                repo.checkout()
+                # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
+                # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
+                if commit_timestamp:
+                    repo.revert_commit_by_time(commit_timestamp)
+                    repo.checkout()
 
     def save_repo_states(self, sources_file, trigger):
         """
