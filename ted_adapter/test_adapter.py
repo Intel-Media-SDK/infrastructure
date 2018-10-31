@@ -97,6 +97,31 @@ class TedAdapter(object):
         self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
         self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
 
+    # Install Libva from packages
+    def _install_rpm(self):
+        """
+        Install rpm package
+
+        :return: None
+        """
+
+        rpm_pack_path = self.root_dir / 'dependencies' / 'libva'
+        rpm_pack = list(rpm_pack_path.glob('*.rpm'))[0]
+        self._rpm(rpm_pack)
+
+
+    def _install_deb(self):
+        """
+        Install deb package
+
+        :return: None
+        """
+
+        deb_pack_path = self.root_dir / 'dependencies' / 'libva'
+        deb_pack = list(deb_pack_path.glob('*.deb'))[0]
+        self._deb(deb_pack)
+
+
 
     def run_test(self):
         """
@@ -107,6 +132,9 @@ class TedAdapter(object):
         """
 
         self._get_artifacts()
+
+        # install libva to DRIVER_PATH
+        self._install_rpm()
 
         # Path to mediasdk fodler which will be tested
         self.env['MFX_HOME'] = adapter_conf.MEDIASDK_PATH
@@ -168,6 +196,12 @@ class TedAdapter(object):
 
     def _mkdir(self, path):
         return self._execute_command(f"mkdir -p {path}")
+
+    def _rpm(self, path, sudo=True):
+        return self._execute_command(f"rpm -Uhv {path}", sudo)
+
+    def _deb(self, path, sudo=True):
+        return self._execute_command(f"dpkg -i {path}", sudo)
 
     def _execute_command(self, command, sudo=False):
         prefix = "sudo" if sudo else ""

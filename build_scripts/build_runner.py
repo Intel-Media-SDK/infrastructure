@@ -383,7 +383,8 @@ class BuildGenerator(object):
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
-            "STRIP_BINARIES": False  # Flag for stripping binaries of build
+            "STRIP_BINARIES": False,  # Flag for stripping binaries of build
+            "DEPENDENCIES_DIR": root_dir / "dependencies",
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
@@ -560,7 +561,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR', 'DEPENDENCIES_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -695,6 +696,7 @@ class BuildGenerator(object):
         print('-' * 50)
         self.log.info("PACKING")
 
+        self.options['DEPENDENCIES_DIR'].mkdir(parents=True, exist_ok=True)
         self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         no_errors = True
@@ -997,7 +999,7 @@ which is not present in mediasdk_directories.''')
     # and fails, class will not be created.
     try:
         if not parsed_args.changed_repo and not parsed_args.repo_states:
-            log.error('"--changed-repo" or "--repo-states" argument bust be added')
+            log.error('"--changed-repo" or "--repo-states" argument must be added')
             exit(ErrorCode.CRITICAL.value)
         elif parsed_args.changed_repo and parsed_args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
