@@ -93,7 +93,7 @@ class Product_type(Enum):
     # Product configuration for this product type is the same as for PRIVATE_ANDROID
     # The duplicate is needed for getting correct link for build artifacts, because
     # builds in private and closed source buildbots with the same product type has the same links
-    CLOSED_ANDROID_OPEN_SOURCE = 'closed_adnroid_open_source'
+    CLOSED_ANDROID_OPEN_SOURCE = 'closed_android_open_source'
     CLOSED_WINDOWS_TITAN = 'closed_windows_titan'
 
     # private
