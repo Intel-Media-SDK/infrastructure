@@ -90,6 +90,12 @@ class Product_type(Enum):
     CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
     CLOSED_EMBEDDED = 'closed_embedded'
     CLOSED_ANDROID = 'closed_android'
+
+    # Product configuration for this product type is the same as for PRIVATE_ANDROID
+    # The duplicate is needed for getting correct link for build artifacts, because
+    # builds in private and closed source buildbots with the same product type has the same links
+    CLOSED_ANDROID_OPEN_SOURCE = 'closed_android_open_source'
+
     CLOSED_WINDOWS_TITAN = 'closed_windows_titan'
 
     # private
@@ -102,9 +108,11 @@ class Product_type(Enum):
     PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
     PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
     PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
+
     # DEFCONFIG means that "enabled all" is not set and
     # build environment doesn't include X11 and Wayland
     PUBLIC_LINUX_API_NEXT_DEFCONFIG = 'public_linux_api_next_defconfig'
+
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
     PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
 
