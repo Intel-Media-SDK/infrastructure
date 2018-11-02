@@ -323,7 +323,8 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
-                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, custom_cli_args=None):
+                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, bitness=None,
+                 custom_cli_args=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -357,6 +358,9 @@ class BuildGenerator(object):
                          (repository which is not in mediasdk_directories)
         :type repo_url: String
 
+        :param bitness: Bitness of target platform
+        :type bitness: String
+
         :param custom_cli_args: Dict of custom command line arguments (ex. 'arg': 'value')
         :type custom_cli_args: Dict
         """
@@ -383,13 +387,14 @@ class BuildGenerator(object):
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
-            "STRIP_BINARIES": False  # Flag for stripping binaries of build
+            "STRIP_BINARIES": False # Flag for stripping binaries of build
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
         self.config_variables = {}
         self.custom_cli_args = custom_cli_args
         self.current_stage = stage
+        self.bitness = bitness
 
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -438,7 +443,8 @@ class BuildGenerator(object):
             'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
-            'branch_name': self.branch_name
+            'branch_name': self.branch_name,
+            'bitness': self.bitness
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -961,6 +967,8 @@ which is not present in mediasdk_directories.''')
                         help="Current executable stage")
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
+    parser.add_argument('-bt', "--bitness",
+                        type=int, help='Bitness of target platform from 8 up to 1024')
 
     parsed_args, unknown_args = parser.parse_known_args()
 
@@ -968,6 +976,10 @@ which is not present in mediasdk_directories.''')
     if parsed_args.stage != Stage.CLEAN.value:
         configure_logger(logs_path=pathlib.Path(parsed_args.root_dir) / 'logs' / f'{parsed_args.stage}.log')
     log = logging.getLogger('build_runner.main')
+
+    if parsed_args.bitness and parsed_args.bitness not in range(8,1025):
+        log.error('Wrong --bitness argument, need from 8 up to 1024')
+        exit(ErrorCode.CRITICAL)
 
     custom_cli_args = {}
     if unknown_args:
@@ -995,7 +1007,8 @@ which is not present in mediasdk_directories.''')
         repo_states_file_path=parsed_args.repo_states,
         repo_url=parsed_args.repo_url,
         custom_cli_args=custom_cli_args,
-        stage=parsed_args.stage
+        stage=parsed_args.stage,
+        bitness=parsed_args.bitness
     )
 
     # We must create BuildGenerator anyway.
@@ -1004,7 +1017,7 @@ which is not present in mediasdk_directories.''')
     try:
         if not parsed_args.changed_repo and not parsed_args.repo_states:
             log.warning('"--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and '
-                        '"master" branch be used')
+                        '"master" branch will be used')
         elif parsed_args.changed_repo and parsed_args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
@@ -1041,7 +1054,7 @@ if __name__ == '__main__':
         print('\nERROR: Python 3.6 or higher is required')
         exit(ErrorCode.CRITICAL)
     else:
-        from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
+        from common.helper import Stage, Product_type, Build_event, Build_type, Bitness, make_archive, \
             copy_win_files, rotate_dir, cmd_exec
         from common.logger_conf import configure_logger
         from common.git_worker import ProductState
