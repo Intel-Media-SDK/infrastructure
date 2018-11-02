@@ -1054,7 +1054,7 @@ if __name__ == '__main__':
         print('\nERROR: Python 3.6 or higher is required')
         exit(ErrorCode.CRITICAL)
     else:
-        from common.helper import Stage, Product_type, Build_event, Build_type, Bitness, make_archive, \
+        from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
             copy_win_files, rotate_dir, cmd_exec
         from common.logger_conf import configure_logger
         from common.git_worker import ProductState
