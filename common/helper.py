@@ -137,7 +137,6 @@ class Target_arch(Enum):
 
     X86 = 'x86'
     X86_64 = 'x86-64'
-    ALL = 'all'
 
 def make_archive(path, data_to_archive):
     """
