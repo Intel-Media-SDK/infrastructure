@@ -968,7 +968,7 @@ which is not present in mediasdk_directories.''')
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
     parser.add_argument('-ta', "--target-arch",
-                        default==[target_arch.value for target_arch in Target_arch],
+                        default=[target_arch.value for target_arch in Target_arch],
                         choices=[target_arch.value for target_arch in Target_arch],
                         help='Architecture of target platform')
 
