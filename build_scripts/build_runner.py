@@ -387,8 +387,7 @@ class BuildGenerator(object):
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
-            "STRIP_BINARIES": False, # Flag for stripping binaries of build
-            "PRODUCT_TYPE": product_type
+            "STRIP_BINARIES": False # Flag for stripping binaries of build
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
