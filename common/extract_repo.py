@@ -30,10 +30,11 @@ import shutil
 from distutils.dir_util import copy_tree
 from datetime import datetime
 
-import git_worker
-from mediasdk_directories import MediaSdkDirectories, Proxy
-from helper import ErrorCode, remove_directory
-from logger_conf import configure_logger
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+from common import git_worker
+from common.mediasdk_directories import MediaSdkDirectories, Proxy
+from common.helper import ErrorCode, remove_directory
+from common.logger_conf import configure_logger
 
 OPEN_SOURCE_KEY = 'OPEN_SOURCE_INFRA'
 CLOSED_SOURCE_KEY = 'CLOSED_SOURCE_INFRA'

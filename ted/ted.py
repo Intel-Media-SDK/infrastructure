@@ -28,6 +28,8 @@ import collections
 import os
 from pathlib import Path
 
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+from common.helper import TestReturnCodes
 from ted import discover
 
 if __name__ == '__main__':
@@ -84,9 +86,6 @@ if __name__ == '__main__':
         passed += passed_
 
     print("\n{} of {} cases passed".format(passed, total))
-
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from common.helper import TestReturnCodes
 
     if (total-passed) != 0:
         sys.exit(TestReturnCodes.SUCCESS.value)

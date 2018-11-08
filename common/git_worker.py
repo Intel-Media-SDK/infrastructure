@@ -31,7 +31,7 @@ from datetime import datetime
 import git
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from helper import remove_directory
+from common.helper import remove_directory
 
 
 class GitRepo(object):
