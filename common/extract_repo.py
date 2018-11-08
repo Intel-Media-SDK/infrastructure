@@ -30,7 +30,7 @@ import shutil
 from distutils.dir_util import copy_tree
 from datetime import datetime
 
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common import git_worker
 from common.mediasdk_directories import MediaSdkDirectories, Proxy
 from common.helper import ErrorCode, remove_directory

@@ -1034,7 +1034,7 @@ which is not present in mediasdk_directories.''')
 
 
 if __name__ == '__main__':
-    sys.path.append(str(pathlib.Path(__file__).parents[1]))
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
     from common.helper import ErrorCode
 
     if platform.python_version_tuple() < ('3', '6'):

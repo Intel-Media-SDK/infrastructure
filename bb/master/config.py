@@ -24,7 +24,7 @@ from enum import Enum
 
 import msdk_secrets
 
-sys.path.append(str(pathlib.Path(__file__).parents[2]))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 from common.helper import Product_type, Build_type
 
 class Mode(Enum):
