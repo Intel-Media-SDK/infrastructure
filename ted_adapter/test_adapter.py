@@ -256,7 +256,7 @@ def main():
 
 if __name__ == '__main__':
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from common import MediaSdkDirectories
+    from common.mediasdk_directories import MediaSdkDirectories
     from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
     from smoke_test.config import LOG_PATH, LOG_NAME
     main()
