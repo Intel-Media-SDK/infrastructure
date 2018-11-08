@@ -22,11 +22,10 @@
 
 
 import sys
-import os
 from pathlib import Path
 from collections import namedtuple
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 from smoke_test import hevc_fei_smoke_test
 
 
