@@ -359,7 +359,7 @@ class BuildGenerator(object):
         :type repo_url: String
 
         :param target_arch: Architecture of target platform
-        :type target_arch: String
+        :type target_arch: List
 
         :param custom_cli_args: Dict of custom command line arguments (ex. 'arg': 'value')
         :type custom_cli_args: Dict
