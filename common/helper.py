@@ -591,4 +591,4 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True):
 
         return completed_process.returncode, completed_process.stdout
     except subprocess.CalledProcessError as failed_process:
-        return failed_process.returncode, failed_process.stdout 
+        return failed_process.returncode, failed_process.stdout
