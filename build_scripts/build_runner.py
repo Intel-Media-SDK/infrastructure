@@ -358,7 +358,7 @@ class BuildGenerator(object):
                          (repository which is not in mediasdk_directories)
         :type repo_url: String
 
-        :param target_arch: Bitness of target platform
+        :param target_arch: Architecture of target platform
         :type target_arch: String
 
         :param custom_cli_args: Dict of custom command line arguments (ex. 'arg': 'value')
