@@ -1062,4 +1062,4 @@ if __name__ == '__main__':
         from common.mediasdk_directories import MediaSdkDirectories
         from common.build_number import get_build_number
 
-        main() 
+        main()
