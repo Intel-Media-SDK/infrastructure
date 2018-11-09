@@ -979,6 +979,9 @@ which is not present in mediasdk_directories.''')
         configure_logger(logs_path=pathlib.Path(parsed_args.root_dir) / 'logs' / f'{parsed_args.stage}.log')
     log = logging.getLogger('build_runner.main')
 
+    target_arch = [parsed_args.target_arch] if isinstance(parsed_args.target_arch, str) \
+                                            else parsed_args.target_arch
+
     custom_cli_args = {}
     if unknown_args:
         for arg in unknown_args:
@@ -1006,7 +1009,7 @@ which is not present in mediasdk_directories.''')
         repo_url=parsed_args.repo_url,
         custom_cli_args=custom_cli_args,
         stage=parsed_args.stage,
-        target_arch=parsed_args.target_arch
+        target_arch=target_arch
     )
 
     # We must create BuildGenerator anyway.
