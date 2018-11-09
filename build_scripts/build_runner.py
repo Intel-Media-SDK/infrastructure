@@ -47,6 +47,14 @@ from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
+    copy_win_files, rotate_dir, cmd_exec, ErrorCode
+from common.logger_conf import configure_logger
+from common.git_worker import ProductState
+from common.mediasdk_directories import MediaSdkDirectories
+from common.build_number import get_build_number
+
 
 class UnsupportedVSError(Exception):
     """
@@ -1034,18 +1042,4 @@ which is not present in mediasdk_directories.''')
 
 
 if __name__ == '__main__':
-    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from common.helper import ErrorCode
-
-    if platform.python_version_tuple() < ('3', '6'):
-        print('\nERROR: Python 3.6 or higher is required')
-        exit(ErrorCode.CRITICAL)
-    else:
-        from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-            copy_win_files, rotate_dir, cmd_exec
-        from common.logger_conf import configure_logger
-        from common.git_worker import ProductState
-        from common.mediasdk_directories import MediaSdkDirectories
-        from common.build_number import get_build_number
-
-        main()
+    main()

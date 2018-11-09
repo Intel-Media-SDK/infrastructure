@@ -22,13 +22,10 @@
 
 import re
 import sys
-import json
 import argparse
-import collections
-import os
 from pathlib import Path
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 from common.helper import TestReturnCodes
 from ted import discover
 
