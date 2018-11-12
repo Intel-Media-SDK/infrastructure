@@ -968,8 +968,9 @@ which is not present in mediasdk_directories.''')
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
     parser.add_argument('-ta', "--target-arch",
-                        default=[target_arch.value for target_arch in Target_arch],
-                        choices=[target_arch.value for target_arch in Target_arch],
+                        nargs='*',
+                        default=[target_arch.value for target_arch in TargetArch],
+                        choices=[target_arch.value for target_arch in TargetArch],
                         help='Architecture of target platform')
 
     parsed_args, unknown_args = parser.parse_known_args()
@@ -979,8 +980,8 @@ which is not present in mediasdk_directories.''')
         configure_logger(logs_path=pathlib.Path(parsed_args.root_dir) / 'logs' / f'{parsed_args.stage}.log')
     log = logging.getLogger('build_runner.main')
 
-    target_arch = [parsed_args.target_arch] if isinstance(parsed_args.target_arch, str) \
-                                            else parsed_args.target_arch
+    # remove duplicated values
+    target_arch = [*set(parsed_args.target_arch)]
 
     custom_cli_args = {}
     if unknown_args:
@@ -1055,7 +1056,7 @@ if __name__ == '__main__':
         print('\nERROR: Python 3.6 or higher is required')
         exit(ErrorCode.CRITICAL)
     else:
-        from common.helper import Stage, Product_type, Build_event, Build_type, Target_arch, make_archive, \
+        from common.helper import Stage, Product_type, Build_event, Build_type, TargetArch, make_archive, \
             copy_win_files, rotate_dir, cmd_exec
         from common.logger_conf import configure_logger
         from common.git_worker import ProductState
