@@ -30,7 +30,7 @@ import filecmp
 from pathlib import Path
 from string import Template
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 from common.helper import TestReturnCodes
 from smoke_test import config as cfg
 
