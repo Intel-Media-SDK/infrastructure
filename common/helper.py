@@ -130,11 +130,10 @@ class Build_event(Enum):
     KLOCWORK = 'klocwork'
     CUSTOM_BUILD = 'custom_build'
 
-class Target_arch(Enum):
+class TargetArch(Enum):
     """
     Constants for defining type of target architecture
     """
-
     x86 = 'x86'
     x86_64 = 'x86_64'
 
