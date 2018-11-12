@@ -25,7 +25,6 @@ which uses in build runner
 import os
 import pathlib
 import platform
-import importlib
 from urllib.parse import quote, urljoin
 
 
@@ -53,15 +52,9 @@ def find_folder_on_disks(folder):
             return root_dir
 
 
-def is_closed_source():
-    if importlib.util.find_spec('common.static_closed_data'):
-        return True
-    return False
-
-
-if is_closed_source():
+try:
     import common.static_closed_data as static_data
-else:
+except Exception:
     import common.static_public_data as static_data
 
 

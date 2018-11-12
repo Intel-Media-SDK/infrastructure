@@ -19,12 +19,10 @@
 # SOFTWARE.
 
 import sys
-import os
 from enum import Enum
 
 import msdk_secrets
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from common.helper import Product_type, Build_type
 
 class Mode(Enum):
