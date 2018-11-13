@@ -102,6 +102,37 @@ class TedAdapter(object):
         self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
         self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
 
+        # Install Libva from packages
+
+    def _install_pack(self, pack_type='rpm'):
+        """
+        Install rpm or deb package
+
+        :return: None
+        """
+
+        pack_path = self.build_artifacts_dir
+
+        for pack in list(pack_path.glob(f'*.{pack_type}')):
+            # Copy pkg to the workdir
+            self._copy(str(pack), str(self.root_dir))
+            # Install pack
+            if pack_type in 'rpm':
+                self._install_rpm(pack)
+            else:
+                self._install_deb(pack)
+
+    def _uninstall_pack(self, pack_type='rpm', pack_name='libva'):
+        """
+        Uninstall rpm or deb package
+
+        :return: None
+        """
+
+        if pack_type in 'rpm':
+            self._uninstall_rpm(pack_name)
+        else:
+            self._uninstall_deb(pack_name)
 
     def run_test(self):
         """
@@ -112,6 +143,13 @@ class TedAdapter(object):
         """
 
         self._get_artifacts()
+
+        # TODO: check OS type to choose rpm/deb
+        # Clean env: uninstall libva from system
+        self._uninstall_pack(pack_type='rpm', pack_name='libva')
+
+        # install libva to system
+        self._install_pack(pack_type='rpm')
 
         # Path to mediasdk fodler which will be tested
         self.env['MFX_HOME'] = adapter_conf.MEDIASDK_PATH
@@ -173,6 +211,18 @@ class TedAdapter(object):
 
     def _mkdir(self, path):
         return self._execute_command(f"mkdir -p {path}")
+
+    def _install_rpm(self, pkg_name, sudo=True):
+        return self._execute_command(f"yum -y install {pkg_name}", sudo)
+
+    def _install_deb(self, pkg_name, sudo=True):
+        return self._execute_command(f"dpkg -y {pkg_name}", sudo)
+
+    def _uninstall_rpm(self, pkg_name, sudo=True):
+        return self._execute_command(f"yum -y remove {pkg_name}", sudo)
+
+    def _uninstall_deb(self, pkg_name, sudo=True):
+        return self._execute_command(f"aptitude -y remove {pkg_name}", sudo)
 
     def _execute_command(self, command, sudo=False):
         prefix = "sudo" if sudo else ""

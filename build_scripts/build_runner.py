@@ -49,7 +49,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, ErrorCode
+    copy_win_files, rotate_dir, cmd_exec, ErrorCode, copytree
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
 from common.mediasdk_directories import MediaSdkDirectories
@@ -391,7 +391,8 @@ class BuildGenerator(object):
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
-            "STRIP_BINARIES": False  # Flag for stripping binaries of build
+            "STRIP_BINARIES": False,  # Flag for stripping binaries of build
+            "LIBVA_PKG_DIR": root_dir / "libva_pkgconfig",  # Fake pkgconfig dir
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
@@ -446,7 +447,9 @@ class BuildGenerator(object):
             'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
-            'branch_name': self.branch_name
+            'branch_name': self.branch_name,
+            'generate_configs': self._generate_build_configs,
+            'change_prefix': self._change_prefix,
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -570,7 +573,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR', 'LIBVA_PKG_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -866,9 +869,17 @@ class BuildGenerator(object):
                                    debug_file])
                 ])
 
+                check_binary_command = f'file {orig_file} | grep ELF'
+
                 for command in strip_commands.values():
                     err, out = cmd_exec(command, shell=False, log=self.log, verbose=False)
                     if err:
+                        # Not strip file if it is not binary
+                        return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self.log,
+                                                                 verbose=False)
+                        if return_code == 1:
+                            self.log.warning(f"File {orig_file} not binary")
+                            break
                         if orig_file not in binaries_with_error:
                             binaries_with_error.append(orig_file)
                         self.log.error(out)
@@ -930,6 +941,40 @@ class BuildGenerator(object):
 
         self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
+
+    # Workaround to build libva from custom location
+    def _generate_build_configs(self, src_config_dir, dst_config_dir, prefix):
+        """
+        Create fake pkgconfigs. Copy true configs to destination dir
+
+        :param src_config_dir: source dir
+        :param dst_config_dir: destination dir
+        :param prefix: package source dir
+        :return:
+        """
+        copytree(src_config_dir, dst_config_dir)
+        self._change_prefix(dst_config_dir, prefix)
+
+    def _change_prefix(self, pkg_dir, prefix):
+        """
+        Change prefix in pkgconfigs
+
+        :param pkg_dir: pkgconfigs dir
+        :param prefix: package source dir
+        :return: None | Exception
+        """
+        files_list = pkg_dir.glob('*.pc')
+        for pkgconfig in files_list:
+            try:
+                file_lines = open(pkgconfig, 'r').readlines()
+                # change prefix path
+                file_lines[0] = f'prefix={prefix}\n'
+
+                with open(pkgconfig, 'w') as out:
+                    out.writelines(line for line in file_lines)
+                    out.close()
+            except IndexError:
+                self.log.error(f"File {pkgconfig} is empty")
 
 
 def main():
