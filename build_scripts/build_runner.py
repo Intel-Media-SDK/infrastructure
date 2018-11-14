@@ -449,7 +449,7 @@ class BuildGenerator(object):
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
             'generate_configs': self._generate_build_configs,
-            'change_prefix': self._change_prefix,
+            'change_config': self._change_config,
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -877,7 +877,7 @@ class BuildGenerator(object):
                         # Not strip file if it is not binary
                         return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self.log,
                                                                  verbose=False)
-                        if return_code == 1:
+                        if return_code:
                             self.log.warning(f"File {orig_file} not binary")
                             break
                         if orig_file not in binaries_with_error:
@@ -943,39 +943,94 @@ class BuildGenerator(object):
         return major_version, minor_version
 
     # Workaround to build libva from custom location
-    def _generate_build_configs(self, src_config_dir, dst_config_dir, prefix):
+    def _generate_build_configs(self, src_config_dir, dst_config_dir, data):
         """
         Create fake pkgconfigs. Copy true configs to destination dir
 
         :param src_config_dir: source dir
+        :type: pathlib.Path
+
         :param dst_config_dir: destination dir
-        :param prefix: package source dir
-        :return:
+        :type: pathlib.Path
+
+        :param data: new configs to write
+        :type: dict
+
+        :return: None
         """
         copytree(src_config_dir, dst_config_dir)
-        self._change_prefix(dst_config_dir, prefix)
+        self._change_config(dst_config_dir, data)
 
-    def _change_prefix(self, pkg_dir, prefix):
+    def _change_config(self, config_dir, new_data):
         """
         Change prefix in pkgconfigs
 
-        :param pkg_dir: pkgconfigs dir
-        :param prefix: package source dir
+        :param config_dir: pkgconfigs dir
+        :type: pathlib.Path
+
+        :param new_data: new data to write to pkgconfigs
+        :type: dict
+
         :return: None | Exception
         """
-        files_list = pkg_dir.glob('*.pc')
+        files_list = config_dir.glob('*.pc')
         for pkgconfig in files_list:
+            current_config_data = self._file_to_dict(pkgconfig)
+            # Change values by dicts join
+            changed_data = {**current_config_data, **new_data}
+
+            # Save the second part of pkgconfig with delimiter ':'
+            additional_config_data = self._file_to_dict(pkgconfig, delimiter=': ')
+
+            # Write to pkgconfigs
+            self._dict_to_file(pkgconfig, changed_data)
+            self._dict_to_file(pkgconfig, additional_config_data, delimiter=': ', mode='a')
+
+
+    def _file_to_dict(self, file_path, delimiter='='):
+        """
+        Read file data to dict
+
+        :param file_path: path to file
+        :type: pathlib.Path
+
+        :param delimiter: delimiter to split by
+        :type: String
+
+        :return: dict of file lines
+        :rtype: dict
+        """
+
+        file_data = {}
+        with file_path.open() as file:
             try:
-                file_lines = open(pkgconfig, 'r').readlines()
-                # change prefix path
-                file_lines[0] = f'prefix={prefix}\n'
-
-                with open(pkgconfig, 'w') as out:
-                    out.writelines(line for line in file_lines)
-                    out.close()
+                file_lines = file.readlines()
+                for line in file_lines:
+                    if delimiter in line:
+                        split_line = line.rstrip().split(delimiter)
+                        file_data[split_line[0]] = split_line[1]
             except IndexError:
-                self.log.error(f"File {pkgconfig} is empty")
+                self.log.error(f"File {file} is empty")
 
+        return file_data
+
+    def _dict_to_file(self, file_path, data, delimiter='=', mode='w'):
+        """
+        Write dict to file
+
+        :param file_path: path to file
+        :type: pathlib.Path
+
+        :param delimiter:
+        :type: String
+
+        :return: None
+        """
+
+        file_data = [delimiter.join([str(key), str(value)]) for (key, value) in data.items()]
+        with file_path.open(mode) as out:
+            out.write(os.linesep.join(file_data))
+            out.write('\n')
 
 def main():
     """
