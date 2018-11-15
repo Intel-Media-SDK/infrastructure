@@ -238,6 +238,7 @@ class ProductState(object):
 
         for repo in self.repo_states:
             if not repo.commit_id:
+                repo.commit_id = 'head'
                 repo.prepare_repo()
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
