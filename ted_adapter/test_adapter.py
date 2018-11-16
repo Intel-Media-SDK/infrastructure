@@ -30,12 +30,14 @@ import argparse
 import shutil
 import subprocess
 import os
+import platform
 import pathlib
 import tarfile
 import traceback
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 import adapter_conf
+import common.package_manager as PackageManager
 from common.mediasdk_directories import MediaSdkDirectories
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
@@ -102,37 +104,36 @@ class TedAdapter(object):
         self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
         self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
 
-        # Install Libva from packages
 
-    def _install_pack(self, pack_type='rpm'):
+
+    def _install_pkg(self, pkg_name):
         """
-        Install rpm or deb package
+        Install pkg
+        :param pkg_name: pkg name
+        :type: String
 
-        :return: None
-        """
-
-        pack_path = self.build_artifacts_dir
-
-        for pack in list(pack_path.glob(f'*.{pack_type}')):
-            # Copy pkg to the workdir
-            self._copy(str(pack), str(self.root_dir))
-            # Install pack
-            if pack_type in 'rpm':
-                self._install_rpm(pack)
-            else:
-                self._install_deb(pack)
-
-    def _uninstall_pack(self, pack_type='rpm', pack_name='libva'):
-        """
-        Uninstall rpm or deb package
-
-        :return: None
+        :return: Flag whether pkg installed
+        :rtype: Bool
         """
 
-        if pack_type in 'rpm':
-            self._uninstall_rpm(pack_name)
-        else:
-            self._uninstall_deb(pack_name)
+        os_type = PackageManager.get_os_version()
+        pkg_type = os_type if os_type in "deb" else "rpm"
+
+        pkg_installed = PackageManager.is_pkg_installed(pkg_name)
+        pkg_uninstalled = True
+
+        if pkg_installed:
+            pkg_uninstalled = PackageManager.uninstall_pkg(pkg_name)
+            pkg_installed = not pkg_installed
+
+        if pkg_uninstalled:
+            pkg_dir = self.build_artifacts_dir
+            for pkg_path in list(pkg_dir.glob(f'*.{pkg_type}')):
+                if pkg_name in pkg_path.name:
+                    pkg_installed = PackageManager.install_pkg(pkg_path)
+                    break
+        return pkg_installed
+
 
     def run_test(self):
         """
@@ -144,12 +145,7 @@ class TedAdapter(object):
 
         self._get_artifacts()
 
-        # TODO: check OS type to choose rpm/deb
-        # Clean env: uninstall libva from system
-        self._uninstall_pack(pack_type='rpm', pack_name='libva')
-
-        # install libva to system
-        self._install_pack(pack_type='rpm')
+        self._install_pkg('libva')
 
         # Path to mediasdk fodler which will be tested
         self.env['MFX_HOME'] = adapter_conf.MEDIASDK_PATH
@@ -211,18 +207,6 @@ class TedAdapter(object):
 
     def _mkdir(self, path):
         return self._execute_command(f"mkdir -p {path}")
-
-    def _install_rpm(self, pkg_name, sudo=True):
-        return self._execute_command(f"yum -y install {pkg_name}", sudo)
-
-    def _install_deb(self, pkg_name, sudo=True):
-        return self._execute_command(f"dpkg -y {pkg_name}", sudo)
-
-    def _uninstall_rpm(self, pkg_name, sudo=True):
-        return self._execute_command(f"yum -y remove {pkg_name}", sudo)
-
-    def _uninstall_deb(self, pkg_name, sudo=True):
-        return self._execute_command(f"aptitude -y remove {pkg_name}", sudo)
 
     def _execute_command(self, command, sudo=False):
         prefix = "sudo" if sudo else ""

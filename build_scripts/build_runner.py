@@ -392,7 +392,7 @@ class BuildGenerator(object):
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
-            "LIBVA_PKG_DIR": root_dir / "libva_pkgconfig",  # Fake pkgconfig dir
+            "CONFIGS_DIR":  root_dir / "configs"
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
@@ -448,8 +448,8 @@ class BuildGenerator(object):
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
-            'generate_configs': self._generate_build_configs,
-            'change_config': self._change_config,
+            'create_config': self._create_config,
+            'update_config': self._update_config,
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -573,7 +573,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR', 'LIBVA_PKG_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR', 'CONFIGS_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -942,15 +942,14 @@ class BuildGenerator(object):
         self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
 
-    # Workaround to build libva from custom location
-    def _generate_build_configs(self, src_config_dir, dst_config_dir, data):
+    def _create_config(self, copy_from, copy_to, data):
         """
-        Create fake pkgconfigs. Copy true configs to destination dir
+        Create fake pkgconfigs
 
-        :param src_config_dir: source dir
+        :param copy_from: source dir
         :type: pathlib.Path
 
-        :param dst_config_dir: destination dir
+        :param copy_to: destination dir
         :type: pathlib.Path
 
         :param data: new configs to write
@@ -958,79 +957,31 @@ class BuildGenerator(object):
 
         :return: None
         """
-        copytree(src_config_dir, dst_config_dir)
-        self._change_config(dst_config_dir, data)
+        copytree(copy_from, copy_to)
+        self._update_config(copy_to, data)
 
-    def _change_config(self, config_dir, new_data):
+    def _update_config(self, config_dir, update_data):
         """
         Change prefix in pkgconfigs
 
         :param config_dir: pkgconfigs dir
         :type: pathlib.Path
 
-        :param new_data: new data to write to pkgconfigs
+        :param update_data: new data to write to pkgconfigs
         :type: dict
 
         :return: None | Exception
         """
         files_list = config_dir.glob('*.pc')
         for pkgconfig in files_list:
-            current_config_data = self._file_to_dict(pkgconfig)
-            # Change values by dicts join
-            changed_data = {**current_config_data, **new_data}
-
-            # Save the second part of pkgconfig with delimiter ':'
-            additional_config_data = self._file_to_dict(pkgconfig, delimiter=': ')
-
-            # Write to pkgconfigs
-            self._dict_to_file(pkgconfig, changed_data)
-            self._dict_to_file(pkgconfig, additional_config_data, delimiter=': ', mode='a')
-
-
-    def _file_to_dict(self, file_path, delimiter='='):
-        """
-        Read file data to dict
-
-        :param file_path: path to file
-        :type: pathlib.Path
-
-        :param delimiter: delimiter to split by
-        :type: String
-
-        :return: dict of file lines
-        :rtype: dict
-        """
-
-        file_data = {}
-        with file_path.open() as file:
-            try:
-                file_lines = file.readlines()
-                for line in file_lines:
-                    if delimiter in line:
-                        split_line = line.rstrip().split(delimiter)
-                        file_data[split_line[0]] = split_line[1]
-            except IndexError:
-                self.log.error(f"File {file} is empty")
-
-        return file_data
-
-    def _dict_to_file(self, file_path, data, delimiter='=', mode='w'):
-        """
-        Write dict to file
-
-        :param file_path: path to file
-        :type: pathlib.Path
-
-        :param delimiter:
-        :type: String
-
-        :return: None
-        """
-
-        file_data = [delimiter.join([str(key), str(value)]) for (key, value) in data.items()]
-        with file_path.open(mode) as out:
-            out.write(os.linesep.join(file_data))
-            out.write('\n')
+            with pkgconfig.open('r') as fd:
+                current_config_data = fd.readlines()
+            with pkgconfig.open('w') as fd:
+                for line in current_config_data:
+                    line = line.rstrip()
+                    for pattern in update_data.keys():
+                        line = re.sub(pattern, update_data[pattern], line)
+                    fd.write(line + '\n')
 
 def main():
     """
