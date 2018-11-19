@@ -49,17 +49,17 @@ def get_build_number(repo_path, os_type, branch):
     return build_number
 
 
-def increase_build_number(origin_repo_path, os_type, branch):
+def increase_build_number(local_repo_path, os_type, branch):
     """
         Increase build number by 1 in remote repository, if it is the same for local and remote repositories
-        This condition needed to avoid increasing build number while rebuilds
-        Function extracts mdp_msdk-product-configs repo in following layout to push change to remote repository
+        This condition is needed to avoid increasing build number while rebuilds
+        Function extracts product-configs repo in following layout to push change to remote repository
 
-        ../tmp/mdp_msdk-product-configs
+        ../tmp/product-configs
         ../origin_repo_path
 
-        :param origin_repo_path: path to local repository with "build_numbers.json" file
-        :type origin_repo_path: String | pathlib.Path
+        :param local_repo_path: path to local repository with "build_numbers.json" file
+        :type local_repo_path: String | pathlib.Path
         :param os_type: OS type. Need for finding certain build number
         :type os_type: String
         :param branch: Name of branch. Need for finding certain build number
@@ -71,40 +71,43 @@ def increase_build_number(origin_repo_path, os_type, branch):
     build_numbers_file = 'build_numbers.json'
 
     log.info(f'Get build number from local repository')
-    origin_build_number = get_build_number(repo_path=pathlib.Path(origin_repo_path),
+    current_build_number = get_build_number(repo_path=pathlib.Path(local_repo_path),
                                            os_type=os_type, branch=branch)
-    if origin_build_number == 0:
-        log.error(f'Build number should be not 0'
-                  f'Maybe {pathlib.Path(origin_repo_path) / build_numbers_file} do not contains {branch} branch for {os_type} platform')
+    if current_build_number == 0:
+        log.error(f'Local build number must not be 0'
+                  f'Check that {pathlib.Path(local_repo_path) / build_numbers_file} contains appropriate {branch} branch for {os_type} platform')
         return False
 
-    temporary_dir = pathlib.Path(origin_repo_path) / '..' / 'tmp'
-    temporary_repo_path = temporary_dir / 'mdp_msdk-product-configs'
-    temporary_build_number_path = temporary_repo_path / build_numbers_file
+    repo_name = pathlib.Path(local_repo_path).name
+    temp_dir = (pathlib.Path(local_repo_path) / '..' / 'tmp').resolve()
+    latest_version_repo_path = temp_dir / repo_name
+    latest_build_number_path = latest_version_repo_path / build_numbers_file
 
-    if temporary_dir.exists():
-        log.info(f"Remove old repository in {temporary_dir}")
-        remove_directory(str(temporary_dir))
+    if temp_dir.exists():
+        log.info(f"Remove old repository in {temp_dir}")
+        remove_directory(str(temp_dir))
 
-    temporary_dir.mkdir(exist_ok=True)
-    extract_repo(root_repo_dir=temporary_dir, repo_name='mdp_msdk-product-configs',
+    temp_dir.mkdir(exist_ok=True)
+    extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
                  branch=branch, commit_id='HEAD')
 
-    log.info(f'Getting build number from HEAD of {branch} branch for repo in {temporary_repo_path}')
-    temporary_build_number = get_build_number(repo_path=temporary_repo_path,
-                                              os_type=os_type, branch=branch)
+    log.info(
+        f'Getting build number from HEAD of {branch} branch for repo in {latest_version_repo_path}')
+    latest_build_number = get_build_number(repo_path=latest_build_number_path,
+                                           os_type=os_type, branch=branch)
 
-    if origin_build_number != temporary_build_number:
-        log.warning(f'Build numbers in remote ({temporary_build_number}) and local ({origin_build_number}) repositories are not equal'
-                    f'It maybe because this is rebuild of old build for which build number already has been increased'
-                    f'Stop operation')
+    if current_build_number != latest_build_number:
+        log.warning(
+            f'Build numbers in remote ({latest_build_number}) and local ({current_build_number}) repositories are not equal'
+            f'It maybe because this is rebuild of old build for which build number already has been increased'
+            f'Stop operation')
         return False
 
     log.info('Increasing build number')
-    if temporary_build_number_path.exists():
+    if latest_build_number_path.exists():
         try:
             log.info(f'\tChanging build numbers file')
-            with temporary_build_number_path.open('r+') as build_number_file:
+            with latest_build_number_path.open('r+') as build_number_file:
                 build_numbers = json.load(build_number_file)
 
                 new_build_number = build_numbers[os_type][branch] + 1
@@ -117,10 +120,10 @@ def increase_build_number(origin_repo_path, os_type, branch):
             log.info(f'\tPush changes')
 
             push_change_commands = ['git add -A',
-                                    f'git commit -m "Increase build number to {new_build_number}"'
-                                    f'git push origin {branch}']
+                                    f'git commit -m "Increased build number of {branch} branch for {os_type} platform to {new_build_number}"',
+                                    f'git push origin HEAD:{branch}']
             for command in push_change_commands:
-                return_code, output = cmd_exec(command, cwd=temporary_repo_path)
+                return_code, output = cmd_exec(command, cwd=latest_version_repo_path)
                 if return_code:
                     log.error(output)
 
@@ -129,7 +132,7 @@ def increase_build_number(origin_repo_path, os_type, branch):
             return False
     else:
         log.error(
-            f'Increasing build number failed, because {temporary_build_number_path} does not exist')
+            f'Increasing build number failed, because {latest_build_number_path} does not exist')
         return False
-    log.info(f'Build number successfully increased. New build number is {new_build_number}')
+    log.info(f'Build number was increased to {new_build_number}')
     return True
