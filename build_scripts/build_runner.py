@@ -331,7 +331,8 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
-                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, custom_cli_args=None):
+                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, target_arch=None,
+                 custom_cli_args=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -365,6 +366,9 @@ class BuildGenerator(object):
                          (repository which is not in mediasdk_directories)
         :type repo_url: String
 
+        :param target_arch: Architecture of target platform
+        :type target_arch: List
+
         :param custom_cli_args: Dict of custom command line arguments (ex. 'arg': 'value')
         :type custom_cli_args: Dict
         """
@@ -391,13 +395,14 @@ class BuildGenerator(object):
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
-            "STRIP_BINARIES": False  # Flag for stripping binaries of build
+            "STRIP_BINARIES": False # Flag for stripping binaries of build
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
         self.config_variables = {}
         self.custom_cli_args = custom_cli_args
         self.current_stage = stage
+        self.target_arch = target_arch
 
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -446,7 +451,8 @@ class BuildGenerator(object):
             'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
-            'branch_name': self.branch_name
+            'branch_name': self.branch_name,
+            'target_arch': self.target_arch
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -552,7 +558,7 @@ class BuildGenerator(object):
         if self.current_stage == Stage.BUILD.value:
             configure_logger(name, self.options['LOGS_DIR'] / 'build' / f'{name}.log')
         self.actions[Stage.BUILD.value].append(VsComponent(name, solution_path, ms_arguments, vs_version,
-                                                     dependencies, env, verbose))
+                                                           dependencies, env, verbose))
 
     def _run_build_config_actions(self, stage):
         for action in self.actions[stage]:
@@ -969,6 +975,11 @@ which is not present in mediasdk_directories.''')
                         help="Current executable stage")
     parser.add_argument('-t', "--commit-time", metavar='datetime',
                         help="Time of commits (ex. 2017-11-02 07:36:40)")
+    parser.add_argument('-ta', "--target-arch",
+                        nargs='*',
+                        default=[target_arch.value for target_arch in TargetArch],
+                        choices=[target_arch.value for target_arch in TargetArch],
+                        help='Architecture of target platform')
 
     parsed_args, unknown_args = parser.parse_known_args()
 
@@ -976,6 +987,9 @@ which is not present in mediasdk_directories.''')
     if parsed_args.stage != Stage.CLEAN.value:
         configure_logger(logs_path=pathlib.Path(parsed_args.root_dir) / 'logs' / f'{parsed_args.stage}.log')
     log = logging.getLogger('build_runner.main')
+
+    # remove duplicated values
+    target_arch = [*set(parsed_args.target_arch)]
 
     custom_cli_args = {}
     if unknown_args:
@@ -1003,7 +1017,8 @@ which is not present in mediasdk_directories.''')
         repo_states_file_path=parsed_args.repo_states,
         repo_url=parsed_args.repo_url,
         custom_cli_args=custom_cli_args,
-        stage=parsed_args.stage
+        stage=parsed_args.stage,
+        target_arch=target_arch
     )
 
     # We must create BuildGenerator anyway.
@@ -1012,7 +1027,7 @@ which is not present in mediasdk_directories.''')
     try:
         if not parsed_args.changed_repo and not parsed_args.repo_states:
             log.warning('"--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and '
-                        '"master" branch be used')
+                        '"master" branch will be used')
         elif parsed_args.changed_repo and parsed_args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
