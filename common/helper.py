@@ -560,12 +560,12 @@ def update_json(check_type, success, output, json_path):
     return True
 
 
-def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, to_hide=None):
+def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, hide=None):
 
     out_cmd = subprocess.list2cmdline(cmd) if isinstance(cmd, list) else cmd
 
-    if isinstance(to_hide, list):
-        for hide_str, show_str in to_hide:
+    if isinstance(hide, list):
+        for hide_str, show_str in hide:
             out_cmd = out_cmd.replace(hide_str, show_str)
 
     if log:
