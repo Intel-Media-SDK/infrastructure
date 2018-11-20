@@ -989,7 +989,7 @@ which is not present in mediasdk_directories.''')
     log = logging.getLogger('build_runner.main')
 
     # remove duplicated values
-    target_arch = [*set(parsed_args.target_arch)]
+    target_arch = list(set(parsed_args.target_arch))
 
     custom_cli_args = {}
     if unknown_args:
