@@ -19,42 +19,32 @@
 # SOFTWARE.
 
 """
-Module for working with packages
+Module for working with Linux rpm and deb packages
 
 """
 
-import platform
-import subprocess
+import logging
+from common.system_info import get_os_name
+from common.helper import cmd_exec
+from common.logger_conf import configure_logger
 
-from enum import Enum
-
-
-class OSType(Enum):
-    """
-    Container for os version
-    """
-
-    CENTOS = "centos"
-    DEBIAN = "deb"
-
-
-CMD_PATTERN = {
+_CMD_PATTERN = {
     "INSTALL": {
-        "deb": "dpkg -y install {pkg}",
-        "centos": "yum -y install {pkg}"
+        "deb": "dpkg -y install {pkg_path}",
+        "centos": "yum -y install {pkg_path}"
     },
     "UNINSTALL": {
-        "deb": "aptitude -y remove {pkg}",
-        "centos": "yum -y remove {pkg}"
+        "deb": "aptitude -y remove {pkg_name}",
+        "centos": "yum -y remove {pkg_name}"
     },
     "CHECK_INSTALLED": {
-        "deb": "dpkg --list | grep {pkg}",
-        "centos": "yum list installed | grep {pkg}"
+        "deb": "dpkg --list | grep {pkg_name}",
+        "centos": "yum list installed | grep {pkg_name}"
     }
 }
 
 
-def install_pkg(pkg_path):
+def install_pkg(pkg_path, pkg_name):
     """
 
     :param pkg_path: path to pkg to install
@@ -63,10 +53,17 @@ def install_pkg(pkg_path):
     :return: Flag whether pkg installed
     :rtype: bool
     """
-    returncode = execute_command(get_install_cmd(pkg_path), sudo=True)
-    if not returncode:
-        return True
-    return False
+
+    configure_logger()
+    log = logging.getLogger('package_manager.install_pkg')
+
+    if not uninstall_pkg(pkg_name):
+        return False
+    cmd = _CMD_PATTERN["INSTALL"].get(get_os_name()).format(pkg_path=pkg_path)
+    err, out = cmd_exec(cmd, log=log, sudo=True)
+    print(out)
+
+    return False if err else True
 
 
 def uninstall_pkg(pkg_name):
@@ -78,10 +75,17 @@ def uninstall_pkg(pkg_name):
     :return: Flag whether pkg uninstalled
     :rtype: bool
     """
-    returncode = execute_command(get_uninstall_cmd(pkg_name), sudo=True)
-    if not returncode:
+
+    if not is_pkg_installed(pkg_name):
         return True
-    return False
+
+    configure_logger()
+    log = logging.getLogger('package_manager.uninstall_pkg')
+    cmd = _CMD_PATTERN["UNINSTALL"].get(get_os_name()).format(pkg_name=pkg_name)
+    err, out = cmd_exec(cmd, log=log, sudo=True)
+    print(out)
+
+    return False if err else True
 
 
 def is_pkg_installed(pkg_name):
@@ -95,81 +99,10 @@ def is_pkg_installed(pkg_name):
     :rtype: bool
 
     """
-    cmd = CMD_PATTERN["CHECK_INSTALLED"].get(get_os_version()).format(pkg=pkg_name)
-    returncode = execute_command(cmd)
-    if not returncode:
+
+    cmd = _CMD_PATTERN["CHECK_INSTALLED"].get(get_os_name()).format(pkg_name=pkg_name)
+    err, out = cmd_exec(cmd)
+    if not err:
         return True
     return False
 
-
-def get_install_cmd(pkg_path):
-    """
-    Return executable cmd for install pkg
-
-    :param pkg_path: path to pkg to install
-    :type: pathlib.Path
-
-    :return: command to install
-    :rtype: String
-    """
-    os_version = get_os_version()
-    cmd = ""
-    if os_version:
-        cmd = CMD_PATTERN["INSTALL"].get(os_version).format(pkg=pkg_path)
-
-    return cmd
-
-
-def get_uninstall_cmd(pkg_name):
-    """
-    Return executable cmd for uninstall pkg
-
-    :param pkg_name: pkg name
-    :type: String
-
-    :return: command to uninstall
-    :rtype: String
-    """
-    os_version = get_os_version()
-    cmd = ""
-    if os_version:
-        cmd = CMD_PATTERN["UNINSTALL"].get(os_version).format(pkg=pkg_name)
-
-    return cmd
-
-
-def get_os_version():
-    """
-    Check OS version and return it
-
-    :return: OS version | None if it is not defined
-    """
-
-    plt = platform.platform()
-    for item in OSType:
-        if item.value in plt:
-            return item.value
-    return None
-
-
-def execute_command(cmd, sudo=False):
-    """
-    Run the command
-
-    :param cmd: comand to execute
-    :type: String
-
-    :param sudo: flag if execute with root privileges
-    :type: bool
-
-    :return: subprocess returncode
-    :rtype: Integer
-    """
-    prefix = "sudo" if sudo else ""
-    timeout = 300
-    process = subprocess.run(f"{prefix} {cmd}",
-                             shell=True,
-                             timeout=timeout,
-                             encoding='utf-8',
-                             errors='backslashreplace')
-    return process.returncode

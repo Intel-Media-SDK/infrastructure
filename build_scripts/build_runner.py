@@ -448,7 +448,6 @@ class BuildGenerator(object):
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
-            'create_config': self._create_config,
             'update_config': self._update_config,
         }
 
@@ -942,25 +941,7 @@ class BuildGenerator(object):
         self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
 
-    def _create_config(self, copy_from, copy_to, data):
-        """
-        Create fake pkgconfigs
-
-        :param copy_from: source dir
-        :type: pathlib.Path
-
-        :param copy_to: destination dir
-        :type: pathlib.Path
-
-        :param data: new configs to write
-        :type: dict
-
-        :return: None
-        """
-        copytree(copy_from, copy_to)
-        self._update_config(copy_to, data)
-
-    def _update_config(self, config_dir, update_data):
+    def _update_config(self, config_dir, update_data, **optional):
         """
         Change prefix in pkgconfigs
 
@@ -970,18 +951,29 @@ class BuildGenerator(object):
         :param update_data: new data to write to pkgconfigs
         :type: dict
 
-        :return: None | Exception
+        :param optional: optional params to define if it is needed to copy configs
+        :type: dict
+
+        :return: Flag whether files were successfully modified
         """
+
+        # Create new dir for pkgconfigs
+        if 'copy_to' in optional:
+            copytree(config_dir, optional['copy_to'])
+            config_dir = optional['copy_to']
+
         files_list = config_dir.glob('*.pc')
         for pkgconfig in files_list:
-            with pkgconfig.open('r') as fd:
+            with pkgconfig.open('r+') as fd:
                 current_config_data = fd.readlines()
-            with pkgconfig.open('w') as fd:
+                fd.seek(0)
+                fd.truncate()
                 for line in current_config_data:
                     line = line.rstrip()
-                    for pattern in update_data.keys():
-                        line = re.sub(pattern, update_data[pattern], line)
+                    for pattern, data in update_data.items():
+                        line = re.sub(pattern, data, line)
                     fd.write(line + '\n')
+
 
 def main():
     """

@@ -41,6 +41,7 @@ import common.package_manager as PackageManager
 from common.mediasdk_directories import MediaSdkDirectories
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
+from common.system_info import get_pack_type
 
 
 
@@ -104,10 +105,9 @@ class TedAdapter(object):
         self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
         self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
 
-
-
-    def _install_pkg(self, pkg_name):
+    def install_test_pkgs(self, pkg_name):
         """
+
         Install pkg
         :param pkg_name: pkg name
         :type: String
@@ -116,23 +116,14 @@ class TedAdapter(object):
         :rtype: Bool
         """
 
-        os_type = PackageManager.get_os_version()
-        pkg_type = os_type if os_type in "deb" else "rpm"
+        pkg_type = get_pack_type()
+        pkg_dir = self.build_artifacts_dir
 
-        pkg_installed = PackageManager.is_pkg_installed(pkg_name)
-        pkg_uninstalled = True
+        for pkg_path in pkg_dir.glob(f'*.{pkg_type}'):
+            if pkg_name in pkg_path.name:
+                return PackageManager.install_pkg(pkg_path, pkg_name)
 
-        if pkg_installed:
-            pkg_uninstalled = PackageManager.uninstall_pkg(pkg_name)
-            pkg_installed = not pkg_installed
-
-        if pkg_uninstalled:
-            pkg_dir = self.build_artifacts_dir
-            for pkg_path in list(pkg_dir.glob(f'*.{pkg_type}')):
-                if pkg_name in pkg_path.name:
-                    pkg_installed = PackageManager.install_pkg(pkg_path)
-                    break
-        return pkg_installed
+        return False
 
 
     def run_test(self):
@@ -144,8 +135,6 @@ class TedAdapter(object):
         """
 
         self._get_artifacts()
-
-        self._install_pkg('libva')
 
         # Path to mediasdk fodler which will be tested
         self.env['MFX_HOME'] = adapter_conf.MEDIASDK_PATH
@@ -271,6 +260,12 @@ def main():
     tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
+
+    pkg_to_install = 'libva'
+    if not adapter.install_test_pkgs(pkg_to_install):
+        print(f"Exception occurred: package {pkg_to_install} was not installed\n")
+        exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
+
     try:
         tests_return_code = adapter.run_test()
     except Exception:
