@@ -28,6 +28,8 @@ from common.system_info import get_os_name
 from common.helper import cmd_exec
 from common.logger_conf import configure_logger
 
+configure_logger()
+
 _CMD_PATTERN = {
     "INSTALL": {
         "deb": "dpkg -y install {pkg_path}",
@@ -54,14 +56,13 @@ def install_pkg(pkg_path, pkg_name):
     :rtype: bool
     """
 
-    configure_logger()
     log = logging.getLogger('package_manager.install_pkg')
 
     if not uninstall_pkg(pkg_name):
         return False
     cmd = _CMD_PATTERN["INSTALL"].get(get_os_name()).format(pkg_path=pkg_path)
     err, out = cmd_exec(cmd, log=log, sudo=True)
-    print(out)
+    log.info(out)
 
     return False if err else True
 
@@ -79,11 +80,10 @@ def uninstall_pkg(pkg_name):
     if not is_pkg_installed(pkg_name):
         return True
 
-    configure_logger()
     log = logging.getLogger('package_manager.uninstall_pkg')
     cmd = _CMD_PATTERN["UNINSTALL"].get(get_os_name()).format(pkg_name=pkg_name)
     err, out = cmd_exec(cmd, log=log, sudo=True)
-    print(out)
+    log.info(out)
 
     return False if err else True
 
