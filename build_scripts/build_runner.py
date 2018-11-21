@@ -49,7 +49,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, ErrorCode
+    copy_win_files, rotate_dir, cmd_exec, ErrorCode, TargetArch
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
 from common.mediasdk_directories import MediaSdkDirectories
