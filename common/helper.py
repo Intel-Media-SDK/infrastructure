@@ -560,7 +560,7 @@ def update_json(check_type, success, output, json_path):
     return True
 
 
-def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, sudo=False):
+def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True):
     if log:
         if verbose:
             log_out = log.info
@@ -578,9 +578,6 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, sudo=F
 
         if env:
             log_out(f'environment: {env}')
-
-    if sudo:
-        cmd = f"sudo {cmd}"
 
     try:
         completed_process = subprocess.run(cmd,

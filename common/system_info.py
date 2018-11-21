@@ -50,7 +50,7 @@ PACK_TYPES = {
 }
 
 
-def get_pack_type():
+def get_pkg_type():
     """
     Return the type of package depending on OS
 

@@ -877,7 +877,7 @@ class BuildGenerator(object):
                         return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self.log,
                                                                  verbose=False)
                         if return_code:
-                            self.log.warning(f"File {orig_file} not binary")
+                            self.log.warning(f"File {orig_file} is not binary")
                             break
                         if orig_file not in binaries_with_error:
                             binaries_with_error.append(orig_file)
@@ -941,11 +941,11 @@ class BuildGenerator(object):
         self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
 
-    def _update_config(self, config_dir, update_data, **optional):
+    def _update_config(self, pkgconfig_dir, update_data, copy_to=None):
         """
         Change prefix in pkgconfigs
 
-        :param config_dir: pkgconfigs dir
+        :param pkgconfig_dir: Path to package congid directory
         :type: pathlib.Path
 
         :param update_data: new data to write to pkgconfigs
@@ -958,21 +958,29 @@ class BuildGenerator(object):
         """
 
         # Create new dir for pkgconfigs
-        if 'copy_to' in optional:
-            copytree(config_dir, optional['copy_to'])
-            config_dir = optional['copy_to']
+        if copy_to:
+            try:
+                copytree(pkgconfig_dir, copy_to)
+                pkgconfig_dir = copy_to
+                self.log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
+            except OSError:
+                self.log.debug(f"update_config: Exception occurred while copying from {pkgconfig_dir} to {copy_to}")
 
-        files_list = config_dir.glob('*.pc')
+        files_list = pkgconfig_dir.glob('*.pc')
         for pkgconfig in files_list:
             with pkgconfig.open('r+') as fd:
-                current_config_data = fd.readlines()
-                fd.seek(0)
-                fd.truncate()
-                for line in current_config_data:
-                    line = line.rstrip()
-                    for pattern, data in update_data.items():
-                        line = re.sub(pattern, data, line)
-                    fd.write(line + '\n')
+                self.log.debug(f"update_config: Start updating pkgconfigs")
+                try:
+                    current_config_data = fd.readlines()
+                    fd.seek(0)
+                    fd.truncate()
+                    for line in current_config_data:
+                        for pattern, data in update_data.items():
+                            line = re.sub(pattern, data, line)
+                        fd.write(line)
+                    self.log.debug(f"update_config: Pkgconfigs are updated")
+                except OSError:
+                    self.log.exception(f"update_config: Exception occurred while opening {pkgconfig}")
 
 
 def main():
