@@ -21,7 +21,7 @@
 import sys
 from enum import Enum
 
-import msdk_secrets
+from common import msdk_secrets
 
 from common.helper import Product_type, Build_type
 
