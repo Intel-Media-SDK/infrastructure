@@ -973,7 +973,7 @@ class BuildGenerator(object):
                 pkgconfig_dir = copy_to
                 self.log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
             except OSError:
-                self.log.error(f"update_config: ERROR")
+                self.log.error(f"update_config: Failed to copy package configs from {pkgconfig_dir} to {copy_to}")
                 raise
 
         files_list = pkgconfig_dir.glob('*.pc')
@@ -990,7 +990,7 @@ class BuildGenerator(object):
                         fd.write(line)
                     self.log.debug(f"update_config: {pkgconfig} is updated")
                 except OSError:
-                    self.log.error(f"update_config: ERROR")
+                    self.log.error(f"update_config: Failed to update package config: {pkgconfig}")
                     raise
 
 
