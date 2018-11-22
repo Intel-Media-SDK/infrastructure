@@ -89,13 +89,13 @@ class Product_type(Enum):
     CLOSED_LINUX = 'closed_linux'
     CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
     CLOSED_EMBEDDED = 'closed_embedded'
-    CLOSED_ANDROID = 'closed_android'
 
     # Product configuration for this product type is the same as for PRIVATE_ANDROID
     # The duplicate is needed for getting correct link for build artifacts, because
     # builds in private and closed source buildbots with the same product type has the same links
     CLOSED_ANDROID_OPEN_SOURCE = 'closed_android_open_source'
 
+    CLOSED_ANDROID = 'closed_android'
     CLOSED_WINDOWS_TITAN = 'closed_windows_titan'
 
     # private
@@ -137,6 +137,14 @@ class Build_event(Enum):
     WEEKLY = 'weekly'
     KLOCWORK = 'klocwork'
     CUSTOM_BUILD = 'custom_build'
+
+
+class TargetArch(Enum):
+    """
+    Constants for defining type of target architecture
+    """
+    x86 = 'x86'
+    x86_64 = 'x86_64'
 
 
 def make_archive(path, data_to_archive):
@@ -382,7 +390,8 @@ def copy_win_files(repos_dir, build_dir):
     """
 
     ignore_files = shutil.ignore_patterns('*.ipdb', '*.map', '*.list', '*obj*', '*.*log', '*.exp',
-                                          '*.bsc', 'mfx_pipeline.lib', 'mfx_trans_pipeline.lib', r'amd64', r'x86')
+                                          '*.bsc', 'mfx_pipeline.lib', 'mfx_trans_pipeline.lib',
+                                          r'amd64', r'x86')
 
     win_thm32_bin = repos_dir / 'build\\win_thm32'
     win_thm64_bin = repos_dir / 'build\\win_thm64'
@@ -560,17 +569,21 @@ def update_json(check_type, success, output, json_path):
     return True
 
 
-def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True):
+def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, hide=None):
+
+    out_cmd = subprocess.list2cmdline(cmd) if isinstance(cmd, list) else cmd
+
+    if isinstance(hide, list):
+        for hide_str, show_str in hide:
+            out_cmd = out_cmd.replace(hide_str, show_str)
+
     if log:
         if verbose:
             log_out = log.info
         else:
             log_out = log.debug
 
-        if isinstance(cmd, list):
-            log_out(f'cmd: {subprocess.list2cmdline(cmd)}')
-        else:
-            log_out(f'cmd: {cmd}')
+        log_out(f'cmd: {out_cmd}')
 
         if not cwd:
             cwd = str(pathlib.Path.cwd())
