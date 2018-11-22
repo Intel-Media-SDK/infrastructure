@@ -62,7 +62,7 @@ def install_pkg(pkg_path, pkg_name):
     cmd = _CMD_PATTERN["INSTALL"].get(get_os_name()).format(pkg_path=pkg_path)
     err, out = cmd_exec(cmd)
 
-    if not err:
+    if err == 0:
         log.debug(out)
         return True
 
@@ -88,7 +88,7 @@ def uninstall_pkg(pkg_name):
     cmd = _CMD_PATTERN["UNINSTALL"].get(get_os_name()).format(pkg_name=pkg_name)
     err, out = cmd_exec(cmd)
 
-    if not err:
+    if err == 0:
         log.debug(out)
         return True
 
@@ -113,7 +113,7 @@ def is_pkg_installed(pkg_name):
     cmd = _CMD_PATTERN["CHECK_INSTALLED"].get(get_os_name()).format(pkg_name=pkg_name)
     err, out = cmd_exec(cmd)
 
-    if not err:
+    if err == 0:
         log.debug(out)
         return True
 

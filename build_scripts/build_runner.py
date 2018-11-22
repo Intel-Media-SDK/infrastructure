@@ -945,7 +945,7 @@ class BuildGenerator(object):
         """
         Change prefix in pkgconfigs
 
-        :param pkgconfig_dir: Path to package congid directory
+        :param pkgconfig_dir: Path to package config directory
         :type: pathlib.Path
 
         :param update_data: new data to write to pkgconfigs
@@ -964,12 +964,12 @@ class BuildGenerator(object):
                 pkgconfig_dir = copy_to
                 self.log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
             except OSError:
-                self.log.debug(f"update_config: Exception occurred while copying from {pkgconfig_dir} to {copy_to}")
+                self.log.exception(f"update_config: Exception occurred while copying from {pkgconfig_dir} to {copy_to}")
 
         files_list = pkgconfig_dir.glob('*.pc')
         for pkgconfig in files_list:
             with pkgconfig.open('r+') as fd:
-                self.log.debug(f"update_config: Start updating pkgconfigs")
+                self.log.debug(f"update_config: Start updating {pkgconfig}")
                 try:
                     current_config_data = fd.readlines()
                     fd.seek(0)
@@ -978,9 +978,10 @@ class BuildGenerator(object):
                         for pattern, data in update_data.items():
                             line = re.sub(pattern, data, line)
                         fd.write(line)
-                    self.log.debug(f"update_config: Pkgconfigs are updated")
+                    self.log.debug(f"update_config: {pkgconfig} is updated")
                 except OSError:
                     self.log.exception(f"update_config: Exception occurred while opening {pkgconfig}")
+                    exit(ErrorCode.CRITICAL)
 
 
 def main():
