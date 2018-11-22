@@ -973,7 +973,8 @@ class BuildGenerator(object):
                 pkgconfig_dir = copy_to
                 self.log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
             except OSError:
-                self.log.exception(f"update_config: Exception occurred while copying from {pkgconfig_dir} to {copy_to}")
+                self.log.error(f"update_config: ERROR")
+                raise
 
         files_list = pkgconfig_dir.glob('*.pc')
         for pkgconfig in files_list:
@@ -989,8 +990,8 @@ class BuildGenerator(object):
                         fd.write(line)
                     self.log.debug(f"update_config: {pkgconfig} is updated")
                 except OSError:
-                    self.log.exception(f"update_config: Exception occurred while opening {pkgconfig}")
-                    exit(ErrorCode.CRITICAL)
+                    self.log.error(f"update_config: ERROR")
+                    raise
 
 
 def main():
