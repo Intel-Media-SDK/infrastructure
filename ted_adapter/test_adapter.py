@@ -30,15 +30,18 @@ import argparse
 import shutil
 import subprocess
 import os
+import platform
 import pathlib
 import tarfile
 import traceback
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 import adapter_conf
+import common.package_manager as PackageManager
 from common.mediasdk_directories import MediaSdkDirectories
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
+from common.system_info import get_pkg_type
 
 
 
@@ -77,6 +80,7 @@ class TedAdapter(object):
         # Path to dispatcher lib should be in the libraries search path
         self.env['LD_LIBRARY_PATH'] = self.dispatcher_dir
 
+
     def _get_artifacts(self):
         """
         Get artifacts archive from share
@@ -101,6 +105,28 @@ class TedAdapter(object):
         # Remove old `/opt/intel/mediasdk` and copy fresh built artifacts
         self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
         self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
+
+    def install_test_pkgs(self, pkg_name):
+        """
+
+        Install pkg
+        :param pkg_name: pkg name
+        :type: String
+
+        :return: Flag whether pkg installed
+        :rtype: Bool
+        """
+
+        pkg_type = get_pkg_type()
+        pkg_dir = self.build_artifacts_dir
+
+        # TODO: dependency should be specified
+        for pkg_path in pkg_dir.glob(f'*.{pkg_type}'):
+            if pkg_name in pkg_path.name:
+                return PackageManager.install_pkg(pkg_path, pkg_name)
+
+        print(f"Package {pkg_name} was not found in {pkg_dir}")
+        return False
 
 
     def run_test(self):
@@ -237,6 +263,12 @@ def main():
     tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
+
+    pkg_to_install = 'libva'
+    if not adapter.install_test_pkgs(pkg_to_install):
+        print(f"Exception occurred: package {pkg_to_install} was not installed\n")
+        exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
+
     try:
         tests_return_code = adapter.run_test()
     except Exception:

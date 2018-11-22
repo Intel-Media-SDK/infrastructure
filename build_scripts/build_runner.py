@@ -49,7 +49,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, ErrorCode, TargetArch
+    copy_win_files, rotate_dir, cmd_exec, copytree, ErrorCode, TargetArch
+
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
 from common.mediasdk_directories import MediaSdkDirectories
@@ -395,7 +396,9 @@ class BuildGenerator(object):
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
-            "STRIP_BINARIES": False # Flag for stripping binaries of build
+            "STRIP_BINARIES": False,  # Flag for stripping binaries of build
+            "CONFIGS_DIR":  root_dir / "configs"
+
         }
         self.dev_pkg_data_to_archive = []
         self.install_pkg_data_to_archive = []
@@ -452,7 +455,9 @@ class BuildGenerator(object):
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
+            'update_config': self._update_config,
             'target_arch': self.target_arch
+
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -576,7 +581,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR', 'CONFIGS_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -872,9 +877,17 @@ class BuildGenerator(object):
                                    debug_file])
                 ])
 
+                check_binary_command = f'file {orig_file} | grep ELF'
+
                 for command in strip_commands.values():
                     err, out = cmd_exec(command, shell=False, log=self.log, verbose=False)
                     if err:
+                        # Not strip file if it is not binary
+                        return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self.log,
+                                                                 verbose=False)
+                        if return_code:
+                            self.log.warning(f"File {orig_file} is not binary")
+                            break
                         if orig_file not in binaries_with_error:
                             binaries_with_error.append(orig_file)
                         self.log.error(out)
@@ -936,6 +949,49 @@ class BuildGenerator(object):
 
         self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
+
+    def _update_config(self, pkgconfig_dir, update_data, copy_to=None):
+        """
+        Change prefix in pkgconfigs
+
+        :param pkgconfig_dir: Path to package config directory
+        :type: pathlib.Path
+
+        :param update_data: new data to write to pkgconfigs
+        :type: dict
+
+        :param optional: optional params to define if it is needed to copy configs
+        :type: dict
+
+        :return: Flag whether files were successfully modified
+        """
+
+        # Create new dir for pkgconfigs
+        if copy_to:
+            try:
+                copytree(pkgconfig_dir, copy_to)
+                pkgconfig_dir = copy_to
+                self.log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
+            except OSError:
+                self.log.error(f"update_config: Failed to copy package configs from {pkgconfig_dir} to {copy_to}")
+                raise
+
+        files_list = pkgconfig_dir.glob('*.pc')
+        for pkgconfig in files_list:
+            with pkgconfig.open('r+') as fd:
+                self.log.debug(f"update_config: Start updating {pkgconfig}")
+                try:
+                    current_config_data = fd.readlines()
+                    fd.seek(0)
+                    fd.truncate()
+                    for line in current_config_data:
+                        for pattern, data in update_data.items():
+                            line = re.sub(pattern, data, line)
+                        fd.write(line)
+                    self.log.debug(f"update_config: {pkgconfig} is updated")
+                except OSError:
+                    self.log.error(f"update_config: Failed to update package config: {pkgconfig}")
+                    raise
 
 
 def main():
