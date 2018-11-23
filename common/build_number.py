@@ -67,6 +67,7 @@ def increase_build_number(local_repo_path, os_type, branch):
     """
 
     log = logging.getLogger('build_number.increase_build_number')
+    log.info(f'Increasing build number in {branch} branch for {os_type} platform')
 
     build_numbers_file = 'build_numbers.json'
 
@@ -74,7 +75,7 @@ def increase_build_number(local_repo_path, os_type, branch):
     current_build_number = get_build_number(repo_path=pathlib.Path(local_repo_path),
                                             os_type=os_type, branch=branch)
     if current_build_number == 0:
-        log.error(f'Local build number must not be 0'
+        log.error(f'Local build number must not be 0\n'
                   f'Check that {pathlib.Path(local_repo_path) / build_numbers_file} contains appropriate {branch} branch for {os_type} platform')
         return False
 
@@ -93,13 +94,13 @@ def increase_build_number(local_repo_path, os_type, branch):
 
     log.info(
         f'Getting build number from HEAD of {branch} branch for repo in {latest_version_repo_path}')
-    latest_git_build_number = get_build_number(repo_path=latest_build_number_path,
+    latest_git_build_number = get_build_number(repo_path=latest_version_repo_path,
                                                os_type=os_type, branch=branch)
 
     if current_build_number != latest_git_build_number:
         log.warning(
-            f'Build numbers in remote ({latest_git_build_number}) and local ({current_build_number}) repositories are not equal'
-            f'It maybe because this is rebuild of old build for which build number already has been increased'
+            f'Build numbers in remote ({latest_git_build_number}) and local ({current_build_number}) repositories are not equal\n'
+            f'It maybe because this is rebuild of old build for which build number already has been increased\n'
             f'Stop operation')
         return False
 
