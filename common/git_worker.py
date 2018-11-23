@@ -213,8 +213,7 @@ class ProductState(object):
 
         for repo_name, data in sources_list.items():
             branch = data.get('branch', 'master')
-            commit_id = data.get('commit_id') if data.get('commit_id')
-                                              else 'head'
+            commit_id = data.get('commit_id', 'HEAD')
 
             self.repo_states.append(
                 GitRepo(root_repo_dir, repo_name, branch, data['url'], commit_id))
@@ -228,7 +227,7 @@ class ProductState(object):
 
         git_commit_date = None
         for repo in self.repo_states:
-            if repo.commit_id:
+            if repo.commit_id != 'HEAD':
                 repo.prepare_repo()
                 git_commit_date = repo.get_time()
                 repo.checkout()
@@ -238,7 +237,7 @@ class ProductState(object):
             else git_commit_date
 
         for repo in self.repo_states:
-            if not repo.commit_id:
+            if repo.commit_id == 'HEAD':
                 repo.prepare_repo()
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
