@@ -212,8 +212,8 @@ class ProductState(object):
         self.commit_time = commit_time
 
         for repo_name, data in sources_list.items():
-            branch = data['branch'] if data.get('branch') else 'master'
-            commit_id = data['commit_id'] if data.get('commit_id') else 'HEAD'
+            branch = data.get('branch') or 'master'
+            commit_id = data.get('commit_id') or 'HEAD'
 
             self.repo_states.append(
                 GitRepo(root_repo_dir, repo_name, branch, data['url'], commit_id))
