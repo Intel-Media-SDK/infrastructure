@@ -397,7 +397,6 @@ class BuildGenerator(object):
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
-            "CONFIGS_DIR":  root_dir / "configs"
 
         }
         self.dev_pkg_data_to_archive = []
@@ -581,7 +580,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR', 'CONFIGS_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
