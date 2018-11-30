@@ -25,10 +25,14 @@ which uses in build runner
 import os
 import pathlib
 import platform
+import re
 from urllib.parse import quote, urljoin
 
 
 LOGICAL_DRIVE = 3  # Drive type from MSDN
+
+# TODO: Pattern for closed source
+OPEN_SOURCE_RELEASE_BRANCH_PATTERN = '^intel-mediasdk-\d+\.\w'
 
 
 def get_logical_drives():
@@ -459,6 +463,21 @@ class MediaSdkDirectories(object):
     def get_repo_url_by_name_w_credentials(cls, name, login, password):
         creds = '//{}:{}@'.format(quote(login), quote(password))
         return static_data.REPOSITORIES.get(name, '').replace('//', creds, 1)
+
+    # TODO: Add check for Closed Source
+
+    # Check for OPEN SOURCE
+    @classmethod
+    def is_release_branch(cls, branch_name):
+        """
+
+        :param branch_name: branch name
+        :return: True if release branch else False
+        """
+
+        if re.match(OPEN_SOURCE_RELEASE_BRANCH_PATTERN, branch_name):
+            return True
+        return False
 
 
 class MediaSDKException(Exception):
