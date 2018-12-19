@@ -32,7 +32,7 @@ import git
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from common.helper import remove_directory
-from common.mediasdk_directories import MediaSdkDirectories
+from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
 
 
 class BranchDoesNotExistException(Exception):
@@ -41,6 +41,7 @@ class BranchDoesNotExistException(Exception):
     """
 
     pass
+
 
 class GitRepo(object):
     """
@@ -134,7 +135,8 @@ class GitRepo(object):
         """
         Checkout to certain state
 
-        :param branch_name: Branch of repo. If None - checkout to commit ID from class variable commit_id
+        :param branch_name: Branch of repo.
+               If None - checkout to commit ID from class variable commit_id
 
         :param silent: Flag for getting time of commit
                (set to True only if commit_id does not exist)
@@ -157,7 +159,7 @@ class GitRepo(object):
             # error raises after checkout to master if we try
             # to get time of triggered commit_id before fetching repo
             # (commit does not exist in local repository yet)
-            committed_date = self.repo.commit(self.commit_id).committed_date
+            committed_date = self.repo.commit(checkout_to).committed_date
             self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -195,10 +197,10 @@ class GitRepo(object):
 
         self.fetch()
         # Switch to fetched branch locally
-        self.hard_reset('FETCH_HEAD')
+        self.checkout(branch_name=self.branch_name)
         if commit_time:
             self.revert_commit_by_time(commit_time)
-        self.checkout(branch_name=self.branch_name)
+            self.checkout()
 
     def revert_commit_by_time(self, commit_time):
         """
@@ -212,6 +214,7 @@ class GitRepo(object):
 
         self.commit_id = str(next(self.repo.iter_commits(
             until=commit_time, max_count=1)))
+        self.log.info(f"Revert commit by time to: {datetime.fromtimestamp(commit_time)}")
 
     def get_time(self, commit_id=None):
         """
@@ -289,7 +292,8 @@ class ProductState(object):
                         raise BranchDoesNotExistException("Release branch does not exist")
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
-                repo.change_repo_state(commit_time=commit_timestamp)
+                if repo.repo_name not in THIRD_PARTY:
+                    repo.change_repo_state(commit_time=commit_timestamp)
 
     def save_repo_states(self, sources_file, trigger):
         """

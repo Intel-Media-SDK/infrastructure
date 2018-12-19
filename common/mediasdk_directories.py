@@ -31,6 +31,8 @@ from urllib.parse import quote, urljoin
 
 LOGICAL_DRIVE = 3  # Drive type from MSDN
 
+THIRD_PARTY = ('libva',)  # Third party components for Media SDK
+
 # TODO: Pattern for closed source
 OPEN_SOURCE_RELEASE_BRANCH_PATTERN = '^intel-mediasdk-\d+\.\w'
 

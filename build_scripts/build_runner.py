@@ -633,7 +633,7 @@ class BuildGenerator(object):
                 if repo == repo_name:
                     if not data.get('branch'):
                         data['branch'] = branch
-                    data['commit_id'] = commit_id
+                        data['commit_id'] = commit_id
                     if self.repo_url:
                         data['url'] = self.repo_url
                 else:
