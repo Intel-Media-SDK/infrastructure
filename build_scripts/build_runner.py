@@ -636,10 +636,9 @@ class BuildGenerator(object):
                         data['commit_id'] = commit_id
                     if self.repo_url:
                         data['url'] = self.repo_url
-                else:
-                    if not data.get('branch'):
-                        if MediaSdkDirectories.is_release_branch(branch):
-                            data['branch'] = branch
+                elif not data.get('branch'):
+                    if MediaSdkDirectories.is_release_branch(branch):
+                        data['branch'] = branch
         elif self.repo_states:
             for repo_name, values in self.repo_states.items():
                 if repo_name in self.product_repos:

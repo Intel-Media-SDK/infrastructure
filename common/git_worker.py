@@ -110,9 +110,9 @@ class GitRepo(object):
         :return: None
         """
 
-        fetch_from = branch_name or self.branch_name
-        self.log.info("Fetch repo %s to %s", self.repo_name, fetch_from)
-        self.repo.remotes.origin.fetch(fetch_from)
+        refname = branch_name or self.branch_name
+        self.log.info("Fetch repo %s to %s", self.repo_name, refname)
+        self.repo.remotes.origin.fetch(refname)
         self.hard_reset('FETCH_HEAD')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -145,12 +145,12 @@ class GitRepo(object):
         :return: None
         """
 
-        checkout_to = branch_name if branch_name else self.commit_id
-        self.log.info("Checkout repo %s to %s", self.repo_name, checkout_to)
+        checkout_dest = branch_name or self.commit_id
+        self.log.info("Checkout repo %s to %s", self.repo_name, checkout_dest)
         try:
-            self.repo.git.checkout(checkout_to, force=True)
+            self.repo.git.checkout(checkout_dest, force=True)
         except git.exc.GitCommandError:
-            self.log.exception("Remote branch %s does not exist", checkout_to)
+            self.log.exception("Remote branch %s does not exist", checkout_dest)
 
         if str(self.commit_id).lower() == 'head':
             self.commit_id = str(self.repo.head.commit)
@@ -159,7 +159,7 @@ class GitRepo(object):
             # error raises after checkout to master if we try
             # to get time of triggered commit_id before fetching repo
             # (commit does not exist in local repository yet)
-            committed_date = self.repo.commit(checkout_to).committed_date
+            committed_date = self.repo.commit(checkout_dest).committed_date
             self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -192,11 +192,9 @@ class GitRepo(object):
         :return: None
         """
 
-        if branch_name:
-            self.branch_name = branch_name
+        self.branch_name = branch_name or self.branch_name
 
         self.fetch()
-        # Switch to fetched branch locally
         self.checkout(branch_name=self.branch_name)
         if commit_time:
             self.revert_commit_by_time(commit_time)
@@ -275,7 +273,7 @@ class ProductState(object):
             if repo.commit_id != 'HEAD':
                 repo.prepare_repo()
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
-                    if not repo.is_branch_exist:
+                    if not repo.is_branch_exist(repo.branch_name):
                         raise BranchDoesNotExistException("Release branch does not exist")
                 git_commit_date = repo.get_time()
                 repo.change_repo_state()
@@ -288,7 +286,7 @@ class ProductState(object):
             if repo.commit_id == 'HEAD':
                 repo.prepare_repo()
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
-                    if not repo.is_branch_exist:
+                    if not repo.is_branch_exist(repo.branch_name):
                         raise BranchDoesNotExistException("Release branch does not exist")
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
