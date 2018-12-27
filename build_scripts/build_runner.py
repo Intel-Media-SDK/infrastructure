@@ -95,7 +95,7 @@ class Action(object):
         :type verbose: Boolean
         """
 
-        self.name = name
+        self.repo_name = name
         self.stage = stage
         self.cmd = cmd
         self.work_dir = work_dir
@@ -465,7 +465,7 @@ class BuildGenerator(object):
         if 'PRODUCT_REPOS' in self.config_variables:
             for repo in self.config_variables['PRODUCT_REPOS']:
                 self.product_repos[repo['name']] = {
-                    'branch': repo.get('branch', 'master'),
+                    'branch': repo.get('branch'),
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
@@ -624,16 +624,21 @@ class BuildGenerator(object):
         if self.changed_repo:
             repo_name, branch, commit_id = self.changed_repo.split(':')
             triggered_repo = repo_name
-            if repo_name in self.product_repos:
-                self.product_repos[repo_name]['branch'] = branch
-                self.product_repos[repo_name]['commit_id'] = commit_id
-                if self.repo_url:
-                    self.product_repos[repo_name]['url'] = self.repo_url
-            else:
-                self.log.critical(f'{repo_name} repository is not defined in the product '
-                                  'configuration PRODUCT_REPOS')
+
+            if repo_name not in self.product_repos:
+                self.log.critical(f'{repo_name} repository is not defined in the product configuration PRODUCT_REPOS')
                 return False
 
+            for repo, data in self.product_repos.items():
+                if repo == repo_name:
+                    if not data.get('branch'):
+                        data['branch'] = branch
+                        data['commit_id'] = commit_id
+                    if self.repo_url:
+                        data['url'] = self.repo_url
+                elif not data.get('branch'):
+                    if MediaSdkDirectories.is_release_branch(branch):
+                        data['branch'] = branch
         elif self.repo_states:
             for repo_name, values in self.repo_states.items():
                 if repo_name in self.product_repos:

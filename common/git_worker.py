@@ -32,6 +32,15 @@ import git
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from common.helper import remove_directory
+from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
+
+
+class BranchDoesNotExistException(Exception):
+    """
+    Exception for branch does not exist
+    """
+
+    pass
 
 
 class GitRepo(object):
@@ -47,8 +56,8 @@ class GitRepo(object):
         :param commit_id: Commit ID
         """
 
-        self.name = repo_name
-        self.branch = branch
+        self.repo_name = repo_name
+        self.branch_name = branch
         self.url = url
         self.commit_id = commit_id
         self.local_repo_dir = root_repo_dir / repo_name
@@ -64,15 +73,13 @@ class GitRepo(object):
         :return: None
         """
         self.log.info('-' * 50)
-        self.log.info("Getting repo " + self.name)
+        self.log.info("Getting repo " + self.repo_name)
 
         self.clone()
         self.repo = git.Repo(str(self.local_repo_dir))
         self.hard_reset()
         self.clean()
-        self.checkout("master", silent=True)
-        self.fetch()
-        self.hard_reset('FETCH_HEAD')
+        self.checkout(branch_name="master", silent=True)
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clone(self):
@@ -92,19 +99,21 @@ class GitRepo(object):
                 remove_directory(self.local_repo_dir)
 
         if not self.local_repo_dir.exists():
-            self.log.info("Clone repo " + self.name)
+            self.log.info("Clone repo " + self.repo_name)
             git.Git().clone(self.url, str(self.local_repo_dir))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
-    def fetch(self):
+    def fetch(self, branch_name=None):
         """
         Fetch repo
 
         :return: None
         """
 
-        self.log.info("Fetch repo %s to %s", self.name, self.branch)
-        self.repo.remotes.origin.fetch(self.branch)
+        refname = branch_name or self.branch_name
+        self.log.info("Fetch repo %s to %s", self.repo_name, refname)
+        self.repo.remotes.origin.fetch(refname)
+        self.hard_reset('FETCH_HEAD')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def hard_reset(self, reset_to=None):
@@ -115,18 +124,19 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Hard reset repo " + self.name)
+        self.log.info("Hard reset repo " + self.repo_name)
         if reset_to:
             self.repo.git.reset('--hard', reset_to)
         else:
             self.repo.git.reset('--hard')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
-    def checkout(self, branch=None, silent=False):
+    def checkout(self, silent=False, branch_name=None):
         """
         Checkout to certain state
 
-        :param branch: Branch of repo. If None - checkout to commit ID from class variable commit_id
+        :param branch_name: Branch of repo.
+               If None - checkout to commit ID from class variable commit_id
 
         :param silent: Flag for getting time of commit
                (set to True only if commit_id does not exist)
@@ -135,9 +145,12 @@ class GitRepo(object):
         :return: None
         """
 
-        checkout_to = branch if branch else self.commit_id
-        self.log.info("Checkout repo %s to %s", self.name, checkout_to)
-        self.repo.git.checkout(checkout_to, force=True)
+        checkout_dest = branch_name or self.commit_id
+        self.log.info("Checkout repo %s to %s", self.repo_name, checkout_dest)
+        try:
+            self.repo.git.checkout(checkout_dest, force=True)
+        except git.exc.GitCommandError:
+            self.log.exception("Remote branch %s does not exist", checkout_dest)
 
         if str(self.commit_id).lower() == 'head':
             self.commit_id = str(self.repo.head.commit)
@@ -146,7 +159,7 @@ class GitRepo(object):
             # error raises after checkout to master if we try
             # to get time of triggered commit_id before fetching repo
             # (commit does not exist in local repository yet)
-            committed_date = self.repo.commit(self.commit_id).committed_date
+            committed_date = self.repo.commit(checkout_dest).committed_date
             self.log.info("Committed date: %s", datetime.fromtimestamp(committed_date))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -157,7 +170,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Clean repo " + self.name)
+        self.log.info("Clean repo " + self.repo_name)
         self.repo.git.clean('-xdf')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -167,8 +180,29 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Pull repo " + self.name)
+        self.log.info("Pull repo " + self.repo_name)
         self.repo.git.pull()
+
+    def change_repo_state(self, commit_time=None, branch_name=None):
+        """
+        Change the repo state
+
+        :param commit_time: time of commit
+        :param branch_name: name of branch to checkout
+        :return: None
+        """
+
+        self.branch_name = branch_name or self.branch_name
+        self.fetch()
+
+        if branch_name:
+            # Checkout to branch
+            self.checkout(branch_name=self.branch_name)
+
+        if commit_time:
+            self.revert_commit_by_time(commit_time)
+        # Checkout to commit id
+        self.checkout()
 
     def revert_commit_by_time(self, commit_time):
         """
@@ -176,12 +210,13 @@ class GitRepo(object):
         If commit date <= certain time,
         commit sets to class variable commit_id.
 
-        :param commit_time: datetime
+        :param commit_time: timestamp
         :return: None
         """
 
         self.commit_id = str(next(self.repo.iter_commits(
-            rev='master', until=commit_time, max_count=1)))
+            until=commit_time, max_count=1)))
+        self.log.info(f"Revert commit by time to: {datetime.fromtimestamp(commit_time)}")
 
     def get_time(self, commit_id=None):
         """
@@ -193,6 +228,18 @@ class GitRepo(object):
 
         commit = commit_id if commit_id else self.commit_id
         return self.repo.commit(commit).committed_date
+
+    def is_branch_exist(self, branch_name):
+        """
+        Check if branch exists in repo
+
+        :param branch_name: branch name
+        :return: True if branch exists else false
+        """
+
+        if self.repo.git.branch('--list', f'*/{branch_name}', '--all'):
+            return True
+        return False
 
 
 class ProductState(object):
@@ -229,8 +276,13 @@ class ProductState(object):
         for repo in self.repo_states:
             if repo.commit_id != 'HEAD':
                 repo.prepare_repo()
+                if MediaSdkDirectories.is_release_branch(repo.branch_name):
+                    if not repo.is_branch_exist(repo.branch_name):
+                        raise BranchDoesNotExistException("Release branch does not exist")
+                    repo.change_repo_state(branch_name=repo.branch_name)
+                else:
+                    repo.change_repo_state()
                 git_commit_date = repo.get_time()
-                repo.checkout()
 
         commit_timestamp = self.commit_time.timestamp() \
             if self.commit_time \
@@ -239,11 +291,14 @@ class ProductState(object):
         for repo in self.repo_states:
             if repo.commit_id == 'HEAD':
                 repo.prepare_repo()
+                if MediaSdkDirectories.is_release_branch(repo.branch_name):
+                    if not repo.is_branch_exist(repo.branch_name):
+                        raise BranchDoesNotExistException("Release branch does not exist")
+                    repo.change_repo_state(commit_time=commit_timestamp, branch_name=repo.branch_name)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
-                if commit_timestamp:
-                    repo.revert_commit_by_time(commit_timestamp)
-                    repo.checkout()
+                elif repo.repo_name not in THIRD_PARTY:
+                    repo.change_repo_state(commit_time=commit_timestamp)
 
     def save_repo_states(self, sources_file, trigger):
         """
@@ -259,11 +314,11 @@ class ProductState(object):
         with sources_file.open('a') as sources_state:
             states = {}
             for state in self.repo_states:
-                states[state.name] = {
-                    'branch': state.branch,
+                states[state.repo_name] = {
+                    'branch': state.branch_name,
                     'commit_id': state.commit_id,
                     'url': state.url,
-                    'trigger': True if trigger == state.name else False
+                    'trigger': True if trigger == state.repo_name else False
                 }
 
             sources_state.write(json.dumps(states, indent=4, sort_keys=True))

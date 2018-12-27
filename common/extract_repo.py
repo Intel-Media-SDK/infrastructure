@@ -49,30 +49,45 @@ def exit_script(error_code=None):
     else:
         log.info("EXTRACTING COMPLETED")
 
-
 @Proxy.with_proxies
 def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=None, proxy=False):
     log = logging.getLogger('extract_repo.extract_repo')
+
     try:
         repo_url = MediaSdkDirectories.get_repo_url_by_name(repo_name)
         if commit_id:
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
                                       branch=branch, url=repo_url, commit_id=commit_id)
             repo.prepare_repo()
-            repo.checkout()
+            repo.change_repo_state()
+
         elif commit_time:
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
-                                      branch=branch, url=repo_url)
+                                      branch='master', url=repo_url)
             repo.prepare_repo()
-            repo.revert_commit_by_time(datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S'))
-            repo.checkout()
+            if MediaSdkDirectories.is_release_branch(branch):
+                if not repo.is_branch_exist(branch):
+                    raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
 
+                # repo.branch = branch
+                repo.change_repo_state(datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S'), branch_name=branch)
+            else:
+                repo.change_repo_state(datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S'))
         else:
             log.info('Commit id and timestamp not specified, clone HEAD of repository')
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
-                                      branch=branch, url=repo_url)
+                                      branch='master', url=repo_url)
+
             repo.prepare_repo()
-            repo.checkout()
+            if MediaSdkDirectories.is_release_branch(branch):
+                if not repo.is_branch_exist(branch):
+                    raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
+
+                # repo.branch = branch
+                repo.change_repo_state(branch_name=branch)
+            else:
+                # repo.branch = master
+                repo.change_repo_state()
 
     except Exception:
         log.exception('Exception occurred')
