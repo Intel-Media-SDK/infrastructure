@@ -193,12 +193,16 @@ class GitRepo(object):
         """
 
         self.branch_name = branch_name or self.branch_name
-
         self.fetch()
-        self.checkout(branch_name=self.branch_name)
+
+        if branch_name:
+            # Checkout to branch
+            self.checkout(branch_name=self.branch_name)
+
         if commit_time:
             self.revert_commit_by_time(commit_time)
-            self.checkout()
+        # Checkout to commit id
+        self.checkout()
 
     def revert_commit_by_time(self, commit_time):
         """
@@ -275,8 +279,10 @@ class ProductState(object):
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
                         raise BranchDoesNotExistException("Release branch does not exist")
+                    repo.change_repo_state(branch_name=repo.branch_name)
+                else:
+                    repo.change_repo_state()
                 git_commit_date = repo.get_time()
-                repo.change_repo_state()
 
         commit_timestamp = self.commit_time.timestamp() \
             if self.commit_time \
@@ -288,9 +294,10 @@ class ProductState(object):
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
                         raise BranchDoesNotExistException("Release branch does not exist")
+                    repo.change_repo_state(commit_time=commit_timestamp, branch_name=repo.branch_name)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
-                if repo.repo_name not in THIRD_PARTY:
+                elif repo.repo_name not in THIRD_PARTY:
                     repo.change_repo_state(commit_time=commit_timestamp)
 
     def save_repo_states(self, sources_file, trigger):
