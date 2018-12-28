@@ -1,2 +1,2 @@
-GitPython==2.1.5
+GitPython==2.1.11
 tenacity==4.5.0
