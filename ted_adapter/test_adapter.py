@@ -38,7 +38,7 @@ import traceback
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 import adapter_conf
 import common.package_manager as PackageManager
-from common.mediasdk_directories import MediaSdkDirectories
+from common.mediasdk_directories import MediaSdkDirectories, REQUIRED_PACKAGES
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
 from common.system_info import get_pkg_type
@@ -106,7 +106,7 @@ class TedAdapter(object):
         self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
         self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
 
-    def install_test_pkgs(self, pkg_name):
+    def install_test_pkgs(self):
         """
 
         Install pkg
@@ -120,13 +120,19 @@ class TedAdapter(object):
         pkg_type = get_pkg_type()
         pkg_dir = self.build_artifacts_dir
 
-        # TODO: dependency should be specified
-        for pkg_path in pkg_dir.glob(f'*.{pkg_type}'):
-            if pkg_name in pkg_path.name:
-                return PackageManager.install_pkg(pkg_path, pkg_name)
-
-        print(f"Package {pkg_name} was not found in {pkg_dir}")
-        return False
+        for pkg_name in REQUIRED_PACKAGES :
+            packages = [pkg_path for pkg_path in pkg_dir.glob(f'*.{pkg_type}')
+                        if pkg_name in pkg_path.name.lower()]
+            if len(packages) > 1:
+                print(f'Found multiple "{pkg_name}" packages {packages} in {pkg_dir}')
+                return False
+            if len(packages) == 0:
+                print(f'Package "{pkg_name}" was not found in {pkg_dir}')
+                return False
+            if not PackageManager.install_pkg(packages[0], pkg_name):
+                print(f'Package "{pkg_name}" was not installed')
+                return False
+        return True
 
 
     def run_test(self):
@@ -264,9 +270,8 @@ def main():
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
 
-    pkg_to_install = 'libva'
-    if not adapter.install_test_pkgs(pkg_to_install):
-        print(f"Exception occurred: package {pkg_to_install} was not installed\n")
+    if not adapter.install_test_pkgs():
+        print(f"Exception occurred: required packages were not installed\n")
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     try:

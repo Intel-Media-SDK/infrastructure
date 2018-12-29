@@ -36,6 +36,9 @@ THIRD_PARTY = ('libva',)  # Third party components for Media SDK
 # TODO: Pattern for closed source
 OPEN_SOURCE_RELEASE_BRANCH_PATTERN = '^intel-mediasdk-\d+\.\w'
 
+# Set the order of installing packages
+# TODO: Add all dependencies and MediaSDK
+REQUIRED_PACKAGES = ['libva']
 
 def get_logical_drives():
     """
