@@ -131,7 +131,7 @@ class GitRepo(object):
             self.repo.git.reset('--hard')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
-    def checkout(self, silent=False, branch_name=None):
+    def checkout(self, branch_name=None, silent=False):
         """
         Checkout to certain state
 
@@ -183,12 +183,12 @@ class GitRepo(object):
         self.log.info("Pull repo " + self.repo_name)
         self.repo.git.pull()
 
-    def change_repo_state(self, commit_time=None, branch_name=None):
+    def change_repo_state(self, branch_name=None, commit_time=None):
         """
         Change the repo state
 
-        :param commit_time: time of commit
         :param branch_name: name of branch to checkout
+        :param commit_time: time of commit
         :return: None
         """
 
@@ -294,7 +294,7 @@ class ProductState(object):
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
                         raise BranchDoesNotExistException("Release branch does not exist")
-                    repo.change_repo_state(commit_time=commit_timestamp, branch_name=repo.branch_name)
+                    repo.change_repo_state(branch_name=repo.branch_name, commit_time=commit_timestamp)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
                 elif repo.repo_name not in THIRD_PARTY:

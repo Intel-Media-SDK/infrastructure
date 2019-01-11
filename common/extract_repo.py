@@ -70,9 +70,10 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
                     raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
 
                 # repo.branch = branch
-                repo.change_repo_state(datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp(), branch_name=branch)
+                repo.change_repo_state(branch_name=branch,
+                                       commit_time=datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
             else:
-                repo.change_repo_state(datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
+                repo.change_repo_state(commit_time=datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
         else:
             log.info('Commit id and timestamp not specified, clone HEAD of repository')
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
