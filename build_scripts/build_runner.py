@@ -455,8 +455,8 @@ class BuildGenerator(object):
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
             'update_config': self._update_config,
-            'target_arch': self.target_arch
-
+            'target_arch': self.target_arch,
+            'commit_time': self.commit_time
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
