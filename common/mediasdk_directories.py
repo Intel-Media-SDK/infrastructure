@@ -126,12 +126,16 @@ class MediaSdkDirectories(object):
     """
 
     @property
-    def product_configs_repo(self):
-        return static_data.PRODUCT_CONFIGS_REPO
+    def open_source_product_configs_repo(self):
+        return static_data.OPEN_SOURCE_PRODUCT_CONFIGS_REPO
 
     @property
     def open_source_infrastructure_repo(self):
         return static_data.OPEN_SOURCE_INFRASTRUCTURE_REPO
+
+    @property
+    def closed_source_product_configs_repo(self):
+        return static_data.CLOSED_SOURCE_PRODUCT_CONFIGS_REPO
 
     @property
     def closed_source_infrastructure_repo(self):

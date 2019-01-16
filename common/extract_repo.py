@@ -28,6 +28,7 @@ import pathlib
 import logging
 import shutil
 from distutils.dir_util import copy_tree
+from importlib import reload
 from datetime import datetime
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -38,6 +39,7 @@ from common.logger_conf import configure_logger
 
 OPEN_SOURCE_KEY = 'OPEN_SOURCE_INFRA'
 CLOSED_SOURCE_KEY = 'CLOSED_SOURCE_INFRA'
+PRIVATE_KEY = 'PRIVATE_INFRA'
 
 
 def exit_script(error_code=None):
@@ -48,6 +50,7 @@ def exit_script(error_code=None):
         sys.exit(error_code)
     else:
         log.info("EXTRACTING COMPLETED")
+
 
 @Proxy.with_proxies
 def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=None, proxy=False):
@@ -67,13 +70,16 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
-                    raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
+                    raise git_worker.BranchDoesNotExistException(
+                        f'Release branch {branch} does not exist')
 
                 # repo.branch = branch
                 repo.change_repo_state(branch_name=branch,
-                                       commit_time=datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
+                                       commit_time=datetime.strptime(commit_time,
+                                                                     '%Y-%m-%d %H:%M:%S').timestamp())
             else:
-                repo.change_repo_state(commit_time=datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
+                repo.change_repo_state(
+                    commit_time=datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
         else:
             log.info('Commit id and timestamp not specified, clone HEAD of repository')
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
@@ -82,7 +88,8 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
-                    raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
+                    raise git_worker.BranchDoesNotExistException(
+                        f'Release branch {branch} does not exist')
 
                 # repo.branch = branch
                 repo.change_repo_state(branch_name=branch)
@@ -105,16 +112,16 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
     original_repos_dir = root_dir / 'tmp_infrastructure'
 
     repos = MediaSdkDirectories()
-    product_configs_repo = repos.product_configs_repo
+    closed_source_product_configs_repo = repos.closed_source_product_configs_repo
     open_source_infra_repo = repos.open_source_infrastructure_repo
     closed_source_infra_repo = repos.closed_source_infrastructure_repo
 
     # Extract product configs
-    extract_repo(root_repo_dir=original_repos_dir, repo_name=product_configs_repo,
+    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_product_configs_repo,
                  branch=branch, commit_id=commit_id, commit_time=commit_time)
 
     # Get revision of build and test scripts from product configs repo
-    configs_dir = original_repos_dir / product_configs_repo
+    configs_dir = original_repos_dir / closed_source_product_configs_repo
     sys.path.append(str(configs_dir))
     import infrastructure_version
 
@@ -148,12 +155,12 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
                   str(infrastructure_root_dir))
 
         log.info(f"- Copy product configs")
-        copy_tree(str(original_repos_dir / product_configs_repo),
-                  str(infrastructure_root_dir / product_configs_repo))
+        copy_tree(str(original_repos_dir / closed_source_product_configs_repo),
+                  str(infrastructure_root_dir / closed_source_product_configs_repo))
 
         # log.info(f"Copy secrets")
         shutil.copyfile(str(pathlib.Path('msdk_secrets.py').absolute()),
-                        str(infrastructure_root_dir / 'pre_commit_checks' / 'msdk_secrets.py'))
+                        str(infrastructure_root_dir / 'common' / 'msdk_secrets.py'))
     except Exception:
         log.exception('Can not create infrastructure package')
         exit_script(ErrorCode.CRITICAL)
@@ -161,17 +168,18 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
 
 def extract_open_source_infrastructure(root_dir, branch, commit_id, commit_time):
     repos = MediaSdkDirectories()
-    product_configs_repo = repos.product_configs_repo
+    open_source_product_configs_repo = repos.open_source_product_configs_repo
     open_source_infra_repo = repos.open_source_infrastructure_repo
 
     # Extract product configs
-    extract_repo(root_repo_dir=root_dir, repo_name=product_configs_repo, branch=branch,
+    extract_repo(root_repo_dir=root_dir, repo_name=open_source_product_configs_repo, branch=branch,
                  commit_id=commit_id, commit_time=commit_time)
 
     # Get revision of infrastructure from product configs repo
-    configs_dir = root_dir / product_configs_repo
+    configs_dir = root_dir / open_source_product_configs_repo
     sys.path.append(str(configs_dir))
     import infrastructure_version
+    sys.path.remove(str(configs_dir))
 
     open_source_infra_version = infrastructure_version.OPEN_SOURCE
 
@@ -181,28 +189,94 @@ def extract_open_source_infrastructure(root_dir, branch, commit_id, commit_time)
                  commit_id=open_source_infra_version['commit_id'])
 
 
+def extract_private_infrastructure(root_dir, branch, commit_id, commit_time):
+    log = logging.getLogger('extract_repo.extract_private_infrastructure')
+
+    infrastructure_root_dir = root_dir / 'infrastructure'
+
+    # We save and update repos in temporary folder and create infrastructure package from it
+    # So, not needed extracting repo to the beginning each time
+    original_repos_dir = root_dir / 'tmp_infrastructure'
+
+    repos = MediaSdkDirectories()
+    open_source_product_configs_repo = repos.open_source_product_configs_repo
+    open_source_infra_repo = repos.open_source_infrastructure_repo
+    closed_source_product_configs_repo = repos.closed_source_product_configs_repo
+    closed_source_infra_repo = repos.closed_source_infrastructure_repo
+
+    # Extract open source infrastructure and product configs
+    extract_open_source_infrastructure(original_repos_dir, branch, commit_id, commit_time)
+
+    # Extract closed source product configs
+    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_product_configs_repo,
+                 branch='master', commit_time=commit_time)
+
+    # Get revision of closed source infrastructure from closed source product configs repo
+    configs_dir = original_repos_dir / closed_source_product_configs_repo
+    sys.path.append(str(configs_dir))
+    import infrastructure_version
+    infrastructure_version = reload(infrastructure_version)
+
+    closed_source_infra_version = infrastructure_version.CLOSED_SOURCE
+
+    # Extract closed source infrastructure
+    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_infra_repo,
+                 branch=closed_source_infra_version['branch'],
+                 commit_id=closed_source_infra_version['commit_id'])
+
+    log.info('-' * 50)
+    log.info(f"Create infrastructure package")
+    try:
+        log.info(f"- Delete existing infrastructure")
+        if infrastructure_root_dir.exists():
+            remove_directory(str(infrastructure_root_dir))
+
+        log.info(f"- Copy open source infrastructure")
+        copy_tree(str(original_repos_dir / open_source_infra_repo),
+                  str(infrastructure_root_dir))
+
+        log.info(f"- Copy closed source infrastructure")
+        copy_tree(str(original_repos_dir / closed_source_infra_repo),
+                  str(infrastructure_root_dir))
+
+        log.info(f"- Copy open source product configs")
+        copy_tree(str(original_repos_dir / open_source_product_configs_repo),
+                  str(infrastructure_root_dir / open_source_product_configs_repo))
+
+        log.info(f"- Copy closed source product configs")
+        copy_tree(str(original_repos_dir / closed_source_product_configs_repo),
+                  str(infrastructure_root_dir / open_source_product_configs_repo))
+
+        # log.info(f"Copy secrets")
+        shutil.copyfile(str(pathlib.Path('msdk_secrets.py').absolute()),
+                        str(infrastructure_root_dir / 'common' / 'msdk_secrets.py'))
+    except Exception:
+        log.exception('Can not create infrastructure package')
+        exit_script(ErrorCode.CRITICAL)
+
+
 def main():
     """Extract whole infrastructure package or specified repository"""
 
     parser = argparse.ArgumentParser(prog="extract_repo.py",
+                                     epilog=f"If you sepcify --repo-name={PRIVATE_KEY} you must specify commit-time and an optional commit-id. "
+                                            f"For all other cases if you specify commit-time and commit-id, only commit-id will be used.",
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("--repo-name", metavar="String", required=True,
-                        help=f"""Repository name or "{OPEN_SOURCE_KEY}" or "{CLOSED_SOURCE_KEY}" 
+                        help=f"""Repository name or "{OPEN_SOURCE_KEY}"/"{CLOSED_SOURCE_KEY}"/"{PRIVATE_KEY}" 
 {OPEN_SOURCE_KEY} key uses for extracting open source infrastructure package
-{CLOSED_SOURCE_KEY} key uses for extracting closed source infrastructure package""")
+{CLOSED_SOURCE_KEY} key uses for extracting closed source infrastructure package
+{PRIVATE_KEY} key uses for extracting private infrastructure package""")
 
     parser.add_argument("--root-dir", metavar="PATH", default='.',
                         help=f"Path where repository will be stored, by default it is current directory")
     parser.add_argument("--branch", metavar="String", default='master',
                         help='Branch name, by default "master" branch')
-
-    # May be specified commit_id or commit_time, not both
-    identifier = parser.add_mutually_exclusive_group()
-    identifier.add_argument("--commit-id", metavar="String",
-                            help='SHA of commit')
-    identifier.add_argument("--commit-time", metavar="String",
-                            help='Will switch to the commit before specified time')
+    parser.add_argument("--commit-id", metavar="String",
+                        help='SHA of commit')
+    parser.add_argument("--commit-time", metavar="String",
+                        help='Will switch to the commit before specified time')
     args = parser.parse_args()
 
     configure_logger()
@@ -218,6 +292,10 @@ def main():
         log.info("EXTRACTING CLOSED SOURCE INFRASTRUCTURE")
         extract_closed_source_infrastructure(root_dir=root_dir, branch=args.branch,
                                              commit_id=args.commit_id, commit_time=args.commit_time)
+    elif args.repo_name == PRIVATE_KEY:
+        log.info("EXTRACTING PRIVATE INFRASTRUCTURE")
+        extract_private_infrastructure(root_dir=root_dir, branch=args.branch,
+                                       commit_id=args.commit_id, commit_time=args.commit_time)
     else:
         log.info("EXTRACTING")
         extract_repo(root_repo_dir=root_dir, repo_name=args.repo_name,
