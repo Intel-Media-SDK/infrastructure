@@ -21,7 +21,7 @@
 """
 Module for working with Git
 """
-
+import collections
 import json
 import logging
 import concurrent.futures
@@ -366,11 +366,11 @@ class ProductState(object):
             :param repo_states: List of repositories' names
             :type repo_states: List
 
-            :return: ex: {<file_path>: <last_committer_email>, ...}
+            :return: ex: {<last_committer_email>: [<file_path>}, [...]}
             :rtype: Dict
         """
 
-        repo_files = {}
+        repo_files = collections.defaultdict(list)
         max_workers = multiprocessing.cpu_count() * 2
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             for repo_name in repo_states:
@@ -387,6 +387,6 @@ class ProductState(object):
                     if result:
                         rel_file_path, author_email = result
                         file_path = repo_path / rel_file_path
-                        repo_files[str(file_path)] = author_email
+                        repo_files[author_email].append(str(file_path))
 
         return repo_files
