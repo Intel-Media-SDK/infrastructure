@@ -236,7 +236,8 @@ class GitRepo(object):
         :param branch_name: branch name
         :return: True if branch exists else false
         """
-
+        # Need to fetch all to get remote branches
+        self.repo.remotes.origin.fetch()
         if self.repo.git.branch('--list', f'*/{branch_name}', '--all'):
             return True
         return False
