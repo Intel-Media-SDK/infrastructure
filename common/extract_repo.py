@@ -67,7 +67,8 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
-                    raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
+                    raise git_worker.BranchDoesNotExistException(
+                        f'Release branch {branch} does not exist in the repo {repo.repo_name}')
 
                 # repo.branch = branch
                 repo.change_repo_state(branch_name=branch,
@@ -82,7 +83,8 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
-                    raise git_worker.BranchDoesNotExistException(f'Release branch {branch} does not exist')
+                    raise git_worker.BranchDoesNotExistException(
+                        f'Release branch {branch} does not exist in the repo {repo.repo_name}')
 
                 # repo.branch = branch
                 repo.change_repo_state(branch_name=branch)
