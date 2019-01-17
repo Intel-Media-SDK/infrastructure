@@ -21,7 +21,7 @@
 """
 Module for working with Git
 """
-
+import collections
 import json
 import logging
 import concurrent.futures
@@ -236,7 +236,8 @@ class GitRepo(object):
         :param branch_name: branch name
         :return: True if branch exists else false
         """
-
+        # Need to fetch all to get remote branches
+        self.repo.remotes.origin.fetch()
         if self.repo.git.branch('--list', f'*/{branch_name}', '--all'):
             return True
         return False
@@ -278,7 +279,8 @@ class ProductState(object):
                 repo.prepare_repo()
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
-                        raise BranchDoesNotExistException("Release branch does not exist")
+                        raise BranchDoesNotExistException(
+                            f'Release branch {repo.branch_name} does not exist in the repo {repo.repo_name}')
                     repo.change_repo_state(branch_name=repo.branch_name)
                 else:
                     repo.change_repo_state()
@@ -293,7 +295,8 @@ class ProductState(object):
                 repo.prepare_repo()
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
-                        raise BranchDoesNotExistException("Release branch does not exist")
+                        raise BranchDoesNotExistException(
+                            f'Release branch {repo.branch_name} does not exist in the repo {repo.repo_name}')
                     repo.change_repo_state(branch_name=repo.branch_name, commit_time=commit_timestamp)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
@@ -365,11 +368,11 @@ class ProductState(object):
             :param repo_states: List of repositories' names
             :type repo_states: List
 
-            :return: ex: {<file_path>: <last_committer_email>, ...}
+            :return: ex: {<last_committer_email>: [<file_path>}, [...]}
             :rtype: Dict
         """
 
-        repo_files = {}
+        repo_files = collections.defaultdict(list)
         max_workers = multiprocessing.cpu_count() * 2
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             for repo_name in repo_states:
@@ -386,6 +389,6 @@ class ProductState(object):
                     if result:
                         rel_file_path, author_email = result
                         file_path = repo_path / rel_file_path
-                        repo_files[str(file_path)] = author_email
+                        repo_files[author_email].append(str(file_path))
 
         return repo_files
