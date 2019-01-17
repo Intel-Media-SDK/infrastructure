@@ -64,7 +64,10 @@ def find_folder_on_disks(folder):
 try:
     import common.static_closed_data as static_data
 except Exception:
-    import common.static_public_data as static_data
+    try:
+        import common.static_private_data as static_data
+    except Exception:
+        import common.static_public_data as static_data
 
 
 class OsType:

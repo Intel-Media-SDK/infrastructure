@@ -71,7 +71,7 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
                     raise git_worker.BranchDoesNotExistException(
-                        f'Release branch {branch} does not exist')
+                        f'Release branch {branch} does not exist in the "{repo_name}" repository')
 
                 # repo.branch = branch
                 repo.change_repo_state(branch_name=branch,
@@ -89,7 +89,7 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
                     raise git_worker.BranchDoesNotExistException(
-                        f'Release branch {branch} does not exist')
+                        f'Release branch {branch} does not exist in the "{repo_name}" repository')
 
                 # repo.branch = branch
                 repo.change_repo_state(branch_name=branch)
@@ -238,6 +238,9 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time):
         log.info(f"- Copy closed source infrastructure")
         copy_tree(str(original_repos_dir / closed_source_infra_repo),
                   str(infrastructure_root_dir))
+
+        log.info(f"- Remove closed source static data")
+        (infrastructure_root_dir / 'common' / 'static_closed_data.py').unlink()
 
         log.info(f"- Copy open source product configs")
         copy_tree(str(original_repos_dir / open_source_product_configs_repo),
