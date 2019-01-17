@@ -279,7 +279,8 @@ class ProductState(object):
                 repo.prepare_repo()
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
-                        raise BranchDoesNotExistException("Release branch does not exist")
+                        raise BranchDoesNotExistException(
+                            f'Release branch {repo.branch_name} does not exist in the repo {repo.repo_name}')
                     repo.change_repo_state(branch_name=repo.branch_name)
                 else:
                     repo.change_repo_state()
@@ -294,7 +295,8 @@ class ProductState(object):
                 repo.prepare_repo()
                 if MediaSdkDirectories.is_release_branch(repo.branch_name):
                     if not repo.is_branch_exist(repo.branch_name):
-                        raise BranchDoesNotExistException("Release branch does not exist")
+                        raise BranchDoesNotExistException(
+                            f'Release branch {repo.branch_name} does not exist in the repo {repo.repo_name}')
                     repo.change_repo_state(branch_name=repo.branch_name, commit_time=commit_timestamp)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
