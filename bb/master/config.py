@@ -39,17 +39,11 @@ Specification of BUILDERS:
 "api_latest"        - if `True` it will enable product`s `api_latest` feature
 "compiler"          - compiler which should be used (env and product_config should support this key)
 "compiler_version"  - version of compiler
-"branch"            - on this branch pattern(!) the build will be activated (use Python re)
 "worker"            - worker(s) which should be used from `WORKERS`
-
-Python re examples:
-^master$ - build only master branch
-(?!master) - build everything except branch master
-.+? - build everything
 """
 BUILDERS = [
     {
-        "name": "build-master-branch",
+        "name": "build",
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
@@ -57,20 +51,6 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "branch": "^master$",
-        "worker": "centos"
-    },
-
-    {
-        "name": "build", #build all except master branch
-        "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX.value,
-        "build_type": Build_type.RELEASE.value,
-        "api_latest": False,
-        "fastboot": False,
-        "compiler": "gcc",
-        "compiler_version": "6.3.1",
-        "branch": "(?!master)",
         "worker": "centos"
     },
 
@@ -83,7 +63,6 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "branch": ".+?",
         "worker": "centos"
     },
 
@@ -96,7 +75,6 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "8.2.0",
-        "branch": ".+?",
         "worker": "ubuntu"
     },
 
@@ -109,7 +87,6 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "clang",
         "compiler_version": "6.0",
-        "branch": ".+?",
         "worker": "ubuntu"
     },
 
@@ -126,7 +103,6 @@ BUILDERS = [
         "fastboot": True,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "branch": ".+?",
         "worker": "centos"
     },
 
@@ -139,7 +115,6 @@ BUILDERS = [
         "fastboot": True,
         "compiler": "gcc",
         "compiler_version": "8.2.0",
-        "branch": ".+?",
         "worker": "ubuntu"
     },
 
@@ -152,7 +127,6 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "branch": ".+?",
         "worker": "centos_defconfig"
     },
 ]
@@ -212,48 +186,14 @@ PRODUCT_CONFIGS_REPO = "product-configs"
 # Give possibility to enable/disable auto deploying infrastructure on workers
 DEPLOYING_INFRASTRUCTURE = True
 
+TRIGGER = 'trigger'
+
 CURRENT_MODE = Mode.PRODUCTION_MODE
-#CURRENT_MODE = Mode.PRODUCTION_MODE_LINUX_NEXT_GEN
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     GITHUB_OWNERS_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
-
-elif CURRENT_MODE == Mode.PRODUCTION_MODE_LINUX_NEXT_GEN:
-    BUILDBOT_TITLE = "MediaSDK Next-Gen"
-    WORKERS = {"centos": {"b-50-41": {},
-                          "b-50-61": {}},
-               "centos_test": {"t-999-999": {}}}
-    GITHUB_OWNERS_REPO = msdk_secrets.EMBEDDED_REPO
-    BUILDBOT_URL = msdk_secrets.BUILDBOT_URL
-    MASTER_PRODUCT_TYPE = "linux_next_gen"
-    BUILDERS = [
-        {
-            "name": "build-master-branch",
-            "product_conf_file": "conf_linux_public.py",
-            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN.value,
-            "build_type": Build_type.RELEASE.value,
-            "api_latest": False,
-            "fastboot": False,
-            "compiler": "gcc",
-            "compiler_version": "6.3.1",
-            "branch": "^master$",
-            "worker": "centos"
-        },
-
-        {
-            "name": "build",  # build all except master branch
-            "product_conf_file": "conf_linux_public.py",
-            "product_type": Product_type.PRIVATE_LINUX_NEXT_GEN.value,
-            "build_type": Build_type.RELEASE.value,
-            "api_latest": False,
-            "fastboot": False,
-            "compiler": "gcc",
-            "compiler_version": "6.3.1",
-            "branch": "(?!master)",
-            "worker": "centos"
-        }]
 
 elif CURRENT_MODE == Mode.TEST_MODE:
     GITHUB_OWNERS_REPO = "flow_test"
