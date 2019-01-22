@@ -44,14 +44,12 @@ from smoke_test.config import LOG_PATH, LOG_NAME
 from common.system_info import get_pkg_type
 
 
-
 class TedAdapter(object):
     """
     Wrapper for 'ted'
     """
 
-    #TODO: add relevant path and delete it
-    test_driver_dir = pathlib.Path('/localdisk/bb/worker/infrastructure') #TODO: hardcoded path
+    test_driver_dir = pathlib.Path(__file__).resolve().parents[2] / 'infrastructure'
     test_results_dir = test_driver_dir / 'ted/results'
     dispatcher_dir = adapter_conf.MEDIASDK_PATH / 'lib64'
     tests_timeout = 300  # 5 minutes
