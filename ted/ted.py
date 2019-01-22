@@ -84,6 +84,6 @@ if __name__ == '__main__':
 
     print("\n{} of {} cases passed".format(passed, total))
 
-    if (total-passed) != 0:
+    if (total-passed) == 0:
         sys.exit(TestReturnCodes.SUCCESS.value)
     sys.exit(TestReturnCodes.TEST_FAILED.value)
