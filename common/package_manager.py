@@ -45,7 +45,7 @@ _CMD_PATTERN = {
 }
 
 
-def install_pkg(pkg_path, pkg_name):
+def install_pkg(pkg_path):
     """
 
     :param pkg_path: path to pkg to install
@@ -57,8 +57,6 @@ def install_pkg(pkg_path, pkg_name):
     configure_logger('package_manager.install_pkg')
     log = logging.getLogger()
 
-    if not uninstall_pkg(pkg_name):
-        return False
     cmd = _CMD_PATTERN["INSTALL"].get(get_os_name()).format(pkg_path=pkg_path)
     err, out = cmd_exec(cmd)
 
@@ -72,6 +70,7 @@ def install_pkg(pkg_path, pkg_name):
 
 def uninstall_pkg(pkg_name):
     """
+    Uninstall rpm/deb package by name
 
     :param pkg_name: name of pkg to uninstall
     :type: String
