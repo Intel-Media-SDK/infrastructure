@@ -38,7 +38,7 @@ import traceback
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 import adapter_conf
 import common.package_manager as PackageManager
-from common.mediasdk_directories import MediaSdkDirectories, REQUIRED_PACKAGES
+from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
 from common.system_info import get_pkg_type
@@ -100,38 +100,55 @@ class TedAdapter(object):
         self._copy(str(remote_pkg), str(self.root_dir))
         self._untar(str(self.root_dir / pkg_name), str(self.root_dir))
 
-        # Remove old `/opt/intel/mediasdk` and copy fresh built artifacts
-        self._remove(str(adapter_conf.MEDIASDK_PATH), sudo=False)
-        self._copy(str(self.root_dir / 'opt' / 'intel' / 'mediasdk'), str(adapter_conf.MEDIASDK_PATH), sudo=False)
-
-    def install_test_pkgs(self):
+    def install_pkgs(self, pkgs, clean_dir=False):
         """
 
-        Install pkg
-        :param pkg_name: pkg name
-        :type: String
+        Install packages required for testing
 
-        :return: Flag whether pkg installed
+        :param pkgs: packages to install
+        :type: list
+
+        :param clean_dir: flag for clean up after package uninstalling
+        :type: bool
+
+        :return: Flag whether all required packages installed
         :rtype: Bool
         """
 
         pkg_type = get_pkg_type()
+        # TODO: define package directory
         pkg_dir = self.build_artifacts_dir
 
-        for pkg_name in REQUIRED_PACKAGES :
+        for pkg_name in pkgs:
             packages = [pkg_path for pkg_path in pkg_dir.glob(f'*.{pkg_type}')
                         if pkg_name in pkg_path.name.lower()]
+
             if len(packages) > 1:
                 print(f'Found multiple "{pkg_name}" packages {packages} in {pkg_dir}')
                 return False
             if len(packages) == 0:
                 print(f'Package "{pkg_name}" was not found in {pkg_dir}')
                 return False
-            if not PackageManager.install_pkg(packages[0], pkg_name):
+
+            if not PackageManager.uninstall_pkg(pkg_name):
+                print(f'Package "{pkg_name}" was not uninstalled')
+                return False
+
+            # Workaround for manual artifacts copying
+            # Change permission of folder /opt/intel/mediasdk for mediasdk user to call rm without sudo
+            if adapter_conf.MEDIASDK_PATH.exists():
+                self._change_permission(adapter_conf.MEDIASDK_PATH)
+            if clean_dir and self._remove(adapter_conf.MEDIASDK_PATH) != 0:
+                # Force clean up package directory
+                print(f'Directory {adapter_conf.MEDIASDK_PATH} was not cleaned up')
+                return False
+            if not PackageManager.install_pkg(packages[0]):
                 print(f'Package "{pkg_name}" was not installed')
                 return False
-        return True
 
+        self._change_permission(adapter_conf.MEDIASDK_PATH)
+
+        return True
 
     def run_test(self):
         """
@@ -192,6 +209,9 @@ class TedAdapter(object):
 # Note: user should be sudoer without asking the password!
     def _remove(self, directory: str, sudo=False):
         return self._execute_command(f"rm -rf {directory}", sudo)
+
+    def _change_permission(self, directory: str, user='mediasdk', sudo=True):
+        return self._execute_command(f"chown -R {user}:{user} {directory}", sudo)
 
     def _copy(self, target_directory: str, destination_directory: str, sudo=False):
         return self._execute_command(f"cp -r {target_directory} {destination_directory}", sudo)
@@ -268,8 +288,14 @@ def main():
 
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
 
-    if not adapter.install_test_pkgs():
-        print(f"Exception occurred: required packages were not installed\n")
+    # Install third parties for msdk
+    if not adapter.install_pkgs(THIRD_PARTY):
+        print(f'Required packages "{THIRD_PARTY}" were not installed\n')
+        exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
+
+    # Install msdk
+    if not adapter.install_pkgs(['mediasdk'], clean_dir=True):
+        print(f'Package "mediasdk" was not installed\n')
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     try:
