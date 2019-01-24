@@ -290,12 +290,12 @@ def main():
 
     # Install third parties for msdk
     if not adapter.install_pkgs(THIRD_PARTY):
-        print(f'Exception occurred: required packages "{THIRD_PARTY}" were not installed\n')
+        print(f'Required packages "{THIRD_PARTY}" were not installed\n')
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     # Install msdk
     if not adapter.install_pkgs(['mediasdk'], clean_dir=True):
-        print(f'Exception occurred: "mediasdk" package was not installed\n')
+        print(f'Package "mediasdk" was not installed\n')
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     try:
