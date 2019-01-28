@@ -33,6 +33,8 @@ from shutil import copystat, Error, copy2
 from zipfile import ZipFile, ZIP_DEFLATED
 import json
 
+from common.system_info import OsName, get_os_name
+
 
 class UnsupportedArchiveError(Exception):
     """
@@ -606,3 +608,15 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, hide=N
         return completed_process.returncode, completed_process.stdout
     except subprocess.CalledProcessError as failed_process:
         return failed_process.returncode, failed_process.stdout
+
+
+def get_packing_cmd(pack_type, pack_dir, enable_ruby, version, source_name):
+    import subprocess
+    params = ['fpm', '--verbose', '-s', 'dir', '-t', pack_type, '--version', version,
+                '-n', source_name] + pack_dir
+    command = subprocess.list2cmdline(params)
+
+    plt = get_os_name()
+    if plt in OsName.DEBIAN.value:
+        return f'{enable_ruby} && {command}'
+    return command

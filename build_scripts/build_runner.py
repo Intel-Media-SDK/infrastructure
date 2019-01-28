@@ -49,7 +49,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, copytree, ErrorCode, TargetArch
+    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch
 
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
@@ -456,7 +456,8 @@ class BuildGenerator(object):
             'branch_name': self.branch_name,
             'update_config': self._update_config,
             'target_arch': self.target_arch,
-            'commit_time': self.commit_time
+            'commit_time': self.commit_time,
+            'get_packing_cmd': get_packing_cmd,
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
