@@ -31,15 +31,15 @@ from common.logger_conf import configure_logger
 
 _CMD_PATTERN = {
     "INSTALL": {
-        "deb": "sudo dpkg -y install {pkg_path}",
+        "ubuntu": "sudo dpkg -y install {pkg_path}",
         "centos": "sudo yum -y install {pkg_path}"
     },
     "UNINSTALL": {
-        "deb": "sudo aptitude -y remove {pkg_name}",
+        "ubuntu": "sudo aptitude -y remove {pkg_name}",
         "centos": "sudo yum -y remove {pkg_name}"
     },
     "CHECK_INSTALLED": {
-        "deb": "dpkg --list | grep {pkg_name}",
+        "ubuntu": "dpkg --list | grep {pkg_name}",
         "centos": "yum list installed | grep {pkg_name}"
     }
 }
