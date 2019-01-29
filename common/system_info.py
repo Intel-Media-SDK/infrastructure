@@ -24,6 +24,7 @@ Information about system
 """
 
 import platform
+import distro
 from enum import Enum
 
 
@@ -35,18 +36,17 @@ class UnsupportedOsError(Exception):
     pass
 
 
-class OsName(Enum):
+class OsType(Enum):
     """
-    Container for supported os names
+    Container for supported os types
     """
-
-    CENTOS = "centos"
-    DEBIAN = "debian"
+    WINDOWS = 'Windows'
+    LINUX = 'Linux'
 
 
 PACK_TYPES = {
-    OsName.CENTOS.value: 'rpm',
-    OsName.DEBIAN.value: 'deb'
+    'centos': 'rpm',
+    'ubuntu': 'deb'
 }
 
 
@@ -57,7 +57,18 @@ def get_pkg_type():
     :return: pack extension
     :rtype: String
     """
-    return PACK_TYPES.get(get_os_name())
+    plt = get_os_name()
+    if plt in PACK_TYPES:
+        return PACK_TYPES[plt]
+    raise UnsupportedOsError(f'No supported Package type for platform "{plt}"')
+
+
+def os_type_is_windows():
+    return platform.system() == OsType.WINDOWS.value
+
+
+def os_type_is_linux():
+    return platform.system() == OsType.LINUX.value
 
 
 def get_os_name():
@@ -67,9 +78,14 @@ def get_os_name():
     :return: OS name | Exception if it is not supported
     """
 
-    plt = platform.platform()
-    for item in OsName:
-        if item.value in plt:
-            return item.value
-    raise UnsupportedOsError(f'The platform {plt} is not currently supported')
+    if os_type_is_linux():
+        return distro.id()
+    elif os_type_is_windows():
+        return OsType.WINDOWS.value
+    raise UnsupportedOsError(f'OS type {platform.system()} is not  currently supported')
 
+
+def get_os_version():
+    if os_type_is_linux():
+        return distro.major_version(), distro.minor_version()
+    raise UnsupportedOsError(f'The platform is not Linux')
