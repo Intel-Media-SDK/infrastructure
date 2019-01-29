@@ -44,18 +44,9 @@ class OsType(Enum):
     LINUX = 'Linux'
 
 
-class LinuxDistr(Enum):
-    """
-    Container for supported Linux distributions
-    """
-
-    CENTOS = "centos"
-    DEBIAN = "ubuntu"
-
-
 PACK_TYPES = {
-    LinuxDistr.CENTOS.value: 'rpm',
-    LinuxDistr.DEBIAN.value: 'deb'
+    'centos': 'rpm',
+    'ubuntu': 'deb'
 }
 
 
@@ -66,28 +57,18 @@ def get_pkg_type():
     :return: pack extension
     :rtype: String
     """
-    pkg_type = PACK_TYPES.get(get_os_name())
-    if pkg_type:
-        return pkg_type
-    raise UnsupportedOsError(f'No supported Package type for platform "{get_os_name()}"')
-
-
-def get_os_type():
-    """
-    Return OS type: Windows, Linux
-
-    :return: OS type
-    """
-
-    return platform.system()
+    plt = get_os_name()
+    if plt in PACK_TYPES:
+        return PACK_TYPES[plt]
+    raise UnsupportedOsError(f'No supported Package type for platform "{plt}"')
 
 
 def os_type_is_windows():
-    return get_os_type() == OsType.WINDOWS.value
+    return platform.system() == OsType.WINDOWS.value
 
 
 def os_type_is_linux():
-    return get_os_type() == OsType.LINUX.value
+    return platform.system() == OsType.LINUX.value
 
 
 def get_os_name():
@@ -98,22 +79,13 @@ def get_os_name():
     """
 
     if os_type_is_linux():
-        plt = distro.linux_distribution()[0]
-        for item in LinuxDistr:
-            if item.value in plt.lower():
-                return item.value
-        raise UnsupportedOsError(f'The platform {plt} is not currently supported')
+        return distro.id()
     elif os_type_is_windows():
         return OsType.WINDOWS.value
-    raise UnsupportedOsError(f'OS type {get_os_type()} is not  currently supported')
+    raise UnsupportedOsError(f'OS type {platform.system()} is not  currently supported')
 
 
-def get_linux_distr_version():
-    """
-    Get Linux distribution version
-
-    :return: major version, minor version
-    """
+def get_os_version():
     if os_type_is_linux():
         return distro.major_version(), distro.minor_version()
     raise UnsupportedOsError(f'The platform is not Linux')
