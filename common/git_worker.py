@@ -392,3 +392,32 @@ class ProductState(object):
                         repo_files[author_email].append(str(file_path))
 
         return repo_files
+
+    @staticmethod
+    def get_last_committer_of_file_line(repo, file_path, line):
+        """
+            Get e-mail of last committer in chosen file by line
+
+            :param repo: path to a repository
+            :type repo: pathlib.Path
+
+            :param file_path: path to a file from repo
+            :return file_path: pathlib.Path
+
+            :param line: Line number
+            :return line: String
+
+            :return email of last committer
+            :rtype None
+        """
+
+        if not file_path.is_dir():
+            repo = git.Repo(str(repo))
+            rel_file_path = str(file_path.relative_to(repo.working_dir))
+            blame = repo.blame("HEAD", rel_file_path, L=f'{line},+1', e=True)
+            try:
+                return blame[0][0].author.email
+            except Exception:
+                pass
+
+        return None
