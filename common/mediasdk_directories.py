@@ -26,6 +26,8 @@ import os
 import pathlib
 import platform
 import re
+import ssl
+import urllib.request
 from urllib.parse import quote, urljoin
 
 
@@ -498,3 +500,41 @@ class MediaSDKException(Exception):
 class MediaSDKFolderNotFound(MediaSDKException):
     """Raise if MediaSDK folder not found"""
     pass
+
+def is_comitter_the_org_member(organization, token):
+    """
+    Checks if commit owner is a member the organization
+    Implemented as closure, because this function should take pull request only
+    Used as pull request filter for BuildBot masters
+    """
+    def checker(pull_request_message):
+        commit_owner = pull_request_message['head']['user']['login']
+        github_member_url = f"https://api.github.com/orgs/{organization}/members/{commit_owner}?access_token={token}"
+
+        try:
+            response = urllib.request.urlopen(github_member_url,
+                                              context=ssl._create_unverified_context())
+        except Exception as error:
+            print(
+                f"Check organization member: Exception occurred while checking user {commit_owner} in {organization} organization: {error}")
+            return False
+
+        if response.code == 204:
+            return True
+        print(
+            f"Check organization member: user {commit_owner} was not found in {organization} organization. Code: {response.code}")
+        return False
+    return checker
+
+def is_release_branch(raw_branch):
+    # TODO: need to unify with MediaSdkDirectories.is_release_branch method
+    """
+    Checks if branch is release branch
+    Used as branch filter for pollers in BuildBot
+    """
+    # ignore pull request branches 'refs/pull/'
+    if raw_branch.startswith('refs/heads/'):
+        branch = raw_branch[11:]
+        if MediaSdkDirectories.is_release_branch(branch) or branch == 'master':
+            return True
+    return False

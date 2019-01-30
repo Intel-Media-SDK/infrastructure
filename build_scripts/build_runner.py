@@ -333,7 +333,7 @@ class BuildGenerator(object):
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
                  commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, target_arch=None,
-                 custom_cli_args=None):
+                 custom_cli_args=None, target_branch=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -405,6 +405,7 @@ class BuildGenerator(object):
         self.custom_cli_args = custom_cli_args
         self.current_stage = stage
         self.target_arch = target_arch
+        self.target_branch = target_branch
 
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -637,7 +638,9 @@ class BuildGenerator(object):
                     if self.repo_url:
                         data['url'] = self.repo_url
                 elif not data.get('branch'):
-                    if MediaSdkDirectories.is_release_branch(branch):
+                    if self.target_branch and MediaSdkDirectories.is_release_branch(self.target_branch):
+                        data['branch'] = self.target_branch
+                    elif MediaSdkDirectories.is_release_branch(branch) and not self.target_branch:
                         data['branch'] = branch
         elif self.repo_states:
             for repo_name, values in self.repo_states.items():
@@ -1040,6 +1043,8 @@ which is not present in mediasdk_directories.''')
                         default=[target_arch.value for target_arch in TargetArch],
                         choices=[target_arch.value for target_arch in TargetArch],
                         help='Architecture of target platform')
+    parser.add_argument('-tb', "--target-branch",
+                        help=f'All not triggered repos will be checkout to this branch.')
 
     parsed_args, unknown_args = parser.parse_known_args()
 
@@ -1078,7 +1083,8 @@ which is not present in mediasdk_directories.''')
         repo_url=parsed_args.repo_url,
         custom_cli_args=custom_cli_args,
         stage=parsed_args.stage,
-        target_arch=target_arch
+        target_arch=target_arch,
+        target_branch=parsed_args.target_branch
     )
 
     # We must create BuildGenerator anyway.

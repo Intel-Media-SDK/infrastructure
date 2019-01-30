@@ -154,7 +154,8 @@ WORKERS = {
         "b-1-14": {}
     },
     "centos_defconfig": {
-        "b-1-20": {},
+        # Workaroud for running 'trigger' builder in parallel with build
+        "b-1-20": {'max_builds': 2},
     },
     "ubuntu": {
         "b-1-18": {},
