@@ -1043,7 +1043,7 @@ which is not present in mediasdk_directories.''')
                         default=[target_arch.value for target_arch in TargetArch],
                         choices=[target_arch.value for target_arch in TargetArch],
                         help='Architecture of target platform')
-    parser.add_argument('-tb', "--target-branch", default=None,
+    parser.add_argument('-tb', "--target-branch",
                         help=f'All not triggered repos will be checkout to this branch.')
 
     parsed_args, unknown_args = parser.parse_known_args()
