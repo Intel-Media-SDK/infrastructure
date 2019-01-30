@@ -411,7 +411,7 @@ class ProductState(object):
             :rtype None
         """
 
-        if not file_path.is_dir():
+        if file_path.exists() and not file_path.is_dir():
             repo = git.Repo(str(repo))
             rel_file_path = str(file_path.relative_to(repo.working_dir))
             blame = repo.blame("HEAD", rel_file_path, L=f'{line},+1', e=True)
