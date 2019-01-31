@@ -508,7 +508,7 @@ def is_comitter_the_org_member(organization, token):
     Used as pull request filter for BuildBot masters
     """
     def checker(pull_request_message):
-        commit_owner = pull_request_message['head']['user']['login']
+        commit_owner = pull_request_message['user']['login']
         github_member_url = f"https://api.github.com/orgs/{organization}/members/{commit_owner}?access_token={token}"
 
         try:
