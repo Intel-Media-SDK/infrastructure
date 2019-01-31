@@ -33,6 +33,7 @@ from shutil import copystat, Error, copy2
 from zipfile import ZipFile, ZIP_DEFLATED
 from common.system_info import get_os_version
 import json
+import subprocess
 
 
 class UnsupportedArchiveError(Exception):
@@ -610,7 +611,6 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, hide=N
 
 
 def get_packing_cmd(pack_type, pack_dir, enable_ruby, version, source_name):
-    import subprocess
     params = ['fpm', '--verbose', '-s', 'dir', '-t', pack_type, '--version', version,
                 '-n', source_name] + pack_dir
     command = subprocess.list2cmdline(params)
