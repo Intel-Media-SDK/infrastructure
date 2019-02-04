@@ -80,6 +80,8 @@ class GitRepo(object):
         self.hard_reset()
         self.clean()
         self.checkout(branch_name="master", silent=True)
+        # Need to fetch all to get remote branches
+        self.repo.remotes.origin.fetch()
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clone(self):
@@ -236,8 +238,7 @@ class GitRepo(object):
         :param branch_name: branch name
         :return: True if branch exists else false
         """
-        # Need to fetch all to get remote branches
-        self.repo.remotes.origin.fetch()
+
         if self.repo.git.branch('--list', f'*/{branch_name}', '--all'):
             return True
         return False
