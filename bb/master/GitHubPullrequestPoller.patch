@@ -1,0 +1,11 @@
+--- /opt/python36/lib/python3.6/site-packages/buildbot/changes/github.py	2019-01-31 14:05:39.178910258 +0300
++++ /opt/python36/lib/python3.6/site-packages/buildbot/changes/github.py	2019-01-31 14:05:18.785064313 +0300
+@@ -254,7 +254,7 @@
+                     author += " <" + str(email) + ">"
+ 
+                 properties = self.extractProperties(pr)
+-
++                properties.update({'target_branch': pr['base']['ref']})
+                 # emit the change
+                 yield self.master.data.updates.addChange(
+                     author=bytes2unicode(author),
