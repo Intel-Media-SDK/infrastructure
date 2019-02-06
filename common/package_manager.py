@@ -26,21 +26,20 @@ Module for working with Linux rpm and deb packages
 import logging
 from common.system_info import get_os_name
 from common.helper import cmd_exec
-from common.logger_conf import configure_logger
 
 
 _CMD_PATTERN = {
     "INSTALL": {
-        "ubuntu": "sudo dpkg -y install {pkg_path}",
+        "ubuntu": "sudo dpkg -i {pkg_path}",
         "centos": "sudo yum -y install {pkg_path}"
     },
     "UNINSTALL": {
         "ubuntu": "sudo aptitude -y remove {pkg_name}",
-        "centos": "sudo yum -y remove {pkg_name}"
+        "centos": "sudo yum -y remove `yum list installed | grep -i ^{pkg_name}`"
     },
     "CHECK_INSTALLED": {
-        "ubuntu": "dpkg --list | grep {pkg_name}",
-        "centos": "yum list installed | grep {pkg_name}"
+        "ubuntu": "aptitude search ^{pkg_name}",
+        "centos": "yum list installed | grep -i ^{pkg_name}"
     }
 }
 
@@ -54,13 +53,13 @@ def install_pkg(pkg_path):
     :return: Flag whether pkg installed
     :rtype: bool
     """
-    configure_logger('package_manager.install_pkg')
-    log = logging.getLogger()
+    log = logging.getLogger('package_manager.install_pkg')
 
     cmd = _CMD_PATTERN["INSTALL"].get(get_os_name()).format(pkg_path=pkg_path)
     err, out = cmd_exec(cmd)
 
     if err == 0:
+        log.info(f'Package "{pkg_path}" was installed')
         log.debug(out)
         return True
 
@@ -79,15 +78,16 @@ def uninstall_pkg(pkg_name):
     :rtype: bool
     """
 
+    log = logging.getLogger('package_manager.uninstall_pkg')
     if not is_pkg_installed(pkg_name):
+        log.info(f'Package {pkg_name} was removed')
         return True
 
-    configure_logger('package_manager.uninstall_pkg')
-    log = logging.getLogger()
     cmd = _CMD_PATTERN["UNINSTALL"].get(get_os_name()).format(pkg_name=pkg_name)
     err, out = cmd_exec(cmd)
 
     if err == 0:
+        log.info(f'Package {pkg_name} was removed')
         log.debug(out)
         return True
 
@@ -107,12 +107,12 @@ def is_pkg_installed(pkg_name):
 
     """
 
-    configure_logger('package_manager.is_pkg_installed')
-    log = logging.getLogger()
+    log = logging.getLogger('package_manager.is_pkg_installed')
     cmd = _CMD_PATTERN["CHECK_INSTALLED"].get(get_os_name()).format(pkg_name=pkg_name)
     err, out = cmd_exec(cmd)
 
     if err == 0:
+        log.info(f'Package {pkg_name} was found')
         log.debug(out)
         return True
 

@@ -30,18 +30,20 @@ import argparse
 import shutil
 import subprocess
 import os
-import platform
 import pathlib
 import tarfile
 import traceback
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 import adapter_conf
+import logging
 import common.package_manager as PackageManager
 from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
 from common.system_info import get_pkg_type
+from common.logger_conf import configure_logger
+
 
 
 class TedAdapter(object):
@@ -52,6 +54,8 @@ class TedAdapter(object):
     test_driver_dir = pathlib.Path(__file__).resolve().parents[2] / 'infrastructure'
     test_results_dir = test_driver_dir / 'ted/results'
     dispatcher_dir = adapter_conf.MEDIASDK_PATH / 'lib64'
+    test_adapter_log_dir = test_driver_dir / 'ted_adapter/logs'
+    test_adapter_log_name = 'test_adapter.log'
     tests_timeout = 300  # 5 minutes
 
     def __init__(self, build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir):
@@ -77,6 +81,9 @@ class TedAdapter(object):
         self.env = os.environ.copy()
         # Path to dispatcher lib should be in the libraries search path
         self.env['LD_LIBRARY_PATH'] = self.dispatcher_dir
+
+        configure_logger(logs_path=self.test_adapter_log_dir / 'test_adapter.log')
+        self.log = logging.getLogger(self.test_adapter_log_name)
 
 
     def _get_artifacts(self):
@@ -124,14 +131,14 @@ class TedAdapter(object):
                         if pkg_name in pkg_path.name.lower()]
 
             if len(packages) > 1:
-                print(f'Found multiple "{pkg_name}" packages {packages} in {pkg_dir}')
+                self.log.info(f'Found multiple "{pkg_name}" packages {packages} in {pkg_dir}')
                 return False
             if len(packages) == 0:
-                print(f'Package "{pkg_name}" was not found in {pkg_dir}')
+                self.log.info(f'Package "{pkg_name}" was not found in {pkg_dir}')
                 return False
 
             if not PackageManager.uninstall_pkg(pkg_name):
-                print(f'Package "{pkg_name}" was not uninstalled')
+                self.log.info(f'Package "{pkg_name}" was not uninstalled')
                 return False
 
             # Workaround for manual artifacts copying
@@ -140,13 +147,12 @@ class TedAdapter(object):
                 self._change_permission(adapter_conf.MEDIASDK_PATH)
             if clean_dir and self._remove(adapter_conf.MEDIASDK_PATH) != 0:
                 # Force clean up package directory
-                print(f'Directory {adapter_conf.MEDIASDK_PATH} was not cleaned up')
-                return False
+                self.log.info(f'Directory {adapter_conf.MEDIASDK_PATH} was not cleaned up')
             if not PackageManager.install_pkg(packages[0]):
-                print(f'Package "{pkg_name}" was not installed')
+                self.log.info(f'Package "{pkg_name}" was not installed')
                 return False
-
-        self._change_permission(adapter_conf.MEDIASDK_PATH)
+        if adapter_conf.MEDIASDK_PATH.exists():
+            self._change_permission(adapter_conf.MEDIASDK_PATH)
 
         return True
 
@@ -193,7 +199,6 @@ class TedAdapter(object):
     def copy_logs_to_share(self):
         rotate_dir(self.tests_artifacts_dir)
         print(f'Copy results to {self.tests_artifacts_dir}')
-
         print(f'Artifacts are available by: {self.tests_artifacts_url}')
 
         # Workaround for copying to samba share on Linux to avoid exceptions while setting Linux permissions.
@@ -201,6 +206,8 @@ class TedAdapter(object):
         shutil.copystat = lambda x, y, follow_symlinks=True: x
         shutil.copytree(self.test_results_dir, self.tests_artifacts_dir, ignore=shutil.ignore_patterns('bin'))
         shutil.copyfile(LOG_PATH, str(self.tests_artifacts_dir / LOG_NAME))
+        shutil.copyfile(str(self.test_adapter_log_dir / self.test_adapter_log_name),
+                        str(self.root_dir / self.test_adapter_log_name))
         shutil.copystat = _orig_copystat
 
 # Direct calls of rm, cp commands needs to use them with `sudo`
@@ -286,16 +293,17 @@ def main():
     tests_artifacts_dir = MediaSdkDirectories.get_test_dir(**directories_layout)
     tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
+    log = logging.getLogger('test_adapter.log')
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
 
     # Install third parties for msdk
     if not adapter.install_pkgs(THIRD_PARTY):
-        print(f'Required packages "{THIRD_PARTY}" were not installed\n')
+        log.info(f'Required packages "{THIRD_PARTY}" were not installed\n')
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     # Install msdk
     if not adapter.install_pkgs(['mediasdk'], clean_dir=True):
-        print(f'Package "mediasdk" was not installed\n')
+        log.info(f'Package "mediasdk" was not installed\n')
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
 
     try:
@@ -313,10 +321,10 @@ def main():
         tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
 
     try:
-        adapter.copy_logs_to_share()
+         adapter.copy_logs_to_share()
     except Exception:
-        print("Exception occurred while copying results:\n", traceback.format_exc())
-        tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
+         print("Exception occurred while copying results:\n", traceback.format_exc())
+         tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
 
     exit(tests_return_code)
 
