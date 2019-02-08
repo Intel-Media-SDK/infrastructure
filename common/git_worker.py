@@ -81,8 +81,7 @@ class GitRepo(object):
         self.hard_reset()
         self.clean()
         self.checkout(branch_name="master", silent=True)
-        # Need to fetch all to get remote branches
-        self.repo.remotes.origin.fetch()
+        self.pull()
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def clone(self):
@@ -196,11 +195,11 @@ class GitRepo(object):
         """
 
         self.branch_name = branch_name or self.branch_name
-        self.fetch()
 
         if branch_name:
             # Checkout to branch
             self.checkout(branch_name=self.branch_name)
+            self.pull()
 
         if commit_time:
             self.revert_commit_by_time(commit_time)
