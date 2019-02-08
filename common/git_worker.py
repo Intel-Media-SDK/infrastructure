@@ -81,6 +81,7 @@ class GitRepo(object):
         self.hard_reset()
         self.clean()
         self.checkout(branch_name="master", silent=True)
+        self.hard_reset('origin/master')
         self.pull()
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -118,7 +119,7 @@ class GitRepo(object):
         self.hard_reset('FETCH_HEAD')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
-    def hard_reset(self, reset_to=None):
+    def hard_reset(self, reset_to="HEAD"):
         """
         Hard reset repo
 
@@ -126,7 +127,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Hard reset repo " + self.repo_name)
+        self.log.info(f"Hard reset repo {self.repo_name} to {reset_to}")
         if reset_to:
             self.repo.git.reset('--hard', reset_to)
         else:
@@ -199,6 +200,7 @@ class GitRepo(object):
         if branch_name:
             # Checkout to branch
             self.checkout(branch_name=self.branch_name)
+            self.hard_reset(f'origin/{self.branch_name}')
             self.pull()
 
         if commit_time:
