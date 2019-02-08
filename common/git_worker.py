@@ -48,7 +48,7 @@ class GitRepo(object):
         Class for work with repositories
     """
 
-    def __init__(self, root_repo_dir, repo_name, branch, url, commit_id=None):
+    def __init__(self, root_repo_dir, repo_name, branch, url, commit_id=None, is_trigger=False):
         """
         :param root_repo_dir: Directory where repositories will clone
         :param repo_name: Name of repository
@@ -62,6 +62,7 @@ class GitRepo(object):
         self.commit_id = commit_id
         self.local_repo_dir = root_repo_dir / repo_name
         self.repo = None
+        self.is_trigger = is_trigger
 
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -263,9 +264,10 @@ class ProductState(object):
         for repo_name, data in sources_list.items():
             branch = data.get('branch') or 'master'
             commit_id = data.get('commit_id') or 'HEAD'
+            is_trigger = data.get('trigger') or False
 
             self.repo_states.append(
-                GitRepo(root_repo_dir, repo_name, branch, data['url'], commit_id))
+                GitRepo(root_repo_dir, repo_name, branch, data['url'], commit_id, is_trigger))
 
     def extract_all_repos(self):
         """
@@ -285,6 +287,7 @@ class ProductState(object):
                     repo.change_repo_state(branch_name=repo.branch_name)
                 else:
                     repo.change_repo_state()
+            if repo.is_trigger:
                 git_commit_date = repo.get_time()
 
         commit_timestamp = self.commit_time.timestamp() \

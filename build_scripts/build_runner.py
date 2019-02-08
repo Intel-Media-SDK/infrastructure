@@ -632,7 +632,9 @@ class BuildGenerator(object):
                 return False
 
             for repo, data in self.product_repos.items():
+                data['trigger'] = False
                 if repo == repo_name:
+                    data['trigger'] = True
                     if not data.get('branch'):
                         data['branch'] = branch
                         data['commit_id'] = commit_id
@@ -651,6 +653,7 @@ class BuildGenerator(object):
                     self.product_repos[repo_name]['branch'] = values['branch']
                     self.product_repos[repo_name]['commit_id'] = values['commit_id']
                     self.product_repos[repo_name]['url'] = values['url']
+                    self.product_repos[repo_name]['trigger'] = values['trigger']
 
         product_state = ProductState(self.product_repos,
                                      self.options["REPOS_DIR"],
