@@ -99,6 +99,7 @@ class Product_type(Enum):
 
     CLOSED_ANDROID = 'closed_android'
     CLOSED_WINDOWS_TITAN = 'closed_windows_titan'
+    CLOSED_PERL_TEST_PKG = 'closed_perl_test_pkg'
 
     # private
     PRIVATE_ANDROID = 'private_android'
