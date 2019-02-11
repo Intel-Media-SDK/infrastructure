@@ -197,11 +197,14 @@ class GitRepo(object):
 
         self.branch_name = branch_name or self.branch_name
 
-        if branch_name:
-            # Checkout to branch
-            self.checkout(branch_name=self.branch_name)
-            self.hard_reset(f'origin/{self.branch_name}')
-            self.pull()
+        if self.branch_name and self.branch_name != 'master':
+            # Only for Gerrit patches
+            if 'refs/changes' in self.branch_name:
+                self.fetch(self.branch_name)
+            else:
+                self.checkout(branch_name=self.branch_name)
+                self.hard_reset(f'origin/{self.branch_name}')
+                self.pull()
 
         if commit_time:
             self.revert_commit_by_time(commit_time)
