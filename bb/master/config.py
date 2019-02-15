@@ -24,6 +24,7 @@ from enum import Enum
 from common import msdk_secrets
 
 from common.helper import Product_type, Build_type
+from common.mediasdk_directories import OPEN_SOURCE_RELEASE_BRANCH_PATTERN
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
@@ -40,6 +41,7 @@ Specification of BUILDERS:
 "compiler"          - compiler which should be used (env and product_config should support this key)
 "compiler_version"  - version of compiler
 "worker"            - worker(s) which should be used from `WORKERS`
+"branch"            - on this branch pattern(!) the build will be activated (use Python re)
 """
 BUILDERS = [
     {
@@ -51,7 +53,9 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "worker": "centos"
+        "worker": "centos",
+        # Builder is enabled for all branches
+        "branch": '.+?'
     },
 
     {
@@ -63,7 +67,9 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "worker": "centos"
+        "worker": "centos",
+        # Builder is enabled for not release branches
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     {
@@ -75,7 +81,8 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "8.2.0",
-        "worker": "ubuntu"
+        "worker": "ubuntu",
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     {
@@ -87,7 +94,8 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "clang",
         "compiler_version": "6.0",
-        "worker": "ubuntu"
+        "worker": "ubuntu",
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     # Fastboot is a special configuration of MediaSDK, when we 
@@ -103,7 +111,8 @@ BUILDERS = [
         "fastboot": True,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "worker": "centos"
+        "worker": "centos",
+        "branch": '.+?'
     },
 
     {
@@ -115,7 +124,8 @@ BUILDERS = [
         "fastboot": True,
         "compiler": "gcc",
         "compiler_version": "8.2.0",
-        "worker": "ubuntu"
+        "worker": "ubuntu",
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     {
@@ -127,7 +137,8 @@ BUILDERS = [
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "worker": "centos_defconfig"
+        "worker": "centos_defconfig",
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 ]
 
@@ -175,7 +186,9 @@ BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis i
 BUILDBOT_TREE_STABLE_TIMER = None # Value "None" means that a separate build will be started immediately for each Change.
 BUILDBOT_TITLE = "Intel® Media SDK"
 
-POLL_INTERVAL = 10 # Poll Github for new changes (in seconds)
+# Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
+# and new api requests will not be performed
+POLL_INTERVAL = 20 # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
