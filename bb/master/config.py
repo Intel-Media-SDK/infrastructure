@@ -54,6 +54,7 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        # Builder is enabled for all branches
         "branch": '.+?'
     },
 
@@ -67,6 +68,7 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        # Builder is enabled for not release branches
         "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
