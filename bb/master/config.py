@@ -80,7 +80,7 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
-        "branch": '.+?'
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     {
@@ -93,7 +93,7 @@ BUILDERS = [
         "compiler": "clang",
         "compiler_version": "6.0",
         "worker": "ubuntu",
-        "branch": '.+?'
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     # Fastboot is a special configuration of MediaSDK, when we 
@@ -123,7 +123,7 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
-        "branch": '.+?'
+        "branch": f'(?!{OPEN_SOURCE_RELEASE_BRANCH_PATTERN})'
     },
 
     {
