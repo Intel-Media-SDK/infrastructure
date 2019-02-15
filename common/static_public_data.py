@@ -10,7 +10,9 @@ REPOSITORIES = {
     # open source infrastructure repository
     'infrastructure': 'https://github.com/Intel-Media-SDK/infrastructure.git',
     # open source product configs
-    'product-configs': 'https://github.com/Intel-Media-SDK/product-configs.git'
+    'product-configs': 'https://github.com/Intel-Media-SDK/product-configs.git',
+    # open source media-driver
+    'media-driver': 'https://github.com/intel/media-driver.git'
 }
 
 PROXIES = {}
