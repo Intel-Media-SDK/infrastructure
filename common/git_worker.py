@@ -429,3 +429,28 @@ class ProductState(object):
                 pass
 
         return None
+
+    @staticmethod
+    def get_commits(repo_path, commit, commit_to=None):
+        """
+            Get commit or slice of commits
+
+            :param repo_path: Path to a repository
+            :type repo_path: String | pathlib.Path
+
+            :param commit: Revision of commit
+            :type commit: String
+
+            :param commit_to: Revision of commit to
+            :type commit_to: String
+
+            :return: git.Commit object or List of git.Commit objects
+            :rtype: git.Commit | List
+        """
+
+        r = git.Repo(str(repo_path))
+
+        if commit_to:
+            return list(r.iter_commits(f'{commit}..{commit_to}'))
+
+        return r.commit(commit)
