@@ -329,6 +329,7 @@ class ProductState(object):
                     'branch': state.branch_name,
                     'commit_id': state.commit_id,
                     'url': state.url,
+                    'commit_time': str(state.repo.commit().committed_datetime.astimezone()),
                     'trigger': True if trigger == state.repo_name else False
                 }
 
