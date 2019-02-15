@@ -186,7 +186,9 @@ BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis i
 BUILDBOT_TREE_STABLE_TIMER = None # Value "None" means that a separate build will be started immediately for each Change.
 BUILDBOT_TITLE = "Intel® Media SDK"
 
-POLL_INTERVAL = 10 # Poll Github for new changes (in seconds)
+# Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
+# and new api requests will not be performed
+POLL_INTERVAL = 20 # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
