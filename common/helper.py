@@ -283,18 +283,19 @@ def extract_archive(archive_path, extract_to, exclude=None):
         raise UnsupportedArchiveError(
             f"Unsupported archive extension {archive_path.suffix}")
 
-    members = None
+    data_to_extract = None
     if exclude and isinstance(exclude, list):
-        ignore = []
-        all_members = package.namelist()
-        for member in all_members:
+        data_to_extract = []
+        for member in package.namelist():
+            is_excluded = False
             for pattern in exclude:
                 if pattern in member:
-                    ignore.append(member)
+                    is_excluded = True
+                    break
+            if not is_excluded:
+                data_to_extract.append(member)
 
-        members = [member for member in all_members if member not in ignore]
-
-    package.extractall(extract_to, members=members)
+    package.extractall(extract_to, members=data_to_extract)
     package.close()
 
 
