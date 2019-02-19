@@ -38,7 +38,7 @@ LOGICAL_DRIVE = 3  # Drive type from MSDN
 THIRD_PARTY = ('libva',)  # Third party components for Media SDK
 
 # TODO: Pattern for closed source
-OPEN_SOURCE_RELEASE_BRANCH_PATTERN = '^intel-mediasdk-\d+\.\w'
+OPEN_SOURCE_RELEASE_BRANCH_PATTERN = ['^intel-mediasdk-\d+\.\w', '^mss2018_r2$']
 
 def get_logical_drives():
     """
@@ -487,8 +487,9 @@ class MediaSdkDirectories(object):
         :return: True if release branch else False
         """
 
-        if re.match(OPEN_SOURCE_RELEASE_BRANCH_PATTERN, branch_name):
-            return True
+        for pattern in OPEN_SOURCE_RELEASE_BRANCH_PATTERN:
+            if re.match(pattern, branch_name):
+                return True
         return False
 
 
