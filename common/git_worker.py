@@ -29,10 +29,18 @@ import multiprocessing
 from datetime import datetime
 
 import git
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, \
+    retry_if_exception_type, retry_if_result
 
 from common.helper import remove_directory
 from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
+
+
+def check_exception(value):
+    if isinstance(value, git.exc.GitCommandError) and (value.status == 128 or value.status == 1):
+        # 1: branch does not exist
+        # 128: revision does not exist
+        raise value
 
 
 class BranchDoesNotExistException(Exception):
@@ -133,7 +141,8 @@ class GitRepo(object):
         else:
             self.repo.git.reset('--hard')
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60),
+           retry=(retry_if_exception_type() | retry_if_result(check_exception)))
     def checkout(self, branch_name=None, silent=False):
         """
         Checkout to certain state
@@ -152,8 +161,9 @@ class GitRepo(object):
         self.log.info("Checkout repo %s to %s", self.repo_name, checkout_dest)
         try:
             self.repo.git.checkout(checkout_dest, force=True)
-        except git.exc.GitCommandError:
+        except git.exc.GitCommandError as err:
             self.log.exception("Remote branch %s does not exist", checkout_dest)
+            return err
 
         if str(self.commit_id).lower() == 'head':
             self.commit_id = str(self.repo.head.commit)
