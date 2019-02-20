@@ -267,6 +267,7 @@ def extract_archive(archive_path, extract_to, exclude=None):
     :type extract_to: String|pathlib.Path
 
     :param exclude: Patterns for files and directories that should not be extracted
+                    (just path sub-strings with no wildcards or regexp)
     :type exclude: List
     """
 
