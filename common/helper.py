@@ -256,7 +256,7 @@ def _zip_data(root_path, pack_as, archive):
         archive.write(root_path, arcname=pack_as)
 
 
-def extract_archive(archive_path, extract_to):
+def extract_archive(archive_path, extract_to, exclude=None):
     """
     Extract archive (.tar, .zip)
 
@@ -265,6 +265,10 @@ def extract_archive(archive_path, extract_to):
 
     :param extract_to: Path to extraction
     :type extract_to: String|pathlib.Path
+
+    :param exclude: Patterns for files and directories that should not be extracted
+                    (just path sub-strings with no wildcards or regexp)
+    :type exclude: List
     """
 
     archive_path = pathlib.Path(archive_path)
@@ -280,7 +284,19 @@ def extract_archive(archive_path, extract_to):
         raise UnsupportedArchiveError(
             f"Unsupported archive extension {archive_path.suffix}")
 
-    package.extractall(extract_to)
+    data_to_extract = None
+    if exclude and isinstance(exclude, list):
+        data_to_extract = []
+        for member in package.namelist():
+            is_excluded = False
+            for pattern in exclude:
+                if pattern in member:
+                    is_excluded = True
+                    break
+            if not is_excluded:
+                data_to_extract.append(member)
+
+    package.extractall(extract_to, members=data_to_extract)
     package.close()
 
 
