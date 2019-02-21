@@ -39,7 +39,8 @@ def get_build_number(repo_path, os_type, branch):
                 if branch in numbers[os_type]:
                     build_number = numbers[os_type][branch]
                 else:
-                    log.warning(f'Branch {branch} does not exist')
+                    log.warning(f'Branch {branch} does not exist. Get number from master')
+                    build_number = numbers[os_type]['master']
             else:
                 log.warning(f'OS {os_type} does not exist')
     else:
