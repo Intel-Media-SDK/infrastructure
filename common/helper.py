@@ -30,7 +30,7 @@ import tarfile
 import subprocess
 from enum import Enum
 from shutil import copystat, Error, copy2
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 from common.system_info import get_os_version
 import json
 import subprocess
@@ -284,13 +284,21 @@ def extract_archive(archive_path, extract_to, exclude=None):
         raise UnsupportedArchiveError(
             f"Unsupported archive extension {archive_path.suffix}")
 
+    if isinstance(package, ZipFile):
+        package_data = package.infolist()
+        is_zip = True
+    else:
+        package_data = package.getmembers()
+        is_zip = False
+
     data_to_extract = None
     if exclude and isinstance(exclude, list):
         data_to_extract = []
-        for member in package.namelist():
+        for member in package_data:
             is_excluded = False
             for pattern in exclude:
-                if pattern in member:
+                member_path = member.filename if is_zip else member.name
+                if pattern in member_path:
                     is_excluded = True
                     break
             if not is_excluded:
