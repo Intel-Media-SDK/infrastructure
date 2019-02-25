@@ -442,15 +442,15 @@ class ProductState(object):
         return None
 
     @staticmethod
-    def get_commits(repo_path, commit, commit_to=None):
+    def get_commits(repo_path, commit_from, commit_to=None):
         """
             Get commit or slice of commits
 
             :param repo_path: Path to a repository
             :type repo_path: String | pathlib.Path
 
-            :param commit: Revision of commit
-            :type commit: String
+            :param commit_from: Revision of commit
+            :type commit_from: String
 
             :param commit_to: Revision of commit to
             :type commit_to: String
@@ -462,6 +462,8 @@ class ProductState(object):
         r = git.Repo(str(repo_path))
 
         if commit_to:
-            return list(r.iter_commits(f'{commit}..{commit_to}'))
+            commits = list(r.iter_commits(f'{commit_from}..{commit_to}'))
+            commits.append(r.commit(commit_from))
+            return commits
 
-        return r.commit(commit)
+        return r.commit(commit_from)
