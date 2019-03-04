@@ -208,8 +208,8 @@ class GitRepo(object):
         self.branch_name = branch_name or self.branch_name
 
         if self.branch_name and self.branch_name != 'master':
-            # Only for Gerrit patches
-            if 'refs/changes' in self.branch_name:
+            # for Gerrit patches and Github pull requests
+            if 'refs/changes' in self.branch_name or 'refs/pull' in self.branch_name:
                 self.fetch(self.branch_name)
             else:
                 self.checkout(branch_name=self.branch_name)

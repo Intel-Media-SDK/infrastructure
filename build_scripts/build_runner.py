@@ -332,7 +332,7 @@ class BuildGenerator(object):
     """
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
-                 commit_time=None, changed_repo=None, repo_states_file_path=None, repo_url=None, target_arch=None,
+                 commit_time=None, changed_repo=None, repo_states_file_path=None, target_arch=None,
                  custom_cli_args=None, target_branch=None):
         """
         :param build_config_path: Path to build configuration file
@@ -363,10 +363,6 @@ class BuildGenerator(object):
                                       of repositories to reproduce the same build
         :type repo_states_file_path: String
 
-        :param repo_url: Link to the external repository
-                         (repository which is not in mediasdk_directories)
-        :type repo_url: String
-
         :param target_arch: Architecture of target platform
         :type target_arch: List
 
@@ -382,12 +378,10 @@ class BuildGenerator(object):
         self.commit_time = commit_time
         self.changed_repo = changed_repo
         self.repo_states = None
-        self.repo_url = repo_url
         self.build_state_file = root_dir / "build_state"
         self.options = {
             "ROOT_DIR": root_dir,
             "REPOS_DIR": root_dir / "repos",
-            "REPOS_FORKED_DIR": root_dir / "repos_forked",
             "BUILD_DIR": root_dir / "build",
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
@@ -414,8 +408,6 @@ class BuildGenerator(object):
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
             changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_dict[0])}.git"
-            if self.repo_url and self.repo_url != changed_repo_url:
-                self.options["REPOS_DIR"] = self.options["REPOS_FORKED_DIR"]
             self.branch_name = changed_repo_dict[1]
         elif repo_states_file_path:
             self.branch_name = 'master'
@@ -582,7 +574,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'REPOS_FORKED_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -618,7 +610,6 @@ class BuildGenerator(object):
         self.log.info("EXTRACTING")
 
         self.options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
-        self.options['REPOS_FORKED_DIR'].mkdir(parents=True, exist_ok=True)
         self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         triggered_repo = 'unknown'
@@ -638,8 +629,6 @@ class BuildGenerator(object):
                     if not data.get('branch'):
                         data['branch'] = branch
                         data['commit_id'] = commit_id
-                    if self.repo_url:
-                        data['url'] = self.repo_url
                 elif not data.get('branch'):
                     if self.target_branch and MediaSdkDirectories.is_release_branch(self.target_branch):
                         data['branch'] = self.target_branch
@@ -1024,10 +1013,6 @@ in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
     parser.add_argument('-s', "--repo-states", metavar="PATH",
                         help="Path to repo_states.json file")
-    parser.add_argument('-f', "--repo-url", metavar="URL", help='''Link to the repository.
-In most cases used to specify link to the forked repositories.
-Use this argument if you want to specify repository
-which is not present in mediasdk_directories.''')
     parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
                         choices=[build_type.value for build_type in Build_type],
                         help='Type of build')
@@ -1084,7 +1069,6 @@ which is not present in mediasdk_directories.''')
         commit_time=commit_time,
         changed_repo=parsed_args.changed_repo,
         repo_states_file_path=parsed_args.repo_states,
-        repo_url=parsed_args.repo_url,
         custom_cli_args=custom_cli_args,
         stage=parsed_args.stage,
         target_arch=target_arch,
