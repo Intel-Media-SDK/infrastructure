@@ -188,9 +188,10 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
 
-        # only for Gerrit
+        # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
-        if branch.startswith('refs/changes/'):
+        # ex: refs/pull/1234/merge -> 1234/merge
+        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
             branch = branch.split('/', 3)[-1]
 
         return cls.get_root_builds_dir(os_type) / branch / build_event / commit_id
@@ -271,9 +272,10 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
 
-        # only for Gerrit
+        # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
-        if branch.startswith('refs/changes/'):
+        # ex: refs/pull/1234/merge -> 1234/merge
+        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
             branch = branch.split('/', 3)[-1]
 
         return '/'.join(
@@ -334,9 +336,10 @@ class MediaSdkDirectories(object):
         NOTE: All tests for commit will be stored together to generate one summary.
         """
 
-        # only for Gerrit
+        # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
-        if branch.startswith('refs/changes/'):
+        # ex: refs/pull/1234/merge -> 1234/merge
+        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
             branch = branch.split('/', 3)[-1]
 
         tests_dir = cls.get_root_test_results_dir(os_type) / branch / build_event / commit_id
@@ -397,9 +400,10 @@ class MediaSdkDirectories(object):
         NOTE: All tests for commit will be stored together to generate one summary.
         """
 
-        # only for Gerrit
+        # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
-        if branch.startswith('refs/changes/'):
+        # ex: refs/pull/1234/merge -> 1234/merge
+        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
             branch = branch.split('/', 3)[-1]
 
         test_url = '/'.join((cls.get_test_root_url(product_type), branch, build_event, commit_id))
