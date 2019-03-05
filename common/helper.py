@@ -27,10 +27,9 @@ import pathlib
 import shutil
 import stat
 import tarfile
-import subprocess
 from enum import Enum
 from shutil import copystat, Error, copy2
-from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
+from zipfile import ZipFile, ZIP_DEFLATED
 from common.system_info import get_os_version
 import json
 import subprocess
@@ -119,6 +118,8 @@ class Product_type(Enum):
 
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
     PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
+
+    PUBLIC_LINUX_LIBVA = 'public_linux_libva'
 
 
 class Build_type(Enum):

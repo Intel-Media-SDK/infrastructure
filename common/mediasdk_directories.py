@@ -412,6 +412,9 @@ class MediaSdkDirectories(object):
         :param test_platform: Acronym of test platform (w10rs3_skl_64_d3d11|c7.3_skl_64_server)
         :type test_platform: String
 
+        :param product: Product (ex: mediasdk, libva, driver)
+        :type product: String
+
         :return: URL to test result
         :rtype: String
 

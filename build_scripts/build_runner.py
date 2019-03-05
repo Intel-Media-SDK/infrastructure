@@ -49,7 +49,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch
+    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive
 
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
@@ -387,6 +387,7 @@ class BuildGenerator(object):
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
             "LOGS_DIR": root_dir / "logs",
+            "DEPENDENCIES_DIR": root_dir / "dependencies",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
@@ -578,7 +579,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'DEPENDENCIES_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -660,6 +661,9 @@ class BuildGenerator(object):
                         self.options["PACK_DIR"] / self.build_config_path.name)
 
         if not self._run_build_config_actions(Stage.EXTRACT.value):
+            return False
+
+        if not self._get_dependencies():
             return False
 
         return True
@@ -996,6 +1000,54 @@ class BuildGenerator(object):
                 except OSError:
                     self.log.error(f"update_config: Failed to update package config: {pkgconfig}")
                     raise
+
+    def _get_dependencies(self):
+        deps = self.config_variables.get("DEPENDENCIES", {})
+        if deps:
+            try:
+                from common.manifest_manager import Manifest
+
+                deps_dir = self.options['DEPENDENCIES_DIR']
+                self.log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
+                deps_dir.mkdir(parents=True, exist_ok=True)
+
+                self.log.info(f'Creating manifest')
+
+                if self.product_type.startswith('public_'):
+                    product_configs = 'product-configs'
+                else:
+                    product_configs = 'mdp_msdk-product-configs'
+
+                manifest = Manifest(self.options['REPOS_DIR'] / product_configs / 'manifest.yml')
+                for dep_name, dep_type in deps.items():
+                    self.log.info(f'Getting component {dep_name}')
+                    comp = manifest.get_component(dep_name)
+                    if comp:
+                        for repo in comp.repositories:
+                            dep_dir = MediaSdkDirectories.get_build_dir(
+                                repo.branch,
+                                Build_event.COMMIT.value,
+                                repo.revision,
+                                dep_type,
+                                Build_type.RELEASE.value,
+                                product=dep_name
+                            )
+
+                            try:
+                                self.log.info(f'Extracting {dep_name} artifacts')
+                                # TODO: Extension hardcoded for open source. Need to use only .zip in future.
+                                extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dep_name)
+                            except Exception:
+                                self.log.exception('Can not extract archive')
+                                return False
+                    else:
+                        self.log.error(f'Component {dep_name} does not exist in manifest')
+                        return False
+            except Exception:
+                self.log.exception('Exception occurred:')
+                return False
+
+        return True
 
 
 def main():
