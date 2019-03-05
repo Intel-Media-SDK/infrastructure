@@ -91,15 +91,6 @@ def get_changed_repo(props):
     return f"{repo_name}:{branch}:{revision}"
 
 
-@util.renderer
-@defer.inlineCallbacks
-def get_event_creation_time(props):
-    build_id = props.build.buildid
-    sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(build_id)
-    sourcestamp_created_time = sourcestamps[0]['created_at'].timestamp()
-    defer.returnValue(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sourcestamp_created_time)))
-
-
 def are_next_builds_needed(step):
     if step.build.results != util.SUCCESS:
         return False
@@ -205,7 +196,6 @@ def init_build_factory(build_specification, props):
                       "--build-type", build_type,
                       "--build-event", "commit",
                       "--product-type", product_type,
-                      "--commit-time", get_event_creation_time,
                       f"compiler={compiler}",
                       f"compiler_version={compiler_version}",
                       ]
