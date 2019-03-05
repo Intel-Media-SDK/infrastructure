@@ -373,6 +373,7 @@ class BuildGenerator(object):
         self.build_config_path = build_config_path
         self.actions = defaultdict(list)
         self.product_repos = {}
+        self.product = None
         self.product_type = product_type
         self.build_event = build_event
         self.commit_time = commit_time
@@ -464,6 +465,8 @@ class BuildGenerator(object):
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
+
+        self.product = self.config_variables.get('PRODUCT', 'mediasdk')
 
         return True
 
@@ -798,11 +801,11 @@ class BuildGenerator(object):
 
         build_dir = MediaSdkDirectories.get_build_dir(
             branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"])
+            self.product_type, self.options["BUILD_TYPE"], product=self.product)
 
         build_url = MediaSdkDirectories.get_build_url(
             branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"])
+            self.product_type, self.options["BUILD_TYPE"], product=self.product)
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)

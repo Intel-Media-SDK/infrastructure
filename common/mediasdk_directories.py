@@ -168,7 +168,7 @@ class MediaSdkDirectories(object):
         raise OSError('Unknown os type %s' % os_type)
 
     @classmethod
-    def get_commit_dir(cls, branch, build_event, commit_id, os_type=None):
+    def get_commit_dir(cls, branch, build_event, commit_id, os_type=None, product='mediasdk'):
         """
         Get path to artifacts of builds on all OSes
 
@@ -184,6 +184,9 @@ class MediaSdkDirectories(object):
         :param os_type: Type of os (Windows|Linux)
         :type os_type: String
 
+        :param product: Product (ex: mediasdk, libva, driver)
+        :type product: String
+
         :return: Path to artifacts of build
         :rtype: String
         """
@@ -196,10 +199,10 @@ class MediaSdkDirectories(object):
         if branch.startswith('refs/pull/'):
             branch = branch.split('/', 2)[-1]
 
-        return cls.get_root_builds_dir(os_type) / branch / build_event / commit_id
+        return cls.get_root_builds_dir(os_type) / product / branch / build_event / commit_id
 
     @classmethod
-    def get_build_dir(cls, branch, build_event, commit_id, product_type, build_type, os_type=None):
+    def get_build_dir(cls, branch, build_event, commit_id, product_type, build_type, os_type=None, product='mediasdk'):
         """
         Get path to artifacts of build
 
@@ -221,11 +224,14 @@ class MediaSdkDirectories(object):
         :param os_type: Type of os (Windows|Linux)
         :type os_type: String
 
+        :param product: Product (ex: mediasdk, libva, driver)
+        :type product: String
+
         :return: Path to artifacts of build
         :rtype: String
         """
 
-        return cls.get_commit_dir(branch, build_event, commit_id, os_type) / f'{product_type}_{build_type}'
+        return cls.get_commit_dir(branch, build_event, commit_id, os_type, product) / f'{product_type}_{build_type}'
 
     @classmethod
     def get_build_root_url(cls, product_type):
@@ -251,7 +257,7 @@ class MediaSdkDirectories(object):
         return urljoin(cls.get_root_url(product_type), build_root_dir)
 
     @classmethod
-    def get_build_url(cls, branch, build_event, commit_id, product_type, build_type):
+    def get_build_url(cls, branch, build_event, commit_id, product_type, build_type, product='mediasdk'):
         """
         Get url to artifacts of build
 
@@ -270,6 +276,9 @@ class MediaSdkDirectories(object):
         :param build_type: Type of build (release|debug)
         :type build_type: String
 
+        :param product: Product (ex: mediasdk, libva, driver)
+        :type product: String
+
         :return: URL to artifacts of build
         :rtype: String
         """
@@ -282,8 +291,8 @@ class MediaSdkDirectories(object):
         if branch.startswith('refs/pull/'):
             branch = branch.split('/', 2)[-1]
 
-        return '/'.join(
-            (cls.get_build_root_url(product_type), branch, build_event, commit_id, f'{product_type}_{build_type}'))
+        return '/'.join((cls.get_build_root_url(product_type), product, branch,
+                         build_event, commit_id, f'{product_type}_{build_type}'))
 
     @classmethod
     def get_root_test_results_dir(cls, os_type=None):
@@ -309,7 +318,7 @@ class MediaSdkDirectories(object):
 
     @classmethod
     def get_test_dir(cls, branch, build_event, commit_id, build_type,
-                     test_platform=None, product_type=None, os_type=None):
+                     test_platform=None, product_type=None, os_type=None, product='mediasdk'):
         """
         Get path to test results on all OSes
 
@@ -334,6 +343,9 @@ class MediaSdkDirectories(object):
         :param product_type: Type of product (linux|windows|embedded|pre_si)
         :type product_type: String
 
+        :param product: Product (ex: mediasdk, libva, driver)
+        :type product: String
+
         :return: Path to test result
         :rtype: String
 
@@ -348,7 +360,7 @@ class MediaSdkDirectories(object):
         if branch.startswith('refs/pull/'):
             branch = branch.split('/', 2)[-1]
 
-        tests_dir = cls.get_root_test_results_dir(os_type) / branch / build_event / commit_id
+        tests_dir = cls.get_root_test_results_dir(os_type) / product / branch / build_event / commit_id
         if test_platform:
             return tests_dir / build_type / test_platform
         else:
@@ -378,7 +390,7 @@ class MediaSdkDirectories(object):
         return urljoin(cls.get_root_url(product_type), test_root_dir)
 
     @classmethod
-    def get_test_url(cls, branch, build_event, commit_id, build_type, product_type, test_platform=None):
+    def get_test_url(cls, branch, build_event, commit_id, build_type, product_type, test_platform=None, product='mediasdk'):
         """
         Get URL to test results
 
@@ -414,7 +426,7 @@ class MediaSdkDirectories(object):
         if branch.startswith('refs/pull/'):
             branch = branch.split('/', 2)[-1]
 
-        test_url = '/'.join((cls.get_test_root_url(product_type), branch, build_event, commit_id))
+        test_url = '/'.join((cls.get_test_root_url(product_type), product, branch, build_event, commit_id))
         if test_platform:
             return '/'.join((test_url, build_type, test_platform))
         else:
