@@ -191,8 +191,10 @@ class MediaSdkDirectories(object):
         # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
         # ex: refs/pull/1234/merge -> 1234/merge
-        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
+        if branch.startswith('refs/changes/'):
             branch = branch.split('/', 3)[-1]
+        if branch.startswith('refs/pull/'):
+            branch = branch.split('/', 2)[-1]
 
         return cls.get_root_builds_dir(os_type) / branch / build_event / commit_id
 
@@ -275,8 +277,10 @@ class MediaSdkDirectories(object):
         # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
         # ex: refs/pull/1234/merge -> 1234/merge
-        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
+        if branch.startswith('refs/changes/'):
             branch = branch.split('/', 3)[-1]
+        if branch.startswith('refs/pull/'):
+            branch = branch.split('/', 2)[-1]
 
         return '/'.join(
             (cls.get_build_root_url(product_type), branch, build_event, commit_id, f'{product_type}_{build_type}'))
@@ -339,8 +343,10 @@ class MediaSdkDirectories(object):
         # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
         # ex: refs/pull/1234/merge -> 1234/merge
-        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
+        if branch.startswith('refs/changes/'):
             branch = branch.split('/', 3)[-1]
+        if branch.startswith('refs/pull/'):
+            branch = branch.split('/', 2)[-1]
 
         tests_dir = cls.get_root_test_results_dir(os_type) / branch / build_event / commit_id
         if test_platform:
@@ -403,8 +409,10 @@ class MediaSdkDirectories(object):
         # for Gerrit and Github
         # ex: refs/changes/25/52345/1 -> 52345/1
         # ex: refs/pull/1234/merge -> 1234/merge
-        if branch.startswith('refs/changes/') or branch.startswith('refs/pull/'):
+        if branch.startswith('refs/changes/'):
             branch = branch.split('/', 3)[-1]
+        if branch.startswith('refs/pull/'):
+            branch = branch.split('/', 2)[-1]
 
         test_url = '/'.join((cls.get_test_root_url(product_type), branch, build_event, commit_id))
         if test_platform:
