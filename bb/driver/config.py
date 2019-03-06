@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -78,6 +78,8 @@ POLL_INTERVAL = 20 # Poll Github for new changes (in seconds)
 # DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 # DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 DATABASE_URL = "sqlite:///state.sqlite"
+
+REPO_URL = 'https://github.com/intel/media-driver'
 
 # TODO: Add token
 # GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -282,7 +282,7 @@ for repo in REPOSITORIES:
         pollAtLaunch=True))
 
     c["change_source"].append(GitHubPullrequestPoller(
-        owner=config.GITHUB_OWNER,
+        owner=repo['organization'],
         repo=repo['name'],
         token=config.GITHUB_TOKEN,
         pullrequest_filter=repo['pull_request_filter'],
