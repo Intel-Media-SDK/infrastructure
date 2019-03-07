@@ -113,7 +113,8 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
-        "branch": lambda branch: True
+        # mss2018_r2 branch not supported building fastboot configuration
+        "branch": lambda branch: branch != 'mss2018_r2'
     },
 
     {
