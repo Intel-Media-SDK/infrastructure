@@ -1016,28 +1016,28 @@ class BuildGenerator(object):
                 self.log.info(f'Getting component {dep_name}')
                 comp = manifest.get_component(dep_name)
                 if comp:
-                    for repo in comp.repositories:
-                        if repo.is_trigger:
-                            dep_dir = MediaSdkDirectories.get_build_dir(
-                                repo.branch,
-                                Build_event.COMMIT.value,
-                                repo.revision,
-                                dep_type,
-                                Build_type.RELEASE.value,
-                                product=dep_name
-                            )
+                    trigger_repo = comp.trigger_repository
+                    if trigger_repo:
+                        dep_dir = MediaSdkDirectories.get_build_dir(
+                            trigger_repo.branch,
+                            Build_event.COMMIT.value,
+                            trigger_repo.revision,
+                            dep_type,
+                            Build_type.RELEASE.value,
+                            product=dep_name
+                        )
 
-                            try:
-                                self.log.info(f'Extracting {dep_name} {dep_type} artifacts')
-                                # TODO: Extension hardcoded for open source. Need to use only .zip in future.
-                                extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dep_name)
-                            except Exception:
-                                self.log.exception('Can not extract archive')
-                                return False
-                            break
-                        else:
-                            self.log.error('There is no repository as a trigger')
+                        try:
+                            self.log.info(f'Extracting {dep_name} {dep_type} artifacts')
+                            # TODO: Extension hardcoded for open source. Need to use only .zip in future.
+                            extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dep_name)
+                        except Exception:
+                            self.log.exception('Can not extract archive')
                             return False
+                        break
+                    else:
+                        self.log.error('There is no repository as a trigger')
+                        return False
                 else:
                     self.log.error(f'Component {dep_name} does not exist in manifest')
                     return False

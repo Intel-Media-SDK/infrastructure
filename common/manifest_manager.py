@@ -275,6 +275,20 @@ class Component:
 
         return list(self._repositories.values())
 
+    @property
+    def trigger_repository(self):
+        """
+        get triggered repository
+
+        :return: Repository object | None
+        :rtype: Repository | None
+        """
+
+        for repo in self._repositories.values():
+            if repo.is_trigger:
+                return repo
+        return None
+
     def get_repository(self, repository_name):
         """
         get repository by name
