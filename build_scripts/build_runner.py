@@ -409,7 +409,6 @@ class BuildGenerator(object):
         # in case of commit from forked repository
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
-            changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_dict[0])}.git"
             self.branch_name = changed_repo_dict[1]
         elif repo_states_file_path:
             self.branch_name = 'master'
