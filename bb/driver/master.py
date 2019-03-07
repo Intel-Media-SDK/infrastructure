@@ -243,7 +243,7 @@ for build_specification in config.BUILDERS:
                                             factory=dynamic_factory(init_build_factory,
                                                                     build_specification)))
 
-# TODO: Need to specify token
+# TODO: Need to specify token for driver
 # Push status of build to the Github
 # c["services"] = [
 #     reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
@@ -262,10 +262,11 @@ REPOSITORIES = [
      'pull_request_filter': lambda x: True},
     {'name': config.PRODUCT_CONFIGS_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
+     'token': config.GITHUB_TOKEN,
      # Only for members of Intel-Media-SDK organization
      # This filter is needed for security, because via product configs can do everything
      'pull_request_filter': mediasdk_directories.is_comitter_the_org_member(
-         organization=config.GITHUB_OWNER,
+         organization=config.MEDIASDK_ORGANIZATION,
          token=config.GITHUB_TOKEN)}
 ]
 
@@ -284,7 +285,7 @@ for repo in REPOSITORIES:
     c["change_source"].append(GitHubPullrequestPoller(
         owner=repo['organization'],
         repo=repo['name'],
-        token=config.GITHUB_TOKEN,
+        token=repo.get('token'),
         pullrequest_filter=repo['pull_request_filter'],
         category="driver",
         # Change branch property from '{branch_name}' to 'refs/pull/{pull_request_id}/merge'

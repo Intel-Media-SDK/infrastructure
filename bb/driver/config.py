@@ -72,20 +72,16 @@ BUILDBOT_TITLE = "Intel® Media Driver"
 
 # Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
 # and new api requests will not be performed
-POLL_INTERVAL = 20 # Poll Github for new changes (in seconds)
+POLL_INTERVAL = 60 # Poll Github for new changes (in seconds)
 
-# TODO: Add postgre database url and password
-# DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
-# DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
-DATABASE_URL = "sqlite:///state.sqlite"
+DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
+DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/driver_buildbot"
 
 REPO_URL = 'https://github.com/intel/media-driver'
 
-# TODO: Add token
-# GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
+GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 
-# TODO: Add url
-# BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
+BUILDBOT_URL = "http://mediasdk.intel.com/driver/"
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
 
