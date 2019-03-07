@@ -405,8 +405,6 @@ class BuildGenerator(object):
 
         self.log = logging.getLogger(self.__class__.__name__)
 
-        # Build and extract in directory for forked repositories
-        # in case of commit from forked repository
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
             self.branch_name = changed_repo_dict[1]
