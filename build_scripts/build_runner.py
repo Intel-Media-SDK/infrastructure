@@ -1003,27 +1003,29 @@ class BuildGenerator(object):
 
     def _get_dependencies(self):
         deps = self.config_variables.get("DEPENDENCIES", {})
-        if deps:
-            try:
-                from common.manifest_manager import Manifest
+        if not deps:
+            return True
 
-                deps_dir = self.options['DEPENDENCIES_DIR']
-                self.log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
-                deps_dir.mkdir(parents=True, exist_ok=True)
+        from common.manifest_manager import Manifest
+        try:
+            deps_dir = self.options['DEPENDENCIES_DIR']
+            self.log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
+            deps_dir.mkdir(parents=True, exist_ok=True)
 
-                self.log.info(f'Creating manifest')
+            self.log.info(f'Creating manifest')
 
-                if self.product_type.startswith('public_'):
-                    product_configs = 'product-configs'
-                else:
-                    product_configs = 'mdp_msdk-product-configs'
+            if self.product_type.startswith('public_'):
+                product_configs = 'product-configs'
+            else:
+                product_configs = 'mdp_msdk-product-configs'
 
-                manifest = Manifest(self.options['REPOS_DIR'] / product_configs / 'manifest.yml')
-                for dep_name, dep_type in deps.items():
-                    self.log.info(f'Getting component {dep_name}')
-                    comp = manifest.get_component(dep_name)
-                    if comp:
-                        for repo in comp.repositories:
+            manifest = Manifest(self.options['REPOS_DIR'] / product_configs / 'manifest.yml')
+            for dep_name, dep_type in deps.items():
+                self.log.info(f'Getting component {dep_name}')
+                comp = manifest.get_component(dep_name)
+                if comp:
+                    for repo in comp.repositories:
+                        if repo.is_trigger:
                             dep_dir = MediaSdkDirectories.get_build_dir(
                                 repo.branch,
                                 Build_event.COMMIT.value,
@@ -1034,18 +1036,22 @@ class BuildGenerator(object):
                             )
 
                             try:
-                                self.log.info(f'Extracting {dep_name} artifacts')
+                                self.log.info(f'Extracting {dep_name} {dep_type} artifacts')
                                 # TODO: Extension hardcoded for open source. Need to use only .zip in future.
                                 extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dep_name)
                             except Exception:
                                 self.log.exception('Can not extract archive')
                                 return False
-                    else:
-                        self.log.error(f'Component {dep_name} does not exist in manifest')
-                        return False
-            except Exception:
-                self.log.exception('Exception occurred:')
-                return False
+                            break
+                        else:
+                            self.log.error('There is no repository as a trigger')
+                            return False
+                else:
+                    self.log.error(f'Component {dep_name} does not exist in manifest')
+                    return False
+        except Exception:
+            self.log.exception('Exception occurred:')
+            return False
 
         return True
 
