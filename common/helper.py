@@ -107,6 +107,7 @@ class Product_type(Enum):
     PRIVATE_LINUX_NEXT_GEN_API_NEXT = 'private_linux_next_gen_api_next'
 
     # public
+    PUBLIC_LINUX_DRIVER = 'public_linux_driver'
     PUBLIC_LINUX = 'public_linux'
     PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
     PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
