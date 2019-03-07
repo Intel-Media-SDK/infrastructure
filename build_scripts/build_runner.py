@@ -1011,12 +1011,7 @@ class BuildGenerator(object):
 
             self.log.info(f'Creating manifest')
 
-            if self.product_type.startswith('public_'):
-                product_configs = 'product-configs'
-            else:
-                product_configs = 'mdp_msdk-product-configs'
-
-            manifest = Manifest(self.options['REPOS_DIR'] / product_configs / 'manifest.yml')
+            manifest = Manifest(self.build_config_path.parent / 'manifest.yml')
             for dep_name, dep_type in deps.items():
                 self.log.info(f'Getting component {dep_name}')
                 comp = manifest.get_component(dep_name)
