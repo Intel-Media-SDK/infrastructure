@@ -1034,7 +1034,6 @@ class BuildGenerator(object):
                         except Exception:
                             self.log.exception('Can not extract archive')
                             return False
-                        break
                     else:
                         self.log.error('There is no repository as a trigger')
                         return False
