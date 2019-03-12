@@ -51,20 +51,21 @@ class Manifest:
     Manifest wrapper
     """
 
-    def __init__(self, manifest_path):
+    def __init__(self, manifest_path=None):
         """
         :param manifest_path: Path to a manifest file
         :type manifest_path: String
         """
 
-        self._manifest_file = pathlib.Path(manifest_path)
+        self._manifest_file = pathlib.Path(manifest_path) if manifest_path else None
         self._version = '0'  # gets from manifest
         self._components = {}  # gets from manifest
 
-        self._prepare_manifest()
+        if manifest_path:
+            self._prepare_manifest()
 
     def __repr__(self):
-        return str(self._manifest_file)
+        return str(self._manifest_file) if self._manifest_file else 'manifest.yml'
 
     def _prepare_manifest(self):
         """

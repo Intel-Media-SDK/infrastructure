@@ -55,6 +55,7 @@ from common.logger_conf import configure_logger
 from common.git_worker import ProductState
 from common.mediasdk_directories import MediaSdkDirectories
 from common.build_number import get_build_number
+from common.manifest_manager import Manifest, Component, Repository
 
 
 class UnsupportedVSError(Exception):
@@ -402,6 +403,10 @@ class BuildGenerator(object):
         self.current_stage = stage
         self.target_arch = target_arch
         self.target_branch = target_branch
+        try:
+            self.manifest = Manifest(self.build_config_path.parent / 'manifest.yml')
+        except Exception:
+            self.manifest = Manifest()
 
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -654,6 +659,9 @@ class BuildGenerator(object):
 
         product_state.save_repo_states(self.options["PACK_DIR"] / 'repo_states.json',
                                        trigger=triggered_repo)
+
+        self._save_manifest(product_state)
+
         shutil.copyfile(self.build_config_path,
                         self.options["PACK_DIR"] / self.build_config_path.name)
 
@@ -1003,7 +1011,6 @@ class BuildGenerator(object):
         if not deps:
             return True
 
-        from common.manifest_manager import Manifest
         try:
             deps_dir = self.options['DEPENDENCIES_DIR']
             self.log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
@@ -1011,10 +1018,9 @@ class BuildGenerator(object):
 
             self.log.info(f'Creating manifest')
 
-            manifest = Manifest(self.build_config_path.parent / 'manifest.yml')
             for dep_name, dep_type in deps.items():
                 self.log.info(f'Getting component {dep_name}')
-                comp = manifest.get_component(dep_name)
+                comp = self.manifest.get_component(dep_name)
                 if comp:
                     trigger_repo = comp.trigger_repository
                     if trigger_repo:
@@ -1045,6 +1051,30 @@ class BuildGenerator(object):
             return False
 
         return True
+
+    def _save_manifest(self, product_state):
+        repos = []
+        for repo in product_state.repo_states:
+            repos.append(
+                Repository(
+                    name=repo.repo_name,
+                    url=repo.url,
+                    branch=repo.branch_name,
+                    revision=repo.commit_id,
+                    trigger=repo.is_trigger
+                )
+            )
+
+        component = self.manifest.get_component(self.product)
+
+        if not component:
+            component = Component(self.product, '1', repos)
+            self.manifest.add_component(component)
+        else:
+            for repo in repos:
+                component.add_repository(repo, replace=True)
+
+        self.manifest.save_manifest(self.options["PACK_DIR"] / 'manifest.yml')
 
 
 def main():

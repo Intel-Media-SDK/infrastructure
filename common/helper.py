@@ -120,6 +120,7 @@ class Product_type(Enum):
     PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
 
     PUBLIC_LINUX_LIBVA = 'public_linux_libva'
+    PUBLIC_LINUX_GMMLIB = 'public_linux_gmmlib'
 
 
 class Build_type(Enum):
