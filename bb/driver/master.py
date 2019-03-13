@@ -41,6 +41,15 @@ def get_repository_name_by_url(repo_url):
 
 
 @util.renderer
+def get_changed_repo(props):
+    repo_url = props.getProperty('repository')
+    branch = props.getProperty('branch')
+    revision = props.getProperty('revision')
+
+    return f"{get_repository_name_by_url(repo_url)}:{branch}:{revision}"
+
+
+@util.renderer
 @defer.inlineCallbacks
 def get_infrastructure_deploying_cmd(props):
     infrastructure_deploying_cmd = [
@@ -71,13 +80,16 @@ def get_infrastructure_deploying_cmd(props):
     defer.returnValue(infrastructure_deploying_cmd)
 
 
-@util.renderer
-def get_changed_repo(props):
-    repo_url = props.getProperty('repository')
-    branch = props.getProperty('branch')
-    revision = props.getProperty('revision')
+def is_trigger_needed(change):
+    category = change.properties.getProperty('category')
+    repository = get_repository_name_by_url(change.properties.getProperty('repository'))
+    files = change.properties.getProperty('files')
 
-    return f"{get_repository_name_by_url(repo_url)}:{branch}:{revision}"
+    # Trigger will be started for all commits in driver repository, as well as for product configs repository,
+    # but only if the files in driver folder was modified
+    return category == 'driver' and \
+           (repository == config.DRIVER_REPO or repository == config.PRODUCT_CONFIGS_REPO and \
+            any([file for file in files if file.startswith('driver/')]))
 
 
 def are_next_builds_needed(step):
@@ -228,7 +240,7 @@ def get_workers(worker_pool):
 # Create schedulers and builders for builds
 c["schedulers"] = [
     schedulers.SingleBranchScheduler(name=config.TRIGGER,
-                                     change_filter=util.ChangeFilter(category="driver"),
+                                     change_filter=util.ChangeFilter(filter_fn=is_trigger_needed),
                                      treeStableTimer=config.BUILDBOT_TREE_STABLE_TIMER,
                                      builderNames=[config.TRIGGER])]
 c["builders"] = [util.BuilderConfig(name=config.TRIGGER,
