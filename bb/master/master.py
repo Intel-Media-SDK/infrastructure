@@ -21,33 +21,17 @@
 import time
 import sys
 import pathlib
-from enum import Enum
 
 from buildbot.changes.gitpoller import GitPoller
-from buildbot.changes.github import GitHubPullrequestPoller
 from buildbot.plugins import schedulers, util, steps, worker, reporters
 from twisted.internet import defer
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
-from common import mediasdk_directories
-
-
-class Stage(Enum):
-    CLEAN = "clean"
-    EXTRACT = "extract"
-    BUILD = "build"
-    INSTALL = "install"
-    PACK = "pack"
-    COPY = "copy"
-
-
-def get_repository_name_by_url(repo_url):
-    # Some magic for getting repository name from GitHub url, by example
-    #  https://github.com/Intel-Media-SDK/product-configs.git -> product-configs
-    return repo_url.split('/')[-1][:-4]
-
+from common.helper import Stage
+from common.mediasdk_directories import is_change_needed, is_branch_needed,\
+    get_repository_name_by_url, is_pull_request_branches_needed
 
 @util.renderer
 @defer.inlineCallbacks
@@ -85,10 +69,7 @@ def get_changed_repo(props):
     repo_url = props.getProperty('repository')
     branch = props.getProperty('branch')
     revision = props.getProperty('revision')
-    # Some magic for getting repository name from url
-    # https://github.com/Intel-Media-SDK/product-configs.git -> product-configs
-    repo_name = repo_url.split('/')[-1][:-4]
-    return f"{repo_name}:{branch}:{revision}"
+    return f"{get_repository_name_by_url(repo_url)}:{branch}:{revision}"
 
 
 def are_next_builds_needed(step):
@@ -215,7 +196,7 @@ def init_build_factory(build_specification, props):
 
     # Trigger tests
     # Tests will be triggered only if product types are similar
-    # Currently they will be triggered only for `build-master-branch`, `build`, `build-api-next`
+    # Currently they will be triggered only for `build`, `build-api-next`
     for test_specification in config.TESTERS:
         if product_type == test_specification["product_type"]:
             build_factory.append(steps.Trigger(schedulerNames=[test_specification["name"]],
@@ -313,39 +294,29 @@ c["services"] = [
 c["change_source"] = []
 
 REPOSITORIES = [
-    {'name': config.GITHUB_OWNERS_REPO,
-     # All pull request
-     'pull_request_filter': lambda x: True},
+    {'name': config.MEDIASDK_REPO,
+     # All changes
+     'change_filter': None},
     {'name': config.PRODUCT_CONFIGS_REPO,
-     # Only for members of Intel-Media-SDK organization
+     # Pull requests only for members of Intel-Media-SDK organization
      # This filter is needed for security, because via product configs can do everything
-     'pull_request_filter': mediasdk_directories.is_comitter_the_org_member(
-         organization=config.GITHUB_OWNER,
-         token=config.GITHUB_TOKEN)}
+     'change_filter': is_change_needed(config.GITHUB_TOKEN)}
 ]
 
 for repo in REPOSITORIES:
-    repo_url = f"https://github.com/{config.GITHUB_OWNER}/{repo['name']}.git"
+    repo_url = f"https://github.com/{config.MEDIASDK_ORGANIZATION}/{repo['name']}.git"
 
     c["change_source"].append(GitPoller(
         repourl=repo_url,
-        workdir=f"gitpoller-{repo['name']}",  # Dir for the output of git remote-ls command
+        # Dir for the output of git remote-ls command
+        workdir=f"gitpoller-{repo['name']}",
         # Poll master and release branches only
-        branches=mediasdk_directories.is_release_branch,
+        branches=is_branch_needed,
+        change_filter=repo['change_filter'],
+        pull_request_branches=is_pull_request_branches_needed(config.MEDIASDK_ORGANIZATION,
+                                                              repo['name'], token=config.GITHUB_TOKEN),
         category="mediasdk",
         pollInterval=config.POLL_INTERVAL,
-        pollAtLaunch=True))
-
-    c["change_source"].append(GitHubPullrequestPoller(
-        owner=config.GITHUB_OWNER,
-        repo=repo['name'],
-        token=config.GITHUB_TOKEN,
-        pullrequest_filter=repo['pull_request_filter'],
-        category="mediasdk",
-        # Change branch property from '{branch_name}' to 'refs/pull/{pull_request_id}/merge'
-        # See more: https://docs.buildbot.net/current/manual/configuration/changesources.html#githubpullrequestpoller
-        magic_link=True,
-        pollInterval=config.POLL_INTERVAL,  # Interval of PR`s checking
         pollAtLaunch=True))
 
 # Web Interface

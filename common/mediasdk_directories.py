@@ -27,9 +27,9 @@ import pathlib
 import platform
 import re
 import ssl
+import json
 import urllib.request
 from urllib.parse import quote, urljoin
-
 
 LOGICAL_DRIVE = 3  # Drive type from MSDN
 
@@ -39,6 +39,7 @@ THIRD_PARTY = ('libva',)  # Third party components for Media SDK
 
 # TODO: Pattern for closed source
 OPEN_SOURCE_RELEASE_BRANCH_PATTERN = ['^intel-mediasdk-\d+\.\w', '^mss2018_r2$']
+
 
 def get_logical_drives():
     """
@@ -123,7 +124,6 @@ class Proxy:
 
 
 class MediaSdkDirectories(object):
-
     """
     Container for static links
     """
@@ -225,7 +225,8 @@ class MediaSdkDirectories(object):
         :rtype: String
         """
 
-        return cls.get_commit_dir(branch, build_event, commit_id, os_type) / f'{product_type}_{build_type}'
+        return cls.get_commit_dir(branch, build_event, commit_id,
+                                  os_type) / f'{product_type}_{build_type}'
 
     @classmethod
     def get_build_root_url(cls, product_type):
@@ -283,7 +284,8 @@ class MediaSdkDirectories(object):
             branch = branch.split('/', 2)[-1]
 
         return '/'.join(
-            (cls.get_build_root_url(product_type), branch, build_event, commit_id, f'{product_type}_{build_type}'))
+            (cls.get_build_root_url(product_type), branch, build_event, commit_id,
+             f'{product_type}_{build_type}'))
 
     @classmethod
     def get_root_test_results_dir(cls, os_type=None):
@@ -378,7 +380,8 @@ class MediaSdkDirectories(object):
         return urljoin(cls.get_root_url(product_type), test_root_dir)
 
     @classmethod
-    def get_test_url(cls, branch, build_event, commit_id, build_type, product_type, test_platform=None):
+    def get_test_url(cls, branch, build_event, commit_id, build_type, product_type,
+                     test_platform=None):
         """
         Get URL to test results
 
@@ -514,40 +517,112 @@ class MediaSDKFolderNotFound(MediaSDKException):
     """Raise if MediaSDK folder not found"""
     pass
 
-def is_comitter_the_org_member(organization, token):
+
+def is_comitter_the_org_member(pull_request, token):
     """
     Checks if commit owner is a member the organization
-    Implemented as closure, because this function should take pull request only
-    Used as pull request filter for BuildBot masters
     """
-    def checker(pull_request_message):
-        commit_owner = pull_request_message['user']['login']
-        github_member_url = f"https://api.github.com/orgs/{organization}/members/{commit_owner}?access_token={token}"
 
-        try:
-            response = urllib.request.urlopen(github_member_url,
-                                              context=ssl._create_unverified_context())
-        except Exception as error:
-            print(
-                f"Check organization member: Exception occurred while checking user {commit_owner} in {organization} organization: {error}")
-            return False
+    commit_owner = pull_request['user']['login']
+    organization = pull_request['base']['repo']['owner']['login']
+    github_member_url = f"https://api.github.com/orgs/{organization}/members/{commit_owner}?access_token={token}"
 
-        if response.code == 204:
-            return True
+    try:
+        response = urllib.request.urlopen(github_member_url,
+                                          context=ssl._create_unverified_context())
+    except Exception as error:
         print(
-            f"Check organization member: user {commit_owner} was not found in {organization} organization. Code: {response.code}")
+            f"Check organization member: Exception occurred while checking user {commit_owner} in {organization} organization: {error}")
         return False
+
+    if response.code == 204:
+        print(f'Check organization member: user {commit_owner} was found in {organization}')
+        return True
+    print(
+        f"Check organization member: user {commit_owner} was not found in {organization} organization. Code: {response.code}")
+    return False
+
+
+def get_pull_request(organization, repository, pull_id=None, token=None, proxy=None):
+    """
+    Gets pull request. Token must be specified for private repositories
+
+    :return None or pull request dict
+    """
+
+    pull_request_url = f'https://api.github.com/repos/{organization}/{repository}/pulls'
+    if pull_id:
+        pull_request_url += f'/{pull_id}'
+
+    request = {'url': pull_request_url, 'method': 'GET',
+               'headers': {'Content-type': 'application/json; charset=UTF-8'}}
+    if token:
+        request['headers']['access_token'] = token
+    req = urllib.request.Request(**request)
+    if proxy:
+        req.set_proxy(proxy, 'http')
+
+    try:
+        response = urllib.request.urlopen(req, context=ssl._create_unverified_context())
+    except Exception as error:
+        print(f'Can not get pull info by {pull_request_url}')
+        print(f'Error: {error}')
+        return None
+
+    pull_request = json.loads(response.read().decode('utf8'))
+    return pull_request
+
+
+def is_change_needed(token=None):
+    """
+    This is a change filter for Buildbot masters
+    Implemented as closure for specifying Github access token from buildbot configuration
+
+    :return None if change is not needed or dict with properties otherwise
+    """
+
+    def checker(repository, branch, revision, files, category):
+        # No filter for common branches
+        if not branch.startswith('refs/pull/'):
+            return {}
+
+        # Checks membership of commit author in organization for pull requests
+        _, organization, repository = repository[:-4].rsplit('/', maxsplit=2)
+        _, pull_id, _ = branch.rsplit('/', maxsplit=2)
+        print(f'Processing {pull_id} pull request from {repository}')
+        pull_request = get_pull_request(organization, repository, pull_id, token)
+        if pull_request:
+            is_request_needed = is_comitter_the_org_member(pull_request, token)
+            if is_request_needed:
+                return {'target_branch': pull_request['base']['ref']}
+
+        return None
+
     return checker
 
-def is_release_branch(raw_branch):
+
+def is_pull_request_branches_needed(organization, repository, token):
+    def checker():
+        all_pull_requests = get_pull_request(organization, repository, token=token)
+        branches_for_pull_requests = [f'refs/pull/{pr["number"]}/head' for pr in all_pull_requests]
+        return branches_for_pull_requests
+    return checker
+
+def is_branch_needed(raw_branch):
     # TODO: need to unify with MediaSdkDirectories.is_release_branch method
     """
     Checks if branch is release branch
     Used as branch filter for pollers in BuildBot
     """
-    # ignore pull request branches 'refs/pull/'
+    # Ignore pull request branches like 'refs/pull/*'
     if raw_branch.startswith('refs/heads/'):
         branch = raw_branch[11:]
         if MediaSdkDirectories.is_release_branch(branch) or branch == 'master':
             return True
+
     return False
+
+def get_repository_name_by_url(repo_url):
+    # Some magic for getting repository name from GitHub url, by example
+    #  https://github.com/Intel-Media-SDK/product-configs.git -> product-configs
+    return repo_url.split('/')[-1][:-4]
