@@ -450,7 +450,8 @@ class BuildGenerator(object):
             'update_config': self._update_config,
             'target_arch': self.target_arch,
             'commit_time': self.commit_time,
-            'get_packing_cmd': get_packing_cmd
+            'get_packing_cmd': get_packing_cmd,
+            'get_commit_number': ProductState.get_commit_number
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
