@@ -446,11 +446,13 @@ class BuildGenerator(object):
             'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
+            'get_product_version': self._get_product_version,
             'branch_name': self.branch_name,
             'update_config': self._update_config,
             'target_arch': self.target_arch,
             'commit_time': self.commit_time,
-            'get_packing_cmd': get_packing_cmd
+            'get_packing_cmd': get_packing_cmd,
+            'get_commit_number': ProductState.get_commit_number
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -949,6 +951,14 @@ class BuildGenerator(object):
 
         self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
+
+    def _get_product_version(self, repo_path):
+        version = '0'
+        product_ver_file = self.options['REPOS_DIR'] / repo_path / 'product.ver'
+        if product_ver_file.exists():
+            with open(product_ver_file, 'r') as data:
+                version = data.read().strip()
+        return version
 
     def _update_config(self, pkgconfig_dir, update_data, copy_to=None):
         """
