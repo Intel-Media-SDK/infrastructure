@@ -464,7 +464,7 @@ class BuildGenerator(object):
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
 
-        self.product = self.config_variables.get('PRODUCT', 'mediasdk')
+        self.product = self.config_variables.get('PRODUCT_NAME', 'mediasdk')
 
         return True
 
