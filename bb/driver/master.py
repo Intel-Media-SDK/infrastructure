@@ -30,14 +30,8 @@ from twisted.internet import defer
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
-from common import mediasdk_directories
+from bb.utils import is_release_branch, is_comitter_the_org_member, get_repository_name_by_url
 from common.helper import Stage
-
-
-def get_repository_name_by_url(repo_url):
-    # Some magic for getting repository name from GitHub url, by example
-    #  https://github.com/Intel-Media-SDK/product-configs.git -> product-configs
-    return repo_url.split('/')[-1][:-4]
 
 
 @util.renderer
@@ -265,7 +259,7 @@ REPOSITORIES = [
      'token': config.GITHUB_TOKEN,
      # Only for members of Intel-Media-SDK organization
      # This filter is needed for security, because via product configs can do everything
-     'pull_request_filter': mediasdk_directories.is_comitter_the_org_member(
+     'pull_request_filter': is_comitter_the_org_member(
          organization=config.MEDIASDK_ORGANIZATION,
          token=config.GITHUB_TOKEN)}
 ]
@@ -277,7 +271,7 @@ for repo in REPOSITORIES:
         repourl=repo_url,
         workdir=f"gitpoller-{repo['name']}",  # Dir for the output of git remote-ls command
         # Poll master and release branches only
-        branches=mediasdk_directories.is_release_branch,
+        branches=is_release_branch,
         category="driver",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))

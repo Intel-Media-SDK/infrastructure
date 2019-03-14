@@ -30,8 +30,8 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
 from common.helper import Stage
-from common.mediasdk_directories import is_change_needed, is_branch_needed,\
-    get_repository_name_by_url, is_pull_request_branches_needed
+from bb.utils import is_change_needed, is_release_branch,\
+    get_repository_name_by_url, get_open_pull_request_branches
 
 @util.renderer
 @defer.inlineCallbacks
@@ -310,11 +310,17 @@ for repo in REPOSITORIES:
         repourl=repo_url,
         # Dir for the output of git remote-ls command
         workdir=f"gitpoller-{repo['name']}",
-        # Poll master and release branches only
-        branches=is_branch_needed,
+        # Poll master, release branches and open pull request branches
+        # Filters performs in following order:
+        # branches (discard all not release branches)
+        # pull_request (add branches of open pull request)
+        # *fetch branches*
+        # change_filter (checking changes)
+        branches=is_release_branch,
+        pull_request_branches=get_open_pull_request_branches(config.MEDIASDK_ORGANIZATION,
+                                                             repo['name'],
+                                                             token=config.GITHUB_TOKEN),
         change_filter=repo['change_filter'],
-        pull_request_branches=is_pull_request_branches_needed(config.MEDIASDK_ORGANIZATION,
-                                                              repo['name'], token=config.GITHUB_TOKEN),
         category="mediasdk",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
