@@ -467,3 +467,21 @@ class ProductState(object):
             return commits
 
         return r.commit(commit_from)
+
+    @staticmethod
+    def get_commit_number(repo_path):
+        """
+            Get count of commits
+
+            :param repo_path: Path to a repository
+            :type repo_path: pathlib.Path | String
+
+            :return: Count of commits
+            :rtype: String
+        """
+
+        if not repo_path.exists():
+            return '0'
+
+        git_repo = git.Git(str(repo_path))
+        return str(git_repo.rev_list('--count', 'HEAD'))

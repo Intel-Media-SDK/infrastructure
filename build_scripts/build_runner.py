@@ -49,7 +49,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch
+    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive
 
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
@@ -373,6 +373,7 @@ class BuildGenerator(object):
         self.build_config_path = build_config_path
         self.actions = defaultdict(list)
         self.product_repos = {}
+        self.product = None
         self.product_type = product_type
         self.build_event = build_event
         self.commit_time = commit_time
@@ -386,6 +387,7 @@ class BuildGenerator(object):
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
             "LOGS_DIR": root_dir / "logs",
+            "DEPENDENCIES_DIR": root_dir / "dependencies",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
@@ -403,11 +405,8 @@ class BuildGenerator(object):
 
         self.log = logging.getLogger(self.__class__.__name__)
 
-        # Build and extract in directory for forked repositories
-        # in case of commit from forked repository
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
-            changed_repo_url = f"{MediaSdkDirectories.get_repo_url_by_name(changed_repo_dict[0])}.git"
             self.branch_name = changed_repo_dict[1]
         elif repo_states_file_path:
             self.branch_name = 'master'
@@ -450,7 +449,8 @@ class BuildGenerator(object):
             'update_config': self._update_config,
             'target_arch': self.target_arch,
             'commit_time': self.commit_time,
-            'get_packing_cmd': get_packing_cmd
+            'get_packing_cmd': get_packing_cmd,
+            'get_commit_number': ProductState.get_commit_number
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
@@ -463,6 +463,8 @@ class BuildGenerator(object):
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
+
+        self.product = self.config_variables.get('PRODUCT_NAME', 'mediasdk')
 
         return True
 
@@ -574,7 +576,7 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR'}
+        remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'DEPENDENCIES_DIR'}
 
         for directory in remove_dirs:
             dir_path = self.options.get(directory)
@@ -656,6 +658,9 @@ class BuildGenerator(object):
                         self.options["PACK_DIR"] / self.build_config_path.name)
 
         if not self._run_build_config_actions(Stage.EXTRACT.value):
+            return False
+
+        if not self._get_dependencies():
             return False
 
         return True
@@ -797,11 +802,11 @@ class BuildGenerator(object):
 
         build_dir = MediaSdkDirectories.get_build_dir(
             branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"])
+            self.product_type, self.options["BUILD_TYPE"], product=self.product)
 
         build_url = MediaSdkDirectories.get_build_url(
             branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"])
+            self.product_type, self.options["BUILD_TYPE"], product=self.product)
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)
@@ -992,6 +997,54 @@ class BuildGenerator(object):
                 except OSError:
                     self.log.error(f"update_config: Failed to update package config: {pkgconfig}")
                     raise
+
+    def _get_dependencies(self):
+        deps = self.config_variables.get("DEPENDENCIES", {})
+        if not deps:
+            return True
+
+        from common.manifest_manager import Manifest
+        try:
+            deps_dir = self.options['DEPENDENCIES_DIR']
+            self.log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
+            deps_dir.mkdir(parents=True, exist_ok=True)
+
+            self.log.info(f'Creating manifest')
+
+            manifest = Manifest(self.build_config_path.parent / 'manifest.yml')
+            for dep_name, dep_type in deps.items():
+                self.log.info(f'Getting component {dep_name}')
+                comp = manifest.get_component(dep_name)
+                if comp:
+                    trigger_repo = comp.trigger_repository
+                    if trigger_repo:
+                        dep_dir = MediaSdkDirectories.get_build_dir(
+                            trigger_repo.branch,
+                            Build_event.COMMIT.value,
+                            trigger_repo.revision,
+                            dep_type,
+                            Build_type.RELEASE.value,
+                            product=dep_name
+                        )
+
+                        try:
+                            self.log.info(f'Extracting {dep_name} {dep_type} artifacts')
+                            # TODO: Extension hardcoded for open source. Need to use only .zip in future.
+                            extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dep_name)
+                        except Exception:
+                            self.log.exception('Can not extract archive')
+                            return False
+                    else:
+                        self.log.error('There is no repository as a trigger')
+                        return False
+                else:
+                    self.log.error(f'Component {dep_name} does not exist in manifest')
+                    return False
+        except Exception:
+            self.log.exception('Exception occurred:')
+            return False
+
+        return True
 
 
 def main():

@@ -44,7 +44,7 @@ Specification of BUILDERS:
 BUILDERS = [
     {
         "name": "build",
-        "product_conf_file": "conf_media_driver.py",
+        "product_conf_file": "driver/conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.RELEASE.value,
         "compiler": "gcc",
