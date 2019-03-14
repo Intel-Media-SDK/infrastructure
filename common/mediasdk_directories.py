@@ -26,9 +26,6 @@ import os
 import pathlib
 import platform
 import re
-import ssl
-import json
-import urllib.request
 from urllib.parse import quote, urljoin
 
 LOGICAL_DRIVE = 3  # Drive type from MSDN
