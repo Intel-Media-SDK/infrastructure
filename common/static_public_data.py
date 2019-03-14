@@ -37,7 +37,16 @@ REPOSITORIES = {
     # open source media-driver
     'media-driver': 'https://github.com/intel/media-driver.git',
     # open source gmmlib
-    'gmmlib': 'https://github.com/intel/gmmlib.git'
+    'gmmlib': 'https://github.com/intel/gmmlib.git',
+    
+    # Dependency repos for intel-graphics-compiler
+    'llvm': 'https://github.com/llvm-mirror/llvm',
+    'clang': 'https://github.com/llvm-mirror/clang',
+    'opencl-clang': 'https://github.com/intel/opencl-clang',
+    'SPIRV-LLVM-Translator': 'https://github.com/KhronosGroup/SPIRV-LLVM-Translator',
+    'llvm-patches': 'https://github.com/intel/llvm-patches',
+    # open source intel-graphics-compiler
+    'intel-graphics-compiler': 'https://github.com/intel/intel-graphics-compiler',
 }
 
 PROXIES = {}
