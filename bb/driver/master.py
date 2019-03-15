@@ -30,14 +30,9 @@ from twisted.internet import defer
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
-from common import mediasdk_directories
 from common.helper import Stage
-
-
-def get_repository_name_by_url(repo_url):
-    # Some magic for getting repository name from GitHub url, by example
-    #  https://github.com/Intel-Media-SDK/product-configs.git -> product-configs
-    return repo_url.split('/')[-1][:-4]
+from bb.utils import is_release_branch, is_comitter_the_org_member, get_repository_name_by_url,\
+    get_open_pull_request_branches, ChangeChecker
 
 
 @util.renderer
@@ -78,18 +73,6 @@ def get_infrastructure_deploying_cmd(props):
                                              '%(prop:target_branch:-%(prop:branch)s)s')]
 
     defer.returnValue(infrastructure_deploying_cmd)
-
-
-def is_trigger_needed(change):
-    category = change.properties.getProperty('category')
-    repository = get_repository_name_by_url(change.properties.getProperty('repository'))
-    files = change.properties.getProperty('files')
-
-    # Trigger will be started for all commits in driver repository, as well as for product configs repository,
-    # but only if the files in driver folder was modified
-    return category == 'driver' and \
-           (repository == config.DRIVER_REPO or repository == config.PRODUCT_CONFIGS_REPO and \
-            any([file for file in files if file.startswith('driver/')]))
 
 
 def are_next_builds_needed(step):
@@ -240,7 +223,7 @@ def get_workers(worker_pool):
 # Create schedulers and builders for builds
 c["schedulers"] = [
     schedulers.SingleBranchScheduler(name=config.TRIGGER,
-                                     change_filter=util.ChangeFilter(filter_fn=is_trigger_needed),
+                                     change_filter=util.ChangeFilter(category='driver'),
                                      treeStableTimer=config.BUILDBOT_TREE_STABLE_TIMER,
                                      builderNames=[config.TRIGGER])]
 c["builders"] = [util.BuilderConfig(name=config.TRIGGER,
@@ -267,19 +250,36 @@ for build_specification in config.BUILDERS:
 # Get changes
 c["change_source"] = []
 
+class DriverChecker(ChangeChecker):
+    # No filtration
+    def check_pull_request(self, pull_request, files):
+        return {'target_branch': pull_request['base']['ref']}
+
+
+class ProductConfigsChecker(ChangeChecker):
+    # Run builds for product configs repo only if files in driver were modified.
+    def check_commit(self, repository, branch, revision, files, category):
+        if any([file for file in files if file.startswith('driver/')]):
+            return {}
+        return None
+
+    def check_pull_request(self, pull_request, files):
+        if any([file for file in files if file.startswith('driver/')]):
+            return {'target_branch': pull_request['base']['ref']}
+        return None
+
+
 REPOSITORIES = [
     {'name': config.DRIVER_REPO,
      'organization': config.DRIVER_ORGANIZATION,
-     # All pull request
-     'pull_request_filter': lambda x: True},
+     'branches': True,
+     'change_filter': DriverChecker()},
+
     {'name': config.PRODUCT_CONFIGS_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
+     'branches': is_release_branch,
      'token': config.GITHUB_TOKEN,
-     # Only for members of Intel-Media-SDK organization
-     # This filter is needed for security, because via product configs can do everything
-     'pull_request_filter': mediasdk_directories.is_comitter_the_org_member(
-         organization=config.MEDIASDK_ORGANIZATION,
-         token=config.GITHUB_TOKEN)}
+     'change_filter': ProductConfigsChecker(config.GITHUB_TOKEN)}
 ]
 
 for repo in REPOSITORIES:
@@ -287,24 +287,22 @@ for repo in REPOSITORIES:
 
     c["change_source"].append(GitPoller(
         repourl=repo_url,
-        workdir=f"gitpoller-{repo['name']}",  # Dir for the output of git remote-ls command
-        # Poll master and release branches only
-        branches=mediasdk_directories.is_release_branch,
+        # Dir for the output of git remote-ls command
+        workdir=f"gitpoller-{repo['name']}",
+        # Poll master, release branches and open pull request branches
+        # Filters performs in following order:
+        # branches (discard all not release branches)
+        # pull_request (add branches of open pull request)
+        # *fetch branches*
+        # change_filter (checking changes)
+        branches=repo['branches'],
+        pull_request_branches=get_open_pull_request_branches(repo['organization'], repo['name'],
+                                                             repo.get('token')),
+        change_filter=repo['change_filter'],
         category="driver",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
 
-    c["change_source"].append(GitHubPullrequestPoller(
-        owner=repo['organization'],
-        repo=repo['name'],
-        token=repo.get('token'),
-        pullrequest_filter=repo['pull_request_filter'],
-        category="driver",
-        # Change branch property from '{branch_name}' to 'refs/pull/{pull_request_id}/merge'
-        # See more: https://docs.buildbot.net/current/manual/configuration/changesources.html#githubpullrequestpoller
-        magic_link=True,
-        pollInterval=config.POLL_INTERVAL,  # Interval of PR`s checking
-        pollAtLaunch=True))
 
 # Web Interface
 c["www"] = dict(port=int(config.PORT),

@@ -196,7 +196,7 @@ WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
-GITHUB_OWNER = "Intel-Media-SDK"
+MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 PRODUCT_CONFIGS_REPO = "product-configs"
 
 # Give possibility to enable/disable auto deploying infrastructure on workers
@@ -208,15 +208,15 @@ CURRENT_MODE = Mode.PRODUCTION_MODE
 #CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
-    GITHUB_OWNERS_REPO = "MediaSDK"
+    MEDIASDK_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
-    GITHUB_OWNERS_REPO = "flow_test"
+    MEDIASDK_REPO = "flow_test"
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
     sys.exit(f"Mode {CURRENT_MODE} is not defined")
 
-GITHUB_REPOSITORY = f"{GITHUB_OWNER}/{GITHUB_OWNERS_REPO}"
+GITHUB_REPOSITORY = f"{MEDIASDK_ORGANIZATION}/{MEDIASDK_REPO}"
 REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"
-PRODUCT_CONFIGS_REPO_URL = f"https://github.com/{GITHUB_OWNER}/{PRODUCT_CONFIGS_REPO}.git"
+PRODUCT_CONFIGS_REPO_URL = f"https://github.com/{MEDIASDK_ORGANIZATION}/{PRODUCT_CONFIGS_REPO}.git"

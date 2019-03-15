@@ -1,0 +1,61 @@
+--- /opt/python36/lib/python3.6/site-packages/buildbot/changes/gitpoller.py	2019-03-13 13:17:02.000000000 +0300
++++ /opt/python36/lib/python3.6/site-packages/buildbot/changes/gitpoller.py	2019-03-13 17:48:09.591042127 +0300
+@@ -59,7 +59,8 @@
+                  pollinterval=-2, fetch_refspec=None,
+                  encoding='utf-8', name=None, pollAtLaunch=False,
+                  buildPushesWithNoCommits=False, only_tags=False,
+-                 sshPrivateKey=None, sshHostKey=None):
++                 sshPrivateKey=None, sshHostKey=None, change_filter=None,
++                 pull_request_branches=None):
+ 
+         # for backward compatibility; the parameter used to be spelled with 'i'
+         if pollinterval != -2:
+@@ -94,6 +95,8 @@
+             else:
+                 branches = ['master']
+ 
++        self.pull_request_branches = pull_request_branches
++        self.change_filter = change_filter
+         self.repourl = repourl
+         self.branches = branches
+         self.encoding = encoding
+@@ -208,6 +211,9 @@
+             remote_branches = [self._removeHeads(b) for b in remote_refs]
+             branches = sorted(list(set(branches) & set(remote_branches)))
+ 
++        if self.pull_request_branches and callable(self.pull_request_branches):
++            branches += self.pull_request_branches()
++
+         refspecs = [
+             u'+{}:{}'.format(self._removeHeads(branch), self._trackerBranch(branch))
+             for branch in branches
+@@ -361,14 +367,23 @@
+ 
+             timestamp, author, files, comments = [r[1] for r in results]
+ 
++            repository = bytes2unicode(self.repourl, encoding=self.encoding)
++            branch_name = bytes2unicode(self._removeHeads(branch))
++            revision = bytes2unicode(rev, encoding=self.encoding)
++
++            change_props = {}
++            if self.change_filter and callable(self.change_filter):
++                props = self.change_filter(repository, branch_name, revision, files, self.category)
++                if type(props) == dict:
++                    change_props = props
++                else:
++                    continue
++
+             yield self.master.data.updates.addChange(
+-                author=author,
+-                revision=bytes2unicode(rev, encoding=self.encoding),
++                author=author, revision=revision, properties=change_props,
+                 files=files, comments=comments, when_timestamp=timestamp,
+-                branch=bytes2unicode(self._removeHeads(branch)),
+-                project=self.project,
+-                repository=bytes2unicode(self.repourl, encoding=self.encoding),
+-                category=self.category, src=u'git')
++                branch=branch_name, project=self.project,
++                repository=repository, category=self.category, src=u'git')
+ 
+     def _isSshPrivateKeyNeededForCommand(self, command):
+         commandsThatNeedKey = [
