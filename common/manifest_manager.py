@@ -77,7 +77,7 @@ class Manifest:
 
         if self._manifest_file.is_file():
             with self._manifest_file.open('r') as manifest:
-                manifest_info = yaml.load(manifest)
+                manifest_info = yaml.load(manifest, Loader=yaml.FullLoader)
 
             self._version = manifest_info.get('version', '0')
 
@@ -175,13 +175,14 @@ class Manifest:
         for comp_name, comp_data in self._components.items():
             comp = dict(comp_data)
             manifest_data['components'][comp_name] = {
-                'version': comp['version'],
-                'repository': comp['repositories']
+                'repository': comp['repositories'],
+                'version': comp['version']
             }
 
         try:
             with path_to_save.open('w') as manifest:
-                yaml.dump(manifest_data, stream=manifest, default_flow_style=False)
+                yaml.dump(manifest_data, stream=manifest,
+                          default_flow_style=False, sort_keys=False)
         except Exception as ex:
             raise ManifestSavingError(ex)
 
@@ -450,3 +451,8 @@ class Repository:
         """
 
         return self._trigger
+
+
+if __name__ == '__main__':
+    m = Manifest(pathlib.Path(r'C:\Users\dlobanox\Projects\product-configs\manifest.yml'))
+    m.save_manifest('man.yml')
