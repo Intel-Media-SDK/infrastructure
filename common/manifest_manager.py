@@ -51,17 +51,18 @@ class Manifest:
     Manifest wrapper
     """
 
-    def __init__(self, manifest_path):
+    def __init__(self, manifest_path=None):
         """
         :param manifest_path: Path to a manifest file
         :type manifest_path: String
         """
 
-        self._manifest_file = pathlib.Path(manifest_path)
+        self._manifest_file = pathlib.Path(manifest_path if manifest_path else 'manifest.yml')
         self._version = '0'  # gets from manifest
         self._components = {}  # gets from manifest
 
-        self._prepare_manifest()
+        if manifest_path:
+            self._prepare_manifest()
 
     def __repr__(self):
         return str(self._manifest_file)
@@ -76,7 +77,7 @@ class Manifest:
 
         if self._manifest_file.is_file():
             with self._manifest_file.open('r') as manifest:
-                manifest_info = yaml.load(manifest)
+                manifest_info = yaml.load(manifest, Loader=yaml.FullLoader)
 
             self._version = manifest_info.get('version', '0')
 
@@ -174,13 +175,14 @@ class Manifest:
         for comp_name, comp_data in self._components.items():
             comp = dict(comp_data)
             manifest_data['components'][comp_name] = {
-                'version': comp['version'],
-                'repository': comp['repositories']
+                'repository': comp['repositories'],
+                'version': comp['version']
             }
 
         try:
             with path_to_save.open('w') as manifest:
-                yaml.dump(manifest_data, stream=manifest, default_flow_style=False)
+                yaml.dump(manifest_data, stream=manifest,
+                          default_flow_style=False, sort_keys=False)
         except Exception as ex:
             raise ManifestSavingError(ex)
 
