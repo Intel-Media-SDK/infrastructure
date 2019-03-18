@@ -43,7 +43,7 @@ REPOSITORIES = {
     'llvm': 'https://github.com/llvm-mirror/llvm',
     'clang': 'https://github.com/llvm-mirror/clang',
     'opencl-clang': 'https://github.com/intel/opencl-clang',
-    'SPIRV-LLVM-Translator': 'https://github.com/KhronosGroup/SPIRV-LLVM-Translator',
+    'spirv-llvm-translator': 'https://github.com/KhronosGroup/SPIRV-LLVM-Translator',
     'llvm-patches': 'https://github.com/intel/llvm-patches',
     # open source intel-graphics-compiler
     'intel-graphics-compiler': 'https://github.com/intel/intel-graphics-compiler',
