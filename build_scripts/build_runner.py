@@ -1066,14 +1066,9 @@ class BuildGenerator(object):
             )
 
         component = self.manifest.get_component(self.product)
+        version = component.version if component else '1'
 
-        if not component:
-            component = Component(self.product, '1', repos)
-            self.manifest.add_component(component)
-        else:
-            for repo in repos:
-                component.add_repository(repo, replace=True)
-
+        self.manifest.add_component(Component(self.product, version, repos), replace=True)
         self.manifest.save_manifest(self.options["PACK_DIR"] / 'manifest.yml')
 
 
