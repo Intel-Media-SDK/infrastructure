@@ -57,7 +57,7 @@ class Manifest:
         :type manifest_path: String
         """
 
-        self._manifest_file = pathlib.Path(manifest_path) if manifest_path else pathlib.Path('manifest.yml')
+        self._manifest_file = pathlib.Path(manifest_path if manifest_path else 'manifest.yml')
         self._version = '0'  # gets from manifest
         self._components = {}  # gets from manifest
 
