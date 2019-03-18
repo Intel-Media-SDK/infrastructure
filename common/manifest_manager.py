@@ -57,7 +57,7 @@ class Manifest:
         :type manifest_path: String
         """
 
-        self._manifest_file = pathlib.Path(manifest_path) if manifest_path else None
+        self._manifest_file = pathlib.Path(manifest_path) if manifest_path else pathlib.Path('manifest.yml')
         self._version = '0'  # gets from manifest
         self._components = {}  # gets from manifest
 
@@ -65,7 +65,7 @@ class Manifest:
             self._prepare_manifest()
 
     def __repr__(self):
-        return str(self._manifest_file) if self._manifest_file else 'manifest.yml'
+        return str(self._manifest_file)
 
     def _prepare_manifest(self):
         """
@@ -451,8 +451,3 @@ class Repository:
         """
 
         return self._trigger
-
-
-if __name__ == '__main__':
-    m = Manifest(pathlib.Path(r'C:\Users\dlobanox\Projects\product-configs\manifest.yml'))
-    m.save_manifest('man.yml')
