@@ -257,9 +257,10 @@ class DriverChecker(ChangeChecker):
 
 
 class ProductConfigsChecker(ChangeChecker):
-    # Run builds for product configs repo only if files in driver were modified.
+    # Run builds for product configs repo only if files in driver
+    # or infrastructure_version.py were modified.
     def check_commit(self, repository, branch, revision, files, category):
-        if any([file for file in files if file.startswith('driver/')]):
+        if any([file for file in files if file.startswith('driver/') or file == 'infrastructure_version.py']):
             return {}
         return None
 
