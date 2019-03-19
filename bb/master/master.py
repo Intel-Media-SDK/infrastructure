@@ -30,7 +30,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
 from common.helper import Stage
-from bb.utils import ChangeChecker, is_release_branch,\
+from bb.utils import ChangeChecker, is_release_branch, \
     get_repository_name_by_url, get_open_pull_request_branches
 
 
@@ -124,7 +124,6 @@ def init_trigger_factory(trigger_specification, props):
 
     repository_name = get_repository_name_by_url(props['repository'])
     trigger_factory.extend([
-
         steps.ShellCommand(
             name='extract repository',
             command=[config.RUN_COMMAND, 'extract_repo.py',
@@ -141,6 +140,16 @@ def init_trigger_factory(trigger_specification, props):
                      util.Interpolate(f'%(prop:builddir)s/repositories/{repository_name}'),
                      '--revision', util.Interpolate('%(prop:revision)s')],
             workdir=r'infrastructure/pre_commit_checks'),
+
+        steps.ShellCommand(
+            name='check copyright',
+            command=[config.RUN_COMMAND, 'check_copyright.py',
+                     '--repo-path',
+                     util.Interpolate(f'%(prop:builddir)s/repositories/{repository_name}'),
+                     '--commit-id', util.Interpolate(r'%(prop:revision)s'),
+                     '--report-path',
+                     util.Interpolate(r'%(prop:builddir)s/checks/pre_commit_checks.json')],
+            workdir=r'infrastructure/pre_commit_checks/check_copyright'),
 
         steps.Trigger(schedulerNames=list([builder['name'] for builder in config.BUILDERS]),
                       waitForFinish=False,
@@ -332,7 +341,6 @@ for repo in REPOSITORIES:
         category="mediasdk",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
-
 
 # Web Interface
 c["www"] = dict(port=int(config.PORT),
