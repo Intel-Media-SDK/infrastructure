@@ -455,7 +455,8 @@ class BuildGenerator(object):
             'target_arch': self.target_arch,
             'commit_time': self.commit_time,
             'get_packing_cmd': get_packing_cmd,
-            'get_commit_number': ProductState.get_commit_number
+            'get_commit_number': ProductState.get_commit_number,
+            'copytree': copytree,
         }
 
         exec(open(self.build_config_path).read(), global_vars, self.config_variables)
