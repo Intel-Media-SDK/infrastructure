@@ -71,7 +71,7 @@ def get_pull_request_info(organization, repository, pull_id=None, token=None, pr
     request = {'url': pull_request_url, 'method': 'GET',
                'headers': {'Content-type': 'application/json; charset=UTF-8'}}
     if token:
-        request['headers']['access_token'] = token
+        request['headers']['Authorization'] = f'token {token}'
     req = urllib.request.Request(**request)
     if proxy:
         req.set_proxy(proxy, 'http')
@@ -131,7 +131,7 @@ class ChangeChecker:
         if branch.startswith('refs/pull/'):
             pull_request = self.get_pull_request(repository, branch)
             if pull_request:
-                self.pull_request_filter(pull_request, files)
+                return self.pull_request_filter(pull_request, files)
             return None
         return self.commit_filter(repository, branch, revision, files, category)
 
