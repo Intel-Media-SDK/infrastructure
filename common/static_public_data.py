@@ -38,6 +38,8 @@ REPOSITORIES = {
     'media-driver': 'https://github.com/intel/media-driver.git',
     # open source gmmlib
     'gmmlib': 'https://github.com/intel/gmmlib.git',
+    # open source opencl
+    'neo': 'https://github.com/intel/compute-runtime',
     
     # Dependency repos for intel-graphics-compiler
     'llvm': 'https://github.com/llvm-mirror/llvm',
