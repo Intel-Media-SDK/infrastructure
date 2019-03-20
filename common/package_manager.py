@@ -63,7 +63,8 @@ def install_pkg(pkg_path):
         log.debug(out)
         return True
 
-    log.info(out)
+    log.error(out)
+    log.error(f'Package "{pkg_path}" was not installed')
     return False
 
 
@@ -91,7 +92,8 @@ def uninstall_pkg(pkg_name):
         log.debug(out)
         return True
 
-    log.info(out)
+    log.error(out)
+    log.error(f'Package "{pkg_name}" was not removed')
     return False
 
 

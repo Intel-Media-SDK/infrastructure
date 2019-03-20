@@ -56,6 +56,7 @@ def install_components(manifest_path, components):
 
         repo = comp.trigger_repository
 
+        # TODO: think about identifying product type
         product_type = None
         for prod_type in product_types:
             if component in prod_type:
@@ -77,6 +78,7 @@ def install_components(manifest_path, components):
         packages = [pkg_path for pkg_path in artifacts.glob(f'*.{pkg_type}')
                     if component in pkg_path.name.lower()]
 
+        # TODO: solve situation with multiple packages installation, e.g. "package" and "package-devel"
         if len(packages) > 1:
             log.info(f'Found multiple "{component}" packages {packages} in {artifacts}')
             return False
@@ -85,11 +87,9 @@ def install_components(manifest_path, components):
             return False
 
         if not PackageManager.uninstall_pkg(component):
-            log.info(f'Package "{component}" was not uninstalled')
             return False
 
         if not PackageManager.install_pkg(packages[0]):
-            log.info(f'Package "{component}" was not installed')
             return False
 
         return True
