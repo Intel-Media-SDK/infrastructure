@@ -306,7 +306,7 @@ c["change_source"] = []
 
 class MediasdkChangeChecker(ChangeChecker):
     # No filtration
-    def check_pull_request(self, pull_request, files):
+    def pull_request_filter(self, pull_request, files):
         return {'target_branch': pull_request['base']['ref']}
 
 
