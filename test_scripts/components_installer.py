@@ -44,7 +44,7 @@ def install_components(manifest_path, components):
     manifest = Manifest(manifest_path)
     components = components
     pkg_type = get_pkg_type()
-    log = logging.getLogger('install_dependencies')
+    log = logging.getLogger('install_components')
 
     product_types = [prod_type.value for prod_type in Product_type]
 
