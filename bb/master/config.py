@@ -21,15 +21,37 @@
 import sys
 from enum import Enum
 
-from common import msdk_secrets
+import factories
+from bb.utils import Mode
 
+from common import msdk_secrets
 from common.helper import Product_type, Build_type
 from common.mediasdk_directories import MediaSdkDirectories
 
-class Mode(Enum):
-    PRODUCTION_MODE = "production_mode"
-    PRODUCTION_MODE_LINUX_NEXT_GEN = "production_mode_linux_next_gen"
-    TEST_MODE = "test_mode"
+
+CURRENT_MODE = Mode.PRODUCTION_MODE
+# CURRENT_MODE = Mode.TEST_MODE
+
+if CURRENT_MODE == Mode.PRODUCTION_MODE:
+    MEDIASDK_REPO = "MediaSDK"
+    BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
+
+elif CURRENT_MODE == Mode.TEST_MODE:
+    MEDIASDK_REPO = "flow_test"
+    BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
+else:
+    sys.exit(f"Mode {CURRENT_MODE} is not defined")
+
+PRODUCT_CONFIGS_REPO = "product-configs"
+PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO]
+
+RUN_COMMAND = "python3"
+TRIGGER = 'trigger'
+
+# Give possibility to enable/disable auto deploying infrastructure on workers
+DEPLOYING_INFRASTRUCTURE = True
+
+FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE, RUN_COMMAND)
 
 """
 Specification of BUILDERS:
@@ -41,12 +63,20 @@ Specification of BUILDERS:
 "compiler"          - compiler which should be used (env and product_config should support this key)
 "compiler_version"  - version of compiler
 "worker"            - worker(s) which should be used from `WORKERS`
-"branch"            - function takes one argument (branch)
+"triggers"          - list of dicts with following keys:
+    "branches"      - function takes one argument (branch)
                       function must return True if builder should be activated, otherwise False
+    "repositories"  - list of repositories (str)
+    "builders"      - list of builder names (str)
+                      builder will be run only if all builds of specified "builders" passed  
 """
-BUILDERS = [
-    {
-        "name": "build",
+BUILDERS = {
+
+    TRIGGER: {"factory": FACTORIES.init_trigger_factory,
+              "disable_scheduler": True},
+
+    "build": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
@@ -56,11 +86,12 @@ BUILDERS = [
         "compiler_version": "6.3.1",
         "worker": "centos",
         # Builder is enabled for all branches
-        "branch": lambda branch: True
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: True}]
     },
 
-    {
-        "name": "build-api-next",
+    "build-api-next": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
         "build_type": Build_type.RELEASE.value,
@@ -70,11 +101,12 @@ BUILDERS = [
         "compiler_version": "6.3.1",
         "worker": "centos",
         # Builder is enabled for not release branches
-        "branch": lambda branch: not MediaSdkDirectories.is_release_branch(branch)
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
-    {
-        "name": "build-gcc-8.2.0",
+    "build-gcc-8.2.0": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
         "build_type": Build_type.RELEASE.value,
@@ -83,11 +115,12 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
-        "branch": lambda branch: not MediaSdkDirectories.is_release_branch(branch)
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
-    {
-        "name": "build-clang-6.0",
+    "build-clang-6.0": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
         "build_type": Build_type.RELEASE.value,
@@ -96,15 +129,17 @@ BUILDERS = [
         "compiler": "clang",
         "compiler_version": "6.0",
         "worker": "ubuntu",
-        "branch": lambda branch: not MediaSdkDirectories.is_release_branch(branch)
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
     # Fastboot is a special configuration of MediaSDK, when we 
     # build MediaSDK in small scope but it can load very fast
     # (needed by embedded systems)
     # see method of building it in product-config
-    {
-        "name": "build-fastboot",
+
+    "build-fastboot": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT.value,
         "build_type": Build_type.RELEASE.value,
@@ -114,11 +149,12 @@ BUILDERS = [
         "compiler_version": "6.3.1",
         "worker": "centos",
         # mss2018_r2 branch not supported building fastboot configuration
-        "branch": lambda branch: branch != 'mss2018_r2'
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: branch != 'mss2018_r2'}]
     },
 
-    {
-        "name": "build-fastboot-gcc-8.2.0",
+    "build-fastboot-gcc-8.2.0": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
         "build_type": Build_type.RELEASE.value,
@@ -127,11 +163,12 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
-        "branch": lambda branch: not MediaSdkDirectories.is_release_branch(branch)
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
-    {
-        "name": "build-api-next-defconfig",
+    "build-api-next-defconfig": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
         "build_type": Build_type.RELEASE.value,
@@ -140,26 +177,32 @@ BUILDERS = [
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos_defconfig",
-        "branch": lambda branch: not MediaSdkDirectories.is_release_branch(branch)
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
-]
 
-TESTERS = [
-    {
-        "name": "test",
+    "test": {
+        "factory": FACTORIES.init_test_factory,
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
-        "worker": "centos_test"
+        "worker": "centos_test",
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda x: True,
+                      'builders': ['build']}]
     },
 
-    {
-        "name": "test-api-next",
+    "test-api-next": {
+        "factory": FACTORIES.init_test_factory,
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
         "build_type": Build_type.RELEASE.value,
-        "worker": "centos_test"
+        "worker": "centos_test",
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branch': lambda x: True,
+                      'builders': ['build-api-next']}]
     }
-]
+}
 
+FLOW = factories.Factories(BUILDERS, FACTORIES)
 
 WORKERS = {
     "centos": {
@@ -180,42 +223,23 @@ WORKERS = {
     },
 }
 
-
-RUN_COMMAND = "python3"
 PORT = "5000"
 WORKER_PORT = "9000"
-BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis info to buildbot.net
-BUILDBOT_TREE_STABLE_TIMER = None # Value "None" means that a separate build will be started immediately for each Change.
+BUILDBOT_NET_USAGE_DATA = None  # "None" disables the sending of usage analysis info to buildbot.net
+BUILDBOT_TREE_STABLE_TIMER = None  # Value "None" means that a separate build will be started immediately for each Change.
 BUILDBOT_TITLE = "Intel® Media SDK"
 
 # Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
 # and new api requests will not be performed
-POLL_INTERVAL = 20 # Poll Github for new changes (in seconds)
+POLL_INTERVAL = 20  # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
-PRODUCT_CONFIGS_REPO = "product-configs"
-
-# Give possibility to enable/disable auto deploying infrastructure on workers
-DEPLOYING_INFRASTRUCTURE = True
 
 TRIGGER = 'trigger'
-
-CURRENT_MODE = Mode.PRODUCTION_MODE
-#CURRENT_MODE = Mode.TEST_MODE
-
-if CURRENT_MODE == Mode.PRODUCTION_MODE:
-    MEDIASDK_REPO = "MediaSDK"
-    BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
-
-elif CURRENT_MODE == Mode.TEST_MODE:
-    MEDIASDK_REPO = "flow_test"
-    BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
-else:
-    sys.exit(f"Mode {CURRENT_MODE} is not defined")
 
 GITHUB_REPOSITORY = f"{MEDIASDK_ORGANIZATION}/{MEDIASDK_REPO}"
 REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"

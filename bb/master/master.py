@@ -18,221 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import time
 import sys
 import pathlib
 
 from buildbot.changes.gitpoller import GitPoller
-from buildbot.plugins import schedulers, util, steps, worker, reporters
-from twisted.internet import defer
+from buildbot.plugins import schedulers, util, worker, reporters
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
-from common.helper import Stage
 from bb.utils import ChangeChecker, is_release_branch, \
     get_repository_name_by_url, get_open_pull_request_branches
-
-
-@util.renderer
-@defer.inlineCallbacks
-def get_infrastructure_deploying_cmd(props):
-    infrastructure_deploying_cmd = [
-        config.RUN_COMMAND, 'extract_repo.py',
-        '--repo-name', 'OPEN_SOURCE_INFRA',
-        '--root-dir', props.getProperty("builddir")]
-
-    # Changes from product-configs\fork of product configs repositories will be deployed as is.
-    # Infrastructure for changes from other repos will be extracted from master\release branch of
-    # Intel-Media-SDK/product-configs repository.
-    if get_repository_name_by_url(props.getProperty('repository')) == config.PRODUCT_CONFIGS_REPO:
-        infrastructure_deploying_cmd += ['--commit-id', props.getProperty("revision"),
-                                         '--branch', props.getProperty("branch")]
-
-    else:
-        build_id = props.build.buildid
-        sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(build_id)
-        sourcestamps_created_time = sourcestamps[0]['created_at'].timestamp()
-        formatted_sourcestamp_created_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                                           time.localtime(
-                                                               sourcestamps_created_time))
-        infrastructure_deploying_cmd += ['--commit-time', formatted_sourcestamp_created_time,
-                                         # Set 'branch' value if 'target_branch' property not set.
-                                         '--branch',
-                                         util.Interpolate(
-                                             '%(prop:target_branch:-%(prop:branch)s)s')]
-
-    defer.returnValue(infrastructure_deploying_cmd)
-
-
-@util.renderer
-def get_changed_repo(props):
-    repo_url = props.getProperty('repository')
-    branch = props.getProperty('branch')
-    revision = props.getProperty('revision')
-    return f"{get_repository_name_by_url(repo_url)}:{branch}:{revision}"
-
-
-def are_next_builds_needed(step):
-    if step.build.results != util.SUCCESS:
-        return False
-    branch = step.getProperty('target_branch') or step.getProperty('branch')
-    builder_names_for_triggering = []
-    for builder in config.BUILDERS:
-        if callable(builder['branch']) and builder['branch'](branch):
-            builder_names_for_triggering.append(builder['name'])
-    # Update builder names for trigger step
-    # NOTE: scheduler names are the same as builder names
-    step.schedulerNames = builder_names_for_triggering
-    return bool(builder_names_for_triggering)
-
-
-class StepsGenerator(steps.BuildStep):
-    """
-    Add steps in run-time [dynamically] based on the builder properties and commit information
-    """
-
-    def __init__(self, default_factory, build_specification, **kwargs):
-        steps.BuildStep.__init__(self, **kwargs)
-        self.name = 'Generate steps'
-        self.default_factory = default_factory
-        self.build_specification = build_specification
-
-    @defer.inlineCallbacks
-    def run(self):
-        builder_steps = self.default_factory(self.build_specification, self.build.properties)
-        self.build.addStepsAfterCurrentStep(builder_steps)
-
-        # generator is used, because logs adding may take long time
-        yield self.addCompleteLog('list of steps',
-                                  str('\n'.join([str(step) for step in builder_steps])))
-        defer.returnValue(util.SUCCESS)
-
-
-def dynamic_factory(default_factory, build_specification):
-    factory = util.BuildFactory()
-    # Hide debug information about build steps for production mode
-    factory.addStep(StepsGenerator(default_factory=default_factory,
-                                   build_specification=build_specification,
-                                   hideStepIf=config.CURRENT_MODE == config.Mode.PRODUCTION_MODE))
-    return factory
-
-
-def init_trigger_factory(trigger_specification, props):
-    trigger_factory = factory_with_deploying_infrastructure_step() if config.DEPLOYING_INFRASTRUCTURE \
-        else []
-
-    repository_name = get_repository_name_by_url(props['repository'])
-    trigger_factory.extend([
-        steps.ShellCommand(
-            name='extract repository',
-            command=[config.RUN_COMMAND, 'extract_repo.py',
-                     '--root-dir', util.Interpolate('%(prop:builddir)s/repositories'),
-                     '--repo-name', repository_name,
-                     '--branch', util.Interpolate('%(prop:branch)s'),
-                     '--commit-id', util.Interpolate('%(prop:revision)s')],
-            workdir=r'infrastructure/common'),
-
-        steps.ShellCommand(
-            name='check author name and email',
-            command=[config.RUN_COMMAND, 'check_author.py',
-                     '--repo-path',
-                     util.Interpolate(f'%(prop:builddir)s/repositories/{repository_name}'),
-                     '--revision', util.Interpolate('%(prop:revision)s')],
-            workdir=r'infrastructure/pre_commit_checks'),
-
-        steps.ShellCommand(
-            name='check copyright',
-            command=[config.RUN_COMMAND, 'check_copyright.py',
-                     '--repo-path',
-                     util.Interpolate(f'%(prop:builddir)s/repositories/{repository_name}'),
-                     '--commit-id', util.Interpolate(r'%(prop:revision)s'),
-                     '--report-path',
-                     util.Interpolate(r'%(prop:builddir)s/checks/pre_commit_checks.json')],
-            workdir=r'infrastructure/pre_commit_checks/check_copyright'),
-
-        steps.Trigger(schedulerNames=list([builder['name'] for builder in config.BUILDERS]),
-                      waitForFinish=False,
-                      doStepIf=are_next_builds_needed,
-                      updateSourceStamp=True)])
-
-    return trigger_factory
-
-
-def factory_with_deploying_infrastructure_step():
-    factory = [steps.ShellCommand(name='deploying infrastructure',
-                                  command=get_infrastructure_deploying_cmd,
-                                  workdir=r'../common')]
-    return factory
-
-
-def init_build_factory(build_specification, props):
-    conf_file = build_specification["product_conf_file"]
-    product_type = build_specification["product_type"]
-    build_type = build_specification["build_type"]
-    api_latest = build_specification["api_latest"]
-    fastboot = build_specification["fastboot"]
-    compiler = build_specification["compiler"]
-    compiler_version = build_specification["compiler_version"]
-    build_factory = factory_with_deploying_infrastructure_step() if config.DEPLOYING_INFRASTRUCTURE \
-        else []
-
-    shell_commands = [config.RUN_COMMAND,
-                      "build_runner.py",
-                      "--build-config",
-                      util.Interpolate(r"%(prop:builddir)s/product-configs/%(kw:conf_file)s",
-                                       conf_file=conf_file),
-                      "--root-dir", util.Interpolate(r"%(prop:builddir)s/build_dir"),
-                      "--changed-repo", get_changed_repo,
-                      "--build-type", build_type,
-                      "--build-event", "commit",
-                      "--product-type", product_type,
-                      f"compiler={compiler}",
-                      f"compiler_version={compiler_version}",
-                      ]
-    if api_latest:
-        shell_commands.append("api_latest=True")
-    if fastboot:
-        shell_commands.append("fastboot=True")
-    if props.hasProperty('target_branch'):
-        shell_commands += ['--target-branch', props['target_branch']]
-
-    # Build by stages: clean, extract, build, install, pack, copy
-    for stage in Stage:
-        build_factory.append(
-            steps.ShellCommand(command=shell_commands + ["--stage", stage.value],
-                               workdir=r"infrastructure/build_scripts",
-                               name=stage.value))
-
-    # Trigger tests
-    # Tests will be triggered only if product types are similar
-    # Currently they will be triggered only for `build`, `build-api-next`
-    for test_specification in config.TESTERS:
-        if product_type == test_specification["product_type"]:
-            build_factory.append(steps.Trigger(schedulerNames=[test_specification["name"]],
-                                               waitForFinish=False,
-                                               updateSourceStamp=True))
-    return build_factory
-
-
-def init_test_factory(test_specification, props):
-    product_type = test_specification["product_type"]
-    build_type = test_specification["build_type"]
-    test_factory = factory_with_deploying_infrastructure_step() if config.DEPLOYING_INFRASTRUCTURE \
-        else []
-
-    test_factory.append(
-        steps.ShellCommand(command=[config.RUN_COMMAND,
-                                    "test_adapter.py",
-                                    "--branch", util.Interpolate(r"%(prop:branch)s"),
-                                    "--build-event", "commit",
-                                    "--product-type", product_type,
-                                    "--commit-id", util.Interpolate(r"%(prop:revision)s"),
-                                    "--build-type", build_type,
-                                    "--root-dir", util.Interpolate(r"%(prop:builddir)s/build_dir")],
-                           workdir=r"infrastructure/ted_adapter"))
-    return test_factory
-
 
 c = BuildmasterConfig = {}
 
@@ -256,35 +52,26 @@ c["buildbotURL"] = config.BUILDBOT_URL
 
 
 def get_workers(worker_pool):
+    if worker_pool is None:
+        return ALL_WORKERS_NAMES
     return list(config.WORKERS[worker_pool].keys())
 
 
 # Create schedulers and builders for builds
+c["builders"] = []
 c["schedulers"] = [
     schedulers.SingleBranchScheduler(name=config.TRIGGER,
                                      change_filter=util.ChangeFilter(category="mediasdk"),
                                      treeStableTimer=config.BUILDBOT_TREE_STABLE_TIMER,
                                      builderNames=[config.TRIGGER])]
-c["builders"] = [util.BuilderConfig(name=config.TRIGGER,
-                                    workernames=ALL_WORKERS_NAMES,
-                                    factory=dynamic_factory(init_trigger_factory, None))]
 
-for build_specification in config.BUILDERS:
-    c["schedulers"].append(schedulers.Triggerable(name=build_specification["name"],
-                                                  builderNames=[build_specification["name"]]))
-    c["builders"].append(util.BuilderConfig(name=build_specification["name"],
-                                            workernames=get_workers(build_specification["worker"]),
-                                            factory=dynamic_factory(init_build_factory,
-                                                                    build_specification)))
-
-# Create schedulers and builders for tests
-for test_specification in config.TESTERS:
-    c["schedulers"].append(schedulers.Triggerable(name=test_specification["name"],
-                                                  builderNames=[test_specification["name"]]))
-    c["builders"].append(util.BuilderConfig(name=test_specification["name"],
-                                            workernames=get_workers(test_specification["worker"]),
-                                            factory=dynamic_factory(init_test_factory,
-                                                                    test_specification)))
+for builder_name, properties in config.FLOW.get_builders().items():
+    if not properties.get('disable_scheduler'):
+        c["schedulers"].append(schedulers.Triggerable(name=builder_name,
+                                                      builderNames=[builder_name]))
+    c["builders"].append(util.BuilderConfig(name=builder_name,
+                                            workernames=get_workers(properties.get("worker")),
+                                            factory=properties['factory']))
 
 # Push status of build to the Github
 c["services"] = [

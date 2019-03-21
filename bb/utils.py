@@ -26,7 +26,33 @@ import ssl
 import json
 import urllib.request
 
+from enum import Enum
+from buildbot.plugins import util
+
 from common.mediasdk_directories import MediaSdkDirectories
+
+
+class Mode(Enum):
+    PRODUCTION_MODE = "production_mode"
+    TEST_MODE = "test_mode"
+
+class BuildStatus(Enum):
+    """
+     Wrapper for buildbot statuses
+     buildbot status have value [0, .. ,6] (see buildbot.process.result) if this build finished
+     or None otherwise
+    """
+    PASSED = util.SUCCESS
+    FAILED = util.FAILURE
+    HAVE_WARNINGS = util.WARNINGS
+    SKIPPED = util.SKIPPED
+    RETRIED = util.RETRY
+    CANCELLED = util.CANCELLED
+    HAVE_EXEPTION = util.EXCEPTION
+    RUNNING = None
+    # Custom status for builds, that is not created yet
+    # In this case buildbot return empty list instead dict with 'result' key
+    NOT_STARTED = 99
 
 
 def is_comitter_the_org_member(pull_request, token=None):
