@@ -371,7 +371,7 @@ class BuildGenerator(object):
         :type custom_cli_args: Dict
         """
 
-        self.build_config_path = build_config_path
+        self.config_path = build_config_path
         self.actions = defaultdict(list)
         self.product_repos = {}
         self.product = None
@@ -404,7 +404,7 @@ class BuildGenerator(object):
         self.target_arch = target_arch
         self.target_branch = target_branch
         try:
-            self.manifest = Manifest(self.build_config_path.parent / 'manifest.yml')
+            self.manifest = Manifest(self.config_path.parent / 'manifest.yml')
         except Exception:
             self.manifest = Manifest()
 
@@ -428,7 +428,7 @@ class BuildGenerator(object):
         else:
             self.branch_name = 'master'
 
-    def generate_build_config(self):
+    def generate_config(self):
         """
         Build configuration file parser
 
@@ -459,7 +459,7 @@ class BuildGenerator(object):
             'copytree': copytree,
         }
 
-        exec(open(self.build_config_path).read(), global_vars, self.config_variables)
+        exec(open(self.config_path).read(), global_vars, self.config_variables)
 
         # TODO add product_repos to global_vars
         if 'PRODUCT_REPOS' in self.config_variables:
@@ -663,8 +663,8 @@ class BuildGenerator(object):
 
         self._save_manifest(product_state)
 
-        shutil.copyfile(self.build_config_path,
-                        self.options["PACK_DIR"] / self.build_config_path.name)
+        shutil.copyfile(self.config_path,
+                        self.options["PACK_DIR"] / self.config_path.name)
 
         if not self._run_build_config_actions(Stage.EXTRACT.value):
             return False
@@ -1165,7 +1165,7 @@ in format: <repo_name>:<branch>:<commit_id>
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
         # prepare build configuration
-        if build_config.generate_build_config():
+        if build_config.generate_config():
             # run stage of build
             no_errors = build_config.run_stage(parsed_args.stage)
         else:
