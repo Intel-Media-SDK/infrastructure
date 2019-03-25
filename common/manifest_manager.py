@@ -85,7 +85,8 @@ class Manifest:
                 self._components[name] = Component.from_dict({
                     'name': name,
                     'version': info['version'],
-                    'repository': info['repository']})
+                    'repository': info['repository'],
+                    'product_type': info['product_type']})
         else:
             raise ManifestDoesNotExist(f'Can not find manifest "{self._manifest_file}"')
 
@@ -176,6 +177,7 @@ class Manifest:
             comp = dict(comp_data)
             manifest_data['components'][comp_name] = {
                 'repository': comp['repositories'],
+                'product_type': comp['product_type'],
                 'version': comp['version']
             }
 
@@ -192,7 +194,7 @@ class Component:
     Component wrapper
     """
 
-    def __init__(self, name, version, repositories):
+    def __init__(self, name, version, repositories, product_type):
         """
         :param name: Name of component
         :type name: String
@@ -206,6 +208,7 @@ class Component:
 
         self._name = name
         self._version = version
+        self._product_type = product_type
         self._repositories = {}
 
         self._prepare_repositories(repositories)
@@ -213,6 +216,7 @@ class Component:
     def __iter__(self):
         yield 'name', self._name
         yield 'version', self._version
+        yield 'product_type', self._product_type
         yield 'repositories', [dict(repo) for repo in self._repositories.values()]
 
     def _prepare_repositories(self, repositories):
@@ -237,7 +241,8 @@ class Component:
         try:
             component = Component(comp_data['name'],
                                   comp_data['version'],
-                                  comp_data['repository'])
+                                  comp_data['repository'],
+                                  comp_data['product_type'])
         except ManifestException:
             raise
         except Exception as ex:
@@ -290,6 +295,17 @@ class Component:
             if repo.is_trigger:
                 return repo
         return None
+
+    @property
+    def product_type(self):
+        """
+        get product type
+
+        :return: Product type
+        :rtype: String
+        """
+
+        return self._product_type
 
     def get_repository(self, repository_name):
         """

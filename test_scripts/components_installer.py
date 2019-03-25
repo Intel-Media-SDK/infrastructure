@@ -25,8 +25,7 @@ Module for installation packages of components from manifest file
 import logging
 from common.manifest_manager import Manifest
 from common.mediasdk_directories import MediaSdkDirectories
-from common.helper import Product_type
-from common import package_manager as PackageManager
+from common import package_manager
 from common.system_info import get_pkg_type
 
 
@@ -46,8 +45,6 @@ def install_components(manifest_path, components):
     pkg_type = get_pkg_type()
     log = logging.getLogger('install_components')
 
-    product_types = [prod_type.value for prod_type in Product_type]
-
     for component in components:
         comp = manifest.get_component(component)
         if not comp:
@@ -56,22 +53,11 @@ def install_components(manifest_path, components):
 
         repo = comp.trigger_repository
 
-        # TODO: think about identifying product type
-        product_type = None
-        for prod_type in product_types:
-            if component in prod_type:
-                product_type = prod_type
-                break
-
-        if not product_type:
-            log.error('Unknown product type')
-            return False
-
         artifacts = MediaSdkDirectories.get_build_dir(
             branch=repo.branch,
             build_event='commit',
             commit_id=repo.revision,
-            product_type=product_type,
+            product_type=component.product_type,
             build_type='release',
             product=component)
 
@@ -86,10 +72,10 @@ def install_components(manifest_path, components):
             log.info(f'Package "{component}" was not found in {artifacts}')
             return False
 
-        if not PackageManager.uninstall_pkg(component):
+        if not package_manager.uninstall_pkg(component):
             return False
 
-        if not PackageManager.install_pkg(packages[0]):
+        if not package_manager.install_pkg(packages[0]):
             return False
 
         return True

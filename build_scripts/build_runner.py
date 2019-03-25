@@ -1019,9 +1019,9 @@ class BuildGenerator(object):
 
             self.log.info(f'Creating manifest')
 
-            for dep_name, dep_type in deps.items():
-                self.log.info(f'Getting component {dep_name}')
-                comp = self.manifest.get_component(dep_name)
+            for dependency in deps:
+                self.log.info(f'Getting component {dependency}')
+                comp = self.manifest.get_component(dependency)
                 if comp:
                     trigger_repo = comp.trigger_repository
                     if trigger_repo:
@@ -1029,15 +1029,15 @@ class BuildGenerator(object):
                             trigger_repo.branch,
                             Build_event.COMMIT.value,
                             trigger_repo.revision,
-                            dep_type,
+                            comp.product_type,
                             Build_type.RELEASE.value,
-                            product=dep_name
+                            product=dependency
                         )
 
                         try:
-                            self.log.info(f'Extracting {dep_name} {dep_type} artifacts')
+                            self.log.info(f'Extracting {dependency} {comp.product_type} artifacts')
                             # TODO: Extension hardcoded for open source. Need to use only .zip in future.
-                            extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dep_name)
+                            extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
                         except Exception:
                             self.log.exception('Can not extract archive')
                             return False
@@ -1045,7 +1045,7 @@ class BuildGenerator(object):
                         self.log.error('There is no repository as a trigger')
                         return False
                 else:
-                    self.log.error(f'Component {dep_name} does not exist in manifest')
+                    self.log.error(f'Component {dependency} does not exist in manifest')
                     return False
         except Exception:
             self.log.exception('Exception occurred:')
@@ -1069,7 +1069,7 @@ class BuildGenerator(object):
         component = self.manifest.get_component(self.product)
         version = component.version if component else '1'
 
-        self.manifest.add_component(Component(self.product, version, repos), replace=True)
+        self.manifest.add_component(Component(self.product, version, repos, self.product_type), replace=True)
         self.manifest.save_manifest(self.options["PACK_DIR"] / 'manifest.yml')
 
 
