@@ -70,7 +70,6 @@ class Stage(Enum):
     CLEAN = "clean"
     EXTRACT = "extract"
     BUILD = "build"
-    TEST = "test"
     INSTALL = "install"
     PACK = "pack"
     COPY = "copy"
@@ -83,6 +82,7 @@ class TestStage(Enum):
     CLEAN = "clean"
     INSTALL = "install"
     TEST = "test"
+    COPY = "copy"
 
 
 class Product_type(Enum):
