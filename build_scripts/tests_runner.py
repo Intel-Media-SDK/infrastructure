@@ -5,7 +5,7 @@ import pathlib
 import argparse
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from common.helper import Stage, ErrorCode
+from common.helper import TestStage, ErrorCode
 from common.logger_conf import configure_logger
 from common.manifest_manager import Manifest
 from build_scripts.build_runner import Action
@@ -24,21 +24,28 @@ class TestScenarioNotFoundException(TestsRunnerException):
 
 
 class TestRunner:
-    def __init__(self, artifacts_dir, root_dir):
-        self._artifacts_dir = pathlib.Path(artifacts_dir)
-        self._root_dir = pathlib.Path(root_dir)
-        self._actions = {}
-        self._config_variables = {}
+    def __init__(self, artifacts, root_dir):
+        self._root_dir = root_dir
+        self._artifacts_dir = None
+        self._manifest = None
         self._config_path = None
+        self._config_variables = {}
+        self._actions = {}
 
-        if self._artifacts_dir.exists():
-            self._manifest = Manifest(self._artifacts_dir / 'manifest.yml')
+        if artifacts.exists():
+            if artifacts.is_file():
+                self._artifacts_dir = artifacts.parent
+                self._manifest = Manifest(artifacts)
+            else:
+                self._artifacts_dir = artifacts
+                self._manifest = Manifest(artifacts / 'manifest.yml')
+
             try:
                 self._config_path = list(self._artifacts_dir.glob('conf_*_test.py'))[0]
             except Exception:
                 raise TestScenarioNotFoundException('Test scenario does not exist')
         else:
-            raise ArtifactsNotFoundException(f'{self._artifacts_dir} does not exist')
+            raise ArtifactsNotFoundException(f'{artifacts} does not exist')
 
         self._log = logging.getLogger(self.__class__.__name__)
 
@@ -62,7 +69,7 @@ class TestRunner:
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
-        Handler for 'action' from build config file
+        Handler for 'action' from config file
 
         :param name: Name of action
         :type name: String
@@ -86,7 +93,7 @@ class TestRunner:
         """
 
         if not stage:
-            stage = Stage.TEST.value
+            stage = TestStage.TEST.value
         else:
             stage = stage.value
 
@@ -99,7 +106,7 @@ class TestRunner:
 
         global_vars = {
             'action': self._action,
-            'stage': Stage,
+            'stage': TestStage,
             'log': self._log
         }
 
@@ -129,23 +136,23 @@ class TestRunner:
 def main():
     parser = argparse.ArgumentParser(prog="tests_runner.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-ad', "--artifacts-dir", metavar="PATH", required=True,
-                        help="Path to a build configuration")
+    parser.add_argument('-ar', "--artifacts", metavar="PATH", required=True,
+                        help="Path to a manifest file or directory with the file")
     parser.add_argument('-d', "--root-dir", metavar="PATH", required=True,
                         help="Path to worker directory")
-    parser.add_argument("--stage", default=Stage.BUILD.value,
-                        choices=[stage.value for stage in Stage],
+    parser.add_argument("--stage", default=TestStage.TEST.value,
+                        choices=[stage.value for stage in TestStage],
                         help="Current executable stage")
     args = parser.parse_args()
 
     configure_logger()
-    if args.stage != Stage.CLEAN.value:
+    if args.stage != TestStage.CLEAN.value:
         configure_logger(logs_path=pathlib.Path(args.root_dir) / 'logs' / f'{args.stage}.log')
     log = logging.getLogger('tests_runner.main')
 
     try:
-        tests_runner = TestRunner(artifacts_dir=args.artifacts_dir,
-                                  root_dir=args.root_dir)
+        tests_runner = TestRunner(artifacts=pathlib.Path(args.artifacts),
+                                  root_dir=pathlib.Path(args.root_dir))
 
         if tests_runner.generate_config():
             no_errors = tests_runner.run_stage(args.stage)
