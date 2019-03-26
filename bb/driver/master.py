@@ -238,14 +238,13 @@ for build_specification in config.BUILDERS:
                                             factory=dynamic_factory(init_build_factory,
                                                                     build_specification)))
 
-# TODO: Need to specify token for driver
 # Push status of build to the Github
-# c["services"] = [
-#     reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
-#                                context=util.Interpolate("buildbot/%(prop:buildername)s"),
-#                                startDescription="Started",
-#                                endDescription="Done",
-#                                verbose=True)]
+c["services"] = [
+    reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
+                               context=util.Interpolate("media-driver/%(prop:buildername)s"),
+                               startDescription="Started",
+                               endDescription="Done",
+                               verbose=True)]
 
 # Get changes
 c["change_source"] = []
@@ -265,7 +264,7 @@ class ProductConfigsChecker(ChangeChecker):
         return None
 
     def pull_request_filter(self, pull_request, files):
-        if any([file for file in files if file.startswith('driver/')]):
+        if any([file for file in files if file.startswith('driver/') or file == 'infrastructure_version.py']):
             return {'target_branch': pull_request['base']['ref']}
         return None
 
@@ -274,7 +273,8 @@ REPOSITORIES = [
     {'name': config.DRIVER_REPO,
      'organization': config.DRIVER_ORGANIZATION,
      'branches': True,
-     'change_filter': DriverChecker()},
+     'token': config.GITHUB_TOKEN,
+     'change_filter': DriverChecker(config.GITHUB_TOKEN)},
 
     {'name': config.PRODUCT_CONFIGS_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
