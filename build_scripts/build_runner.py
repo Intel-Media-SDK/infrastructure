@@ -355,22 +355,6 @@ class BuildGenerator(ConfigGenerator):
 
         return True
 
-    def run_stage(self, stage):
-        """
-        Run method "_<stage>" of the class
-
-        :param stage: Stage of build
-        :type stage: Stage
-        """
-
-        stage_value = f'_{stage}'
-
-        if hasattr(self, stage_value):
-            return self.__getattribute__(stage_value)()
-
-        self._log.error(f'Stage {stage} does not support')
-        return False
-
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
         Handler for 'action' from build config file
@@ -446,14 +430,6 @@ class BuildGenerator(ConfigGenerator):
             configure_logger(name, self._options['LOGS_DIR'] / 'build' / f'{name}.log')
         self._actions[Stage.BUILD.value].append(VsComponent(name, solution_path, ms_arguments, vs_version,
                                                             dependencies, env, verbose))
-
-    def _run_build_config_actions(self, stage):
-        for action in self._actions[stage]:
-            error_code = action.run(self._options)
-            if error_code:
-                return False
-
-        return True
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
     def _clean(self):
