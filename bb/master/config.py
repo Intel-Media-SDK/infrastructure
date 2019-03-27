@@ -70,10 +70,15 @@ Specification of BUILDERS:
     "builders"      - list of builder names (str)
                       builder will be run only if all builds of specified "builders" passed  
 """
+
+# All builders will use Triggerable scheduler by default
+# To disable default scheduler add "add_triggerable_sheduler": False in builder dict
 BUILDERS = {
 
     TRIGGER: {"factory": FACTORIES.init_trigger_factory,
-              "disable_scheduler": True},
+              # SingleBranchScheduler will use for this builder (see master.py), so default
+              # Triggerable is not needed
+              "add_triggerable_sheduler": False},
 
     "build": {
         "factory": FACTORIES.init_build_factory,
@@ -202,12 +207,12 @@ BUILDERS = {
     }
 }
 
-FLOW = factories.Factories(BUILDERS, FACTORIES)
+FLOW = factories.Flow(BUILDERS, FACTORIES)
 
 WORKERS = {
     "centos": {
         "b-1-10": {},
-        "b-1-14": {}
+        "b-1-22": {}
     },
     "centos_defconfig": {
         # Workaroud for running 'trigger' builder in parallel with build

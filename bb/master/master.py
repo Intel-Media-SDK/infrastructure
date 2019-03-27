@@ -66,7 +66,7 @@ c["schedulers"] = [
                                      builderNames=[config.TRIGGER])]
 
 for builder_name, properties in config.FLOW.get_builders().items():
-    if not properties.get('disable_scheduler'):
+    if properties.get('add_triggerable_sheduler', True):
         c["schedulers"].append(schedulers.Triggerable(name=builder_name,
                                                       builderNames=[builder_name]))
     c["builders"].append(util.BuilderConfig(name=builder_name,
