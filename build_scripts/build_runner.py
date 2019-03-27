@@ -510,6 +510,11 @@ class BuildGenerator(ConfigGenerator):
         shutil.copyfile(self._config_path,
                         self._options["PACK_DIR"] / self._config_path.name)
 
+        test_scenario = self._config_path.parent / f'{self._config_path.stem}_test{self._config_path.suffix}'
+        if test_scenario.exists():
+            shutil.copyfile(test_scenario,
+                            self._options["PACK_DIR"] / test_scenario.name)
+
         if not self._run_build_config_actions(Stage.EXTRACT.value):
             return False
 
