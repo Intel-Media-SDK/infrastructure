@@ -6,6 +6,10 @@ from collections import defaultdict
 from common.helper import cmd_exec, Stage
 
 
+class DefaultStageException(Exception):
+    pass
+
+
 class Action(object):
     """
     Command line script runner
@@ -141,6 +145,9 @@ class ConfigGenerator:
             'options': self._options,
             'log': self._log
         }
+
+        if not self._default_stage:
+            raise DefaultStageException('_default_stage is not declared.')
 
     def _update_global_vars(self):
         pass
