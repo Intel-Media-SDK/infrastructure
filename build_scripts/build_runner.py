@@ -256,7 +256,6 @@ class BuildGenerator(ConfigGenerator):
         :type custom_cli_args: Dict
         """
 
-        self._stage = Stage
         self._default_stage = Stage.BUILD.value
         super().__init__(root_dir, build_config_path, stage)
 
@@ -309,21 +308,12 @@ class BuildGenerator(ConfigGenerator):
         else:
             self.branch_name = 'master'
 
-    def generate_config(self):
-        """
-        Build configuration file parser
-
-        :return: None | Exception
-        """
-
-        global_vars = {
-            'action': self._action,
+    def _update_global_vars(self):
+        self._global_vars.update({
             'vs_component': self._vs_component,
-            'options': self._options,
-            'stage': self._stage,
+            'stage': Stage,
             'copy_win_files': copy_win_files,
             'args': self._custom_cli_args,
-            'log': self._log,
             'product_type': self._product_type,
             'build_event': self._build_event,
             # TODO should be in lower case
@@ -338,10 +328,9 @@ class BuildGenerator(ConfigGenerator):
             'get_packing_cmd': get_packing_cmd,
             'get_commit_number': ProductState.get_commit_number,
             'copytree': copytree,
-        }
+        })
 
-        exec(open(self._config_path).read(), global_vars, self._config_variables)
-
+    def _get_config_vars(self):
         # TODO add product_repos to global_vars
         if 'PRODUCT_REPOS' in self._config_variables:
             for repo in self._config_variables['PRODUCT_REPOS']:
@@ -352,8 +341,6 @@ class BuildGenerator(ConfigGenerator):
                 }
 
         self._product = self._config_variables.get('PRODUCT_NAME', 'mediasdk')
-
-        return True
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """

@@ -123,33 +123,35 @@ class Action(object):
 
 
 class ConfigGenerator:
-    _stage = None
     _default_stage = None
 
     def __init__(self, root_dir, config_path, current_stage):
         self._config_path = config_path
         self._current_stage = current_stage
-
         self._actions = defaultdict(list)
-        self._config_variables = {}
-
         self._options = {
             "ROOT_DIR": root_dir
         }
 
         self._log = logging.getLogger(self.__class__.__name__)
 
-    def generate_config(self):
-
-        global_vars = {
+        self._config_variables = {}
+        self._global_vars = {
             'action': self._action,
-            'stage': self._stage,
+            'options': self._options,
             'log': self._log
         }
 
-        exec(open(self._config_path).read(), global_vars, self._config_variables)
+    def _update_global_vars(self):
+        pass
 
-        # TODO get variables from test scenario
+    def _get_config_vars(self):
+        pass
+
+    def generate_config(self):
+        self._update_global_vars()
+        exec(open(self._config_path).read(), self._global_vars, self._config_variables)
+        self._get_config_vars()
 
         return True
 

@@ -43,9 +43,13 @@ class TestRunner(ConfigGenerator):
         else:
             raise ArtifactsNotFoundException(f'{artifacts} does not exist')
 
-        self._stage = TestStage
         self._default_stage = TestStage.TEST.value
         super().__init__(root_dir, config_path, current_stage)
+
+    def _update_global_vars(self):
+        self._global_vars.update({
+            'stage': TestStage
+        })
 
     def _clean(self):
         self._log.info('-' * 50)
