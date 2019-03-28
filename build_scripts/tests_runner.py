@@ -25,12 +25,14 @@ During manual running, only the "test" step is performed if stage is not specifi
 """
 
 import sys
+import shutil
 import logging
 import pathlib
 import argparse
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
+from test_scripts.components_installer import install_components
 from common.helper import TestStage, ErrorCode
 from common.logger_conf import configure_logger
 from common.manifest_manager import Manifest
@@ -78,8 +80,24 @@ class TestRunner(ConfigGenerator):
         })
 
     def _clean(self):
+        """
+        Clean build directories
+
+        :return: None | Exception
+        """
+
         self._log.info('-' * 50)
         self._log.info("CLEANING")
+
+        remove_dirs = {'ROOT_DIR'}
+
+        for directory in remove_dirs:
+            dir_path = self._options.get(directory)
+            if dir_path.exists():
+                self._log.info(f'remove directory {dir_path}')
+                shutil.rmtree(dir_path)
+
+        self._options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
         return True
 
@@ -87,13 +105,27 @@ class TestRunner(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("INSTALLING")
 
-        return True
+        components = self._config_variables.get('INSTALL', [])
+
+        if not components:
+            self._log.info('Nothing to install')
+            return True
+
+        return install_components(self._manifest, components)
 
     def _test(self):
         self._log.info('-' * 50)
         self._log.info("TESTING")
 
+        if not self._run_build_config_actions(TestStage.TEST.value):
+            return False
         return True
+
+    def _copy(self):
+        self._log.info('-' * 50)
+        self._log.info("COPYING")
+
+        # TODO: Save results on share
 
 
 def main():

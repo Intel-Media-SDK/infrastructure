@@ -29,10 +29,10 @@ from common import package_manager
 from common.system_info import get_pkg_type
 
 
-def install_components(manifest_path, components):
+def install_components(manifest, components):
     """
-    :param manifest_path: Path to a manifest file
-    :type manifest_path: String
+    :param manifest: Path to a manifest file
+    :type manifest: String | Manifest
 
     :param components: List of components to install
     :type components: List
@@ -40,7 +40,9 @@ def install_components(manifest_path, components):
     :return: Boolean
     """
 
-    manifest = Manifest(manifest_path)
+    if not isinstance(manifest, Manifest):
+        manifest = Manifest(manifest)
+
     components = components
     pkg_type = get_pkg_type()
     log = logging.getLogger('install_components')
