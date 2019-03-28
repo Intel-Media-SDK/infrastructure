@@ -132,10 +132,13 @@ class Flow:
             for trigger in triggers:
                 parent_builders = trigger.get('builders', ['trigger'])
                 for parent_builder in parent_builders:
-                    if self.builder_spec[parent_builder].get('next_builders'):
-                        self.builder_spec[parent_builder]['next_builders'][builder_name] = trigger
+                    next_builders = self.builder_spec[parent_builder].get('next_builders')
+                    if next_builders and next_builders.get(builder_name):
+                        self.builder_spec[parent_builder]['next_builders'][builder_name].append(trigger)
+                    elif next_builders and not next_builders.get(builder_name):
+                        self.builder_spec[parent_builder]['next_builders'][builder_name] = [trigger]
                     else:
-                        self.builder_spec[parent_builder]['next_builders'] = {builder_name: trigger}
+                        self.builder_spec[parent_builder]['next_builders'] = {builder_name: [trigger]}
 
     def get_builders(self):
         """
@@ -182,10 +185,9 @@ class StepsGenerator(steps.BuildStep):
 
         # Filtration next builders by branch and project
         builder_names_for_triggering_after_check = []
-        for builder, props in self.build_specification['next_builders']:
-            triggers = props.get('triggers', [])
+        for builder, triggers in self.build_specification['next_builders'].items():
             for trigger in triggers:
-                if project in trigger.get('project', []) and trigger.get('branches')(branch):
+                if project in trigger.get('projects', []) and trigger.get('branch')(branch):
                     builder_names_for_triggering_after_check.append(builder)
                     break
 
@@ -202,14 +204,15 @@ class StepsGenerator(steps.BuildStep):
 
             # Check dependencies for builders from builder_names_for_triggering_after_check
             for next_builder in builder_names_for_triggering_after_check:
-                dependencies = self.build_specification['next_builders'][next_builder]
-                for dependent_builder in dependencies.get('builders', []):
-                    build = triggered_builds_from_parent_build.get(dependent_builder)
-                    if build is None or build_id != build['build_id'] and build[
-                        'result'] != BuildStatus.PASSED:
+                for dependency in self.build_specification['next_builders'][next_builder]:
+                    for dependent_builder in dependency.get('builders', []):
+                        build = triggered_builds_from_parent_build.get(dependent_builder)
+                        if build is None or build_id != build['build_id'] and build[
+                            'result'] != BuildStatus.PASSED:
+                            break
+                    else:
+                        builder_names_for_triggering.append(next_builder)
                         break
-                else:
-                    builder_names_for_triggering.append(next_builder)
 
         # Update builder names for trigger step
         # NOTE: scheduler names are the same as builder names
@@ -266,46 +269,45 @@ class Factories:
                                        hideStepIf=self.mode == Mode.PRODUCTION_MODE))
         return factory
 
-    @defer.inlineCallbacks
-    def factory_with_deploying_infrastructure_step(self, props):
-        """
-        Created step for deploying infrastructure.
-        Used as first step in all factories.
-
-        :return: list with one ShellCommand step or empty list
-        """
+    def factory_with_deploying_infrastructure_step(self):
         factory = list()
         # return empty factory if deploying infrastructure is disabled
         # otherwise return factory with deploying infrastructure step
         if not self.deploying_infrastructure:
             return factory
 
-        infrastructure_deploying_cmd = [
-            self.run_command, 'extract_repo.py',
-            '--repo-name', 'OPEN_SOURCE_INFRA',
-            '--root-dir', props.getProperty("builddir")]
+        @util.renderer
+        @defer.inlineCallbacks
+        def get_infrastructure_deploying_cmd(props):
+            infrastructure_deploying_cmd = [
+                self.run_command, 'extract_repo.py',
+                '--repo-name', 'OPEN_SOURCE_INFRA',
+                '--root-dir', props.getProperty("builddir")]
 
-        # Changes from product-configs\fork of product configs repositories will be deployed as is.
-        # Infrastructure for changes from other repos will be extracted from master\release branch of
-        # Intel-Media-SDK/product-configs repository.
-        if get_repository_name_by_url(props.getProperty('repository')) == "product-configs":
-            infrastructure_deploying_cmd += ['--commit-id', props.getProperty("revision"),
-                                             '--branch', props.getProperty("branch")]
+            # Changes from product-configs\fork of product configs repositories will be deployed as is.
+            # Infrastructure for changes from other repos will be extracted from master\release branch of
+            # Intel-Media-SDK/product-configs repository.
+            if get_repository_name_by_url(
+                    props.getProperty('repository')) == "product-configs":
+                infrastructure_deploying_cmd += ['--commit-id', props.getProperty("revision"),
+                                                 '--branch', props.getProperty("branch")]
 
-        else:
-            build_id = props.build.buildid
-            sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(
-                build_id)
-            sourcestamps_created_time = sourcestamps[0]['created_at'].timestamp()
-            formatted_sourcestamp_created_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                                               time.localtime(
-                                                                   sourcestamps_created_time))
-            infrastructure_deploying_cmd += ['--commit-time',
-                                             formatted_sourcestamp_created_time,
-                                             # Set 'branch' value if 'target_branch' property not set.
-                                             '--branch',
-                                             util.Interpolate(
-                                                 '%(prop:target_branch:-%(prop:branch)s)s')]
+            else:
+                build_id = props.build.buildid
+                sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(
+                    build_id)
+                sourcestamps_created_time = sourcestamps[0]['created_at'].timestamp()
+                formatted_sourcestamp_created_time = time.strftime('%Y-%m-%d %H:%M:%S',
+                                                                   time.localtime(
+                                                                       sourcestamps_created_time))
+                infrastructure_deploying_cmd += ['--commit-time',
+                                                 formatted_sourcestamp_created_time,
+                                                 # Set 'branch' value if 'target_branch' property not set.
+                                                 '--branch',
+                                                 util.Interpolate(
+                                                     '%(prop:target_branch:-%(prop:branch)s)s')]
+
+            defer.returnValue(infrastructure_deploying_cmd)
 
         factory.append(steps.ShellCommand(name='deploying infrastructure',
                                           command=get_infrastructure_deploying_cmd,
@@ -313,7 +315,7 @@ class Factories:
         return factory
 
     def init_trigger_factory(self, build_specification, props):
-        trigger_factory = self.factory_with_deploying_infrastructure_step(props)
+        trigger_factory = self.factory_with_deploying_infrastructure_step()
 
         repository_name = get_repository_name_by_url(props['repository'])
         trigger_factory.extend([
@@ -354,7 +356,7 @@ class Factories:
         fastboot = build_specification["fastboot"]
         compiler = build_specification["compiler"]
         compiler_version = build_specification["compiler_version"]
-        build_factory = self.factory_with_deploying_infrastructure_step(props)
+        build_factory = self.factory_with_deploying_infrastructure_step()
 
         shell_commands = [self.run_command,
                           "build_runner.py",
@@ -387,7 +389,7 @@ class Factories:
     def init_test_factory(self, test_specification, props):
         product_type = test_specification["product_type"]
         build_type = test_specification["build_type"]
-        test_factory = self.factory_with_deploying_infrastructure_step(props)
+        test_factory = self.factory_with_deploying_infrastructure_step()
 
         test_factory.append(
             steps.ShellCommand(command=[self.run_command,
