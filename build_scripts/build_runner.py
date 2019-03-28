@@ -48,7 +48,7 @@ from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from build_scripts.common_runner import ConfigGenerator, Action
+from build_scripts.common_runner import ConfigGenerator, Action, RunnerException
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
     copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive
 
@@ -59,7 +59,7 @@ from common.build_number import get_build_number
 from common.manifest_manager import Manifest, Component, Repository
 
 
-class UnsupportedVSError(Exception):
+class UnsupportedVSError(RunnerException):
     """
     Error, which need to be raised
     if Visual Studio version not supported
@@ -272,7 +272,6 @@ class BuildGenerator(ConfigGenerator):
             "BUILD_DIR": root_dir / "build",
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
-            "LOGS_DIR": root_dir / "logs",
             "DEPENDENCIES_DIR": root_dir / "dependencies",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
@@ -1030,11 +1029,11 @@ in format: <repo_name>:<branch>:<commit_id>
         if not build_state_file.exists():
             build_state_file.write_text(json.dumps({'status': "PASS"}))
         log.info('-' * 50)
-        log.info("%sING COMPLETED", parsed_args.stage.upper())
+        log.info("%s STAGE COMPLETED", parsed_args.stage.upper())
     else:
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
         log.error('-' * 50)
-        log.error("%sING FAILED", parsed_args.stage.upper())
+        log.error("%s STAGE FAILED", parsed_args.stage.upper())
         exit(ErrorCode.CRITICAL.value)
 
 

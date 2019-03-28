@@ -1,3 +1,27 @@
+# Copyright (c) 2018 Intel Corporation
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""
+    Module contains base class for build and test runners
+"""
+
 import logging
 import os
 import pathlib
@@ -6,7 +30,11 @@ from collections import defaultdict
 from common.helper import cmd_exec, Stage
 
 
-class DefaultStageException(Exception):
+class RunnerException(Exception):
+    pass
+
+
+class DefaultStageException(RunnerException):
     pass
 
 
@@ -134,7 +162,8 @@ class ConfigGenerator:
         self._current_stage = current_stage
         self._actions = defaultdict(list)
         self._options = {
-            "ROOT_DIR": root_dir
+            "ROOT_DIR": root_dir,
+            "LOGS_DIR": root_dir / 'logs'
         }
 
         self._log = logging.getLogger(self.__class__.__name__)
@@ -150,12 +179,36 @@ class ConfigGenerator:
             raise DefaultStageException('_default_stage is not declared.')
 
     def _update_global_vars(self):
+        """
+        Set additional variables while executing configuration file;
+        It can be used in child classes
+
+        Ex.:
+        self._global_vars.update({
+            'stage': TestStage
+        })
+        """
+
         pass
 
     def _get_config_vars(self):
+        """
+        Define variables from configuration file as fields of a runner class;
+        It can be used in child classes
+
+        Ex:
+        self.product = self._config_variables.get('PRODUCT_NAME', None)
+        """
+
         pass
 
     def generate_config(self):
+        """
+        Read configuration file
+
+        :return: Boolean
+        """
+
         self._update_global_vars()
         exec(open(self._config_path).read(), self._global_vars, self._config_variables)
         self._get_config_vars()
@@ -179,6 +232,15 @@ class ConfigGenerator:
         return False
 
     def _run_build_config_actions(self, stage):
+        """
+        Run actions of selected stage
+
+        :param stage: Stage name
+        :type stage: String
+
+        :return: Boolean
+        """
+
         for action in self._actions[stage]:
             error_code = action.run(self._options)
             if error_code:

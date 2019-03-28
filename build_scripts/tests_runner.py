@@ -1,29 +1,55 @@
-import os
+# Copyright (c) 2018 Intel Corporation
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""
+This module uses for CI testing of MediaSDK product.
+
+During manual running, only the "test" step is performed if stage is not specified
+"""
+
 import sys
 import logging
 import pathlib
 import argparse
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from build_scripts.common_runner import ConfigGenerator
+from build_scripts.common_runner import ConfigGenerator, RunnerException
 from common.helper import TestStage, ErrorCode
 from common.logger_conf import configure_logger
 from common.manifest_manager import Manifest
 
 
-class TestsRunnerException(Exception):
+class ArtifactsNotFoundException(RunnerException):
     pass
 
 
-class ArtifactsNotFoundException(TestsRunnerException):
-    pass
-
-
-class TestScenarioNotFoundException(TestsRunnerException):
+class TestScenarioNotFoundException(RunnerException):
     pass
 
 
 class TestRunner(ConfigGenerator):
+    """
+    Main class.
+    Contains commands for testing product.
+    """
+
     def __init__(self, artifacts, root_dir, current_stage):
         self._artifacts_dir = None
         self._manifest = None
@@ -103,10 +129,10 @@ def main():
 
     if no_errors:
         log.info('-' * 50)
-        log.info("%sING COMPLETED", args.stage.upper())
+        log.info("%s STAGE COMPLETED", args.stage.upper())
     else:
         log.error('-' * 50)
-        log.error("%sING FAILED", args.stage.upper())
+        log.error("%s STAGE FAILED", args.stage.upper())
         exit(ErrorCode.CRITICAL.value)
 
 
