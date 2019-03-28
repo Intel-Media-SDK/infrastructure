@@ -59,7 +59,7 @@ def install_components(manifest, components):
             branch=repo.branch,
             build_event='commit',
             commit_id=repo.revision,
-            product_type=component.product_type,
+            product_type=comp.product_type,
             build_type='release',
             product=component)
 
