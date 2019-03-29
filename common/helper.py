@@ -101,6 +101,7 @@ class Product_type(Enum):
     CLOSED_PERL_TEST_PKG = 'closed_perl_test_pkg'
 
     # private
+    PRIVATE_WINDOWS = 'private_windows'
     PRIVATE_ANDROID = 'private_android'
     PRIVATE_LINUX_NEXT_GEN = 'private_linux_next_gen'
     PRIVATE_LINUX_NEXT_GEN_API_NEXT = 'private_linux_next_gen_api_next'
