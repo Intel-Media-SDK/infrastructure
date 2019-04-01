@@ -29,8 +29,9 @@ from twisted.internet import defer
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
+from common.mediasdk_directories import MediaSdkDirectories
 
-from common.helper import Stage
+from common.helper import Stage, TestStage
 from bb.utils import is_release_branch, is_comitter_the_org_member, get_repository_name_by_url,\
     get_open_pull_request_branches, ChangeChecker
 
@@ -192,7 +193,36 @@ def init_build_factory(build_specification, props):
                                workdir=r"infrastructure/build_scripts",
                                name=stage.value))
 
+    # Trigger tests
+    # Tests will be triggered only if product types are similar
+    # Currently they will be triggered only for `build`
+    for test_specification in config.TESTERS:
+        if product_type == test_specification["product_type"]:
+            build_factory.append(steps.Trigger(schedulerNames=[test_specification["name"]],
+                                               waitForFinish=False,
+                                               updateSourceStamp=True))
     return build_factory
+
+
+def init_test_factory(test_specification, props):
+    test_factory = factory_with_deploying_infrastructure_step() if config.DEPLOYING_INFRASTRUCTURE \
+        else []
+
+    driver_manifest_path = MediaSdkDirectories.get_build_dir(props['branch'], 'commit',
+                                                             props['revision'],
+                                                             test_specification['product_type'],
+                                                             test_specification['build_type'],
+                                                             product='driver')
+    command = [config.RUN_COMMAND, "test_adapter.py",
+               '--artifacts', str(driver_manifest_path),
+               '--root-dir', util.Interpolate('%(prop:builddir)s'),
+               '--stage']
+
+    for test_stage in TestStage:
+        test_factory.append(
+            steps.ShellCommand(command=command+[test_stage],
+                               workdir=r"infrastructure/build_scripts"))
+    return test_factory
 
 
 c = BuildmasterConfig = {}
@@ -237,6 +267,14 @@ for build_specification in config.BUILDERS:
                                             workernames=get_workers(build_specification["worker"]),
                                             factory=dynamic_factory(init_build_factory,
                                                                     build_specification)))
+
+for test_specification in config.TESTERS:
+    c["schedulers"].append(schedulers.Triggerable(name=test_specification["name"],
+                                                  builderNames=[test_specification["name"]]))
+    c["builders"].append(util.BuilderConfig(name=test_specification["name"],
+                                            workernames=get_workers(test_specification["worker"]),
+                                            factory=dynamic_factory(init_test_factory,
+                                                                    test_specification)))
 
 # Push status of build to the Github
 c["services"] = [
