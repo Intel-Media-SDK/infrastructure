@@ -413,15 +413,17 @@ class BuildGenerator(object):
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
             self.branch_name = changed_repo_dict[1]
+            self.changed_repo_name = changed_repo_dict[0]
         elif repo_states_file_path:
             self.branch_name = 'master'
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
                 with repo_states_file.open() as repo_states_json:
                     self.repo_states = json.load(repo_states_json)
-                    for repo_state in self.repo_states.values():
+                    for repo_name, repo_state in self.repo_states.items():
                         if repo_state['trigger']:
                             self.branch_name = repo_state['branch']
+                            self.changed_repo_name = repo_name
                             break
             else:
                 raise Exception(f'{repo_states_file} does not exist')
@@ -451,6 +453,7 @@ class BuildGenerator(object):
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
+            'changed_repo_name': self.changed_repo_name,
             'update_config': self._update_config,
             'target_arch': self.target_arch,
             'commit_time': self.commit_time,
