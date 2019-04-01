@@ -220,7 +220,7 @@ def init_test_factory(test_specification, props):
 
     for test_stage in TestStage:
         test_factory.append(
-            steps.ShellCommand(command=command+[test_stage],
+            steps.ShellCommand(command=command+[test_stage.value],
                                workdir=r"infrastructure/build_scripts"))
     return test_factory
 
