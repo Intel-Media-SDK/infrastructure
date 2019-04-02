@@ -201,7 +201,6 @@ class CopyrightChecker:
         """
         Checks the copyright strings list, returns True if copyright correct
 
-        :param src_file: The path to source file from repository root
         :param tested_strings: The string list with copyright data
         :return: True if no copyright problems present
         """
