@@ -61,7 +61,7 @@ class Manifest:
         self._version = '0'  # gets from manifest
         self._components = {}  # gets from manifest
 
-        if manifest_path:
+        if manifest_path is not None:
             self._prepare_manifest()
 
     def __repr__(self):

@@ -75,6 +75,16 @@ class Stage(Enum):
     COPY = "copy"
 
 
+class TestStage(Enum):
+    """
+    Constants for defining stage of test
+    """
+    CLEAN = "clean"
+    INSTALL = "install"
+    TEST = "test"
+    COPY = "copy"
+
+
 class Product_type(Enum):
     """
     Constants for defining type of product

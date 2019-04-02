@@ -48,6 +48,7 @@ from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from build_scripts.common_runner import ConfigGenerator, Action, RunnerException
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
     copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive
 
@@ -58,129 +59,13 @@ from common.build_number import get_build_number
 from common.manifest_manager import Manifest, Component, Repository
 
 
-class UnsupportedVSError(Exception):
+class UnsupportedVSError(RunnerException):
     """
     Error, which need to be raised
     if Visual Studio version not supported
     """
 
     pass
-
-
-class Action(object):
-    """
-    Command line script runner
-    """
-
-    def __init__(self, name, stage, cmd, work_dir, env, callfunc, verbose):
-        """
-        :param name: Name of action
-        :type name: String
-
-        :param stage: Stage type
-        :type stage: Stage
-
-        :param cmd: command line script
-        :type cmd: String
-
-        :param work_dir: Path where script will execute
-        :type work_dir: pathlib.Path
-
-        :param env: Environment variables for script
-        :type env: Dict
-
-        :param callfunc: python function, which need to execute
-        :type callfunc: tuple (function_name, args, kwargs)
-
-        :param verbose: Flag for output all logs
-        :type verbose: Boolean
-        """
-
-        self.repo_name = name
-        self.stage = stage
-        self.cmd = cmd
-        self.work_dir = work_dir
-        self.env = env
-        self.callfunc = callfunc
-        self.verbose = verbose
-
-        self.log = logging.getLogger(name)
-
-    def run(self, options=None):
-        """
-        Script runner
-
-        :return: None | subprocess.CalledProcessError
-        """
-
-        self.log.info('-' * 50)
-
-        if self.callfunc:
-            func, args, kwargs = self.callfunc
-
-            self.log.info('function: %s', func)
-            self.log.info('args: %s', args)
-            self.log.info('kwargs: %s', kwargs)
-
-            func(*args, **kwargs)
-
-        if self.cmd:
-            if isinstance(self.cmd, list):
-                self.cmd = ' && '.join(self.cmd)
-
-            env = os.environ.copy()
-
-            if options:
-                self.cmd = self.cmd.format_map(options)
-                if options.get('ENV'):
-                    env.update(options['ENV'])
-
-            if self.env:
-                env.update(self.env)
-
-            if self.work_dir:
-                self.work_dir.mkdir(parents=True, exist_ok=True)
-
-            error_code, out = cmd_exec(self.cmd, env=env, cwd=self.work_dir, log=self.log)
-
-            if error_code:
-                self._parse_logs(out)
-            else:
-                if self.verbose:
-                    self.log.info(out)
-                    self.log.info('completed')
-                else:
-                    self.log.debug(out)
-                    self.log.debug('completed')
-
-            return error_code
-
-    def _parse_logs(self, stdout):
-        self.log.error(stdout)
-        output = [""]
-
-        # linux error example:
-        # .../graphbuilder.h:19:9: error: ‘class YAML::GraphBuilderInterface’ has virtual ...
-        # windows error example:
-        # ...decode.cpp(92): error C2220: warning treated as error - no 'executable' file ...
-        # LINK : fatal error LNK1257: code generation failed ...
-
-        if platform.system() == 'Windows':
-            error_substrings = [' error ']
-        elif platform.system() == 'Linux':
-            error_substrings = [': error', 'error:']
-        else:
-            error_substrings = None
-            self.log.warning(f'Unsupported OS for parsing errors: {platform.system()}')
-
-        if error_substrings:
-            for line in stdout.splitlines():
-                if any(error_substring in line for error_substring in error_substrings):
-                    output.append(line)
-            if len(output) > 1:
-                output.append("The errors above were found in the output. "
-                              "See full log for details.")
-                self.log.error('\n'.join(output))
 
 
 class VsComponent(Action):
@@ -326,7 +211,7 @@ class VsComponent(Action):
         return super().run(options)
 
 
-class BuildGenerator(object):
+class BuildGenerator(ConfigGenerator):
     """
     Main class.
     Contains commands for building product.
@@ -371,44 +256,38 @@ class BuildGenerator(object):
         :type custom_cli_args: Dict
         """
 
-        self.build_config_path = build_config_path
-        self.actions = defaultdict(list)
-        self.product_repos = {}
-        self.product = None
-        self.product_type = product_type
-        self.build_event = build_event
-        self.commit_time = commit_time
-        self.changed_repo = changed_repo
-        self.repo_states = None
-        self.build_state_file = root_dir / "build_state"
-        self.options = {
-            "ROOT_DIR": root_dir,
+        self._default_stage = Stage.BUILD.value
+        super().__init__(root_dir, build_config_path, stage)
+
+        self._product_repos = {}
+        self._product = None
+        self._product_type = product_type
+        self._build_event = build_event
+        self._commit_time = commit_time
+        self._changed_repo = changed_repo
+        self._repo_states = None
+        self._build_state_file = root_dir / "build_state"
+        self._options.update({
             "REPOS_DIR": root_dir / "repos",
             "BUILD_DIR": root_dir / "build",
             "INSTALL_DIR": root_dir / "install",
             "PACK_DIR": root_dir / "pack",
-            "LOGS_DIR": root_dir / "logs",
             "DEPENDENCIES_DIR": root_dir / "dependencies",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
             "VARS": {},  # Dictionary of dynamical variables for action() steps
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
-
-        }
-        self.dev_pkg_data_to_archive = []
-        self.install_pkg_data_to_archive = []
-        self.config_variables = {}
-        self.custom_cli_args = custom_cli_args
-        self.current_stage = stage
-        self.target_arch = target_arch
-        self.target_branch = target_branch
+        })
+        self._dev_pkg_data_to_archive = []
+        self._install_pkg_data_to_archive = []
+        self._custom_cli_args = custom_cli_args
+        self._target_arch = target_arch
+        self._target_branch = target_branch
         try:
-            self.manifest = Manifest(self.build_config_path.parent / 'manifest.yml')
+            self._manifest = Manifest(self._config_path.parent / 'manifest.yml')
         except Exception:
-            self.manifest = Manifest()
-
-        self.log = logging.getLogger(self.__class__.__name__)
+            self._manifest = Manifest()
 
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
@@ -430,68 +309,40 @@ class BuildGenerator(object):
         else:
             self.branch_name = 'master'
 
-    def generate_build_config(self):
-        """
-        Build configuration file parser
-
-        :return: None | Exception
-        """
-
-        global_vars = {
-            'action': self._action,
+    def _update_global_vars(self):
+        self._global_vars.update({
             'vs_component': self._vs_component,
-            'options': self.options,
             'stage': Stage,
             'copy_win_files': copy_win_files,
-            'args': self.custom_cli_args,
-            'log': self.log,
-            'product_type': self.product_type,
-            'build_event': self.build_event,
+            'args': self._custom_cli_args,
+            'product_type': self._product_type,
+            'build_event': self._build_event,
             # TODO should be in lower case
-            'DEV_PKG_DATA_TO_ARCHIVE': self.dev_pkg_data_to_archive,
-            'INSTALL_PKG_DATA_TO_ARCHIVE': self.install_pkg_data_to_archive,
+            'DEV_PKG_DATA_TO_ARCHIVE': self._dev_pkg_data_to_archive,
+            'INSTALL_PKG_DATA_TO_ARCHIVE': self._install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self.branch_name,
             'changed_repo_name': self.changed_repo_name,
             'update_config': self._update_config,
-            'target_arch': self.target_arch,
-            'commit_time': self.commit_time,
+            'target_arch': self._target_arch,
+            'commit_time': self._commit_time,
             'get_packing_cmd': get_packing_cmd,
             'get_commit_number': ProductState.get_commit_number,
             'copytree': copytree,
-        }
+        })
 
-        exec(open(self.build_config_path).read(), global_vars, self.config_variables)
-
+    def _get_config_vars(self):
         # TODO add product_repos to global_vars
-        if 'PRODUCT_REPOS' in self.config_variables:
-            for repo in self.config_variables['PRODUCT_REPOS']:
-                self.product_repos[repo['name']] = {
+        if 'PRODUCT_REPOS' in self._config_variables:
+            for repo in self._config_variables['PRODUCT_REPOS']:
+                self._product_repos[repo['name']] = {
                     'branch': repo.get('branch'),
                     'commit_id': repo.get('commit_id'),
                     'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
                 }
 
-        self.product = self.config_variables.get('PRODUCT_NAME', 'mediasdk')
-
-        return True
-
-    def run_stage(self, stage):
-        """
-        Run method "_<stage>" of the class
-
-        :param stage: Stage of build
-        :type stage: Stage
-        """
-
-        stage_value = f'_{stage}'
-
-        if hasattr(self, stage_value):
-            return self.__getattribute__(stage_value)()
-
-        self.log.error(f'Stage {stage} does not support')
-        return False
+        self._product = self._config_variables.get('PRODUCT_NAME', 'mediasdk')
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
@@ -524,12 +375,12 @@ class BuildGenerator(object):
             stage = stage.value
 
         if not work_dir:
-            work_dir = self.options["ROOT_DIR"]
+            work_dir = self._options["ROOT_DIR"]
             if stage in [Stage.BUILD.value, Stage.INSTALL.value]:
-                work_dir = self.options["BUILD_DIR"]
-        if stage == Stage.BUILD.value and self.current_stage == Stage.BUILD.value:
-            configure_logger(name, self.options['LOGS_DIR'] / 'build' / f'{name}.log')
-        self.actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
+                work_dir = self._options["BUILD_DIR"]
+        if stage == Stage.BUILD.value and self._current_stage == Stage.BUILD.value:
+            configure_logger(name, self._options['LOGS_DIR'] / 'build' / f'{name}.log')
+        self._actions[stage].append(Action(name, stage, cmd, work_dir, env, callfunc, verbose))
 
     def _vs_component(self, name, solution_path, msbuild_args=None, vs_version="vs2017",
                       dependencies=None, env=None, verbose=False):
@@ -557,25 +408,17 @@ class BuildGenerator(object):
         :return: None | Exception
         """
 
-        ms_arguments = deepcopy(self.config_variables.get('MSBUILD_ARGUMENTS', {}))
+        ms_arguments = deepcopy(self._config_variables.get('MSBUILD_ARGUMENTS', {}))
         if msbuild_args:
             for key, value in msbuild_args.items():
                 if isinstance(value, dict):
                     ms_arguments[key] = {**ms_arguments.get(key, {}), **msbuild_args[key]}
                 else:
                     ms_arguments[key] = msbuild_args[key]
-        if self.current_stage == Stage.BUILD.value:
-            configure_logger(name, self.options['LOGS_DIR'] / 'build' / f'{name}.log')
-        self.actions[Stage.BUILD.value].append(VsComponent(name, solution_path, ms_arguments, vs_version,
-                                                           dependencies, env, verbose))
-
-    def _run_build_config_actions(self, stage):
-        for action in self.actions[stage]:
-            error_code = action.run(self.options)
-            if error_code:
-                return False
-
-        return True
+        if self._current_stage == Stage.BUILD.value:
+            configure_logger(name, self._options['LOGS_DIR'] / 'build' / f'{name}.log')
+        self._actions[Stage.BUILD.value].append(VsComponent(name, solution_path, ms_arguments, vs_version,
+                                                            dependencies, env, verbose))
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=30))
     def _clean(self):
@@ -588,21 +431,21 @@ class BuildGenerator(object):
         remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'DEPENDENCIES_DIR'}
 
         for directory in remove_dirs:
-            dir_path = self.options.get(directory)
+            dir_path = self._options.get(directory)
             if dir_path.exists():
                 shutil.rmtree(dir_path)
 
-        self.options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
+        self._options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
-        self.log.info('-' * 50)
-        self.log.info('CLEANING')
+        self._log.info('-' * 50)
+        self._log.info('CLEANING')
 
-        if self.build_state_file.exists():
-            self.log.info('remove build state file %s', self.build_state_file)
-            self.build_state_file.unlink()
+        if self._build_state_file.exists():
+            self._log.info('remove build state file %s', self._build_state_file)
+            self._build_state_file.unlink()
 
         for dir_path in remove_dirs:
-            self.log.info('remove directory %s', self.options.get(dir_path))
+            self._log.info('remove directory %s', self._options.get(dir_path))
 
         if not self._run_build_config_actions(Stage.CLEAN.value):
             return False
@@ -618,22 +461,22 @@ class BuildGenerator(object):
         """
 
         print('-' * 50)
-        self.log.info("EXTRACTING")
+        self._log.info("EXTRACTING")
 
-        self.options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
-        self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+        self._options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+        self._options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         triggered_repo = 'unknown'
 
-        if self.changed_repo:
-            repo_name, branch, commit_id = self.changed_repo.split(':')
+        if self._changed_repo:
+            repo_name, branch, commit_id = self._changed_repo.split(':')
             triggered_repo = repo_name
 
-            if repo_name not in self.product_repos:
-                self.log.critical(f'{repo_name} repository is not defined in the product configuration PRODUCT_REPOS')
+            if repo_name not in self._product_repos:
+                self._log.critical(f'{repo_name} repository is not defined in the product configuration PRODUCT_REPOS')
                 return False
 
-            for repo, data in self.product_repos.items():
+            for repo, data in self._product_repos.items():
                 data['trigger'] = False
                 if repo == repo_name:
                     data['trigger'] = True
@@ -641,33 +484,38 @@ class BuildGenerator(object):
                         data['branch'] = branch
                         data['commit_id'] = commit_id
                 elif not data.get('branch'):
-                    if self.target_branch and MediaSdkDirectories.is_release_branch(self.target_branch):
-                        data['branch'] = self.target_branch
-                    elif MediaSdkDirectories.is_release_branch(branch) and not self.target_branch:
+                    if self._target_branch and MediaSdkDirectories.is_release_branch(self._target_branch):
+                        data['branch'] = self._target_branch
+                    elif MediaSdkDirectories.is_release_branch(branch) and not self._target_branch:
                         data['branch'] = branch
-        elif self.repo_states:
-            for repo_name, values in self.repo_states.items():
-                if repo_name in self.product_repos:
+        elif self._repo_states:
+            for repo_name, values in self._repo_states.items():
+                if repo_name in self._product_repos:
                     if values['trigger']:
                         triggered_repo = repo_name
-                    self.product_repos[repo_name]['branch'] = values['branch']
-                    self.product_repos[repo_name]['commit_id'] = values['commit_id']
-                    self.product_repos[repo_name]['url'] = values['url']
-                    self.product_repos[repo_name]['trigger'] = values['trigger']
+                    self._product_repos[repo_name]['branch'] = values['branch']
+                    self._product_repos[repo_name]['commit_id'] = values['commit_id']
+                    self._product_repos[repo_name]['url'] = values['url']
+                    self._product_repos[repo_name]['trigger'] = values['trigger']
 
-        product_state = ProductState(self.product_repos,
-                                     self.options["REPOS_DIR"],
-                                     self.commit_time)
+        product_state = ProductState(self._product_repos,
+                                     self._options["REPOS_DIR"],
+                                     self._commit_time)
 
         product_state.extract_all_repos()
 
-        product_state.save_repo_states(self.options["PACK_DIR"] / 'repo_states.json',
+        product_state.save_repo_states(self._options["PACK_DIR"] / 'repo_states.json',
                                        trigger=triggered_repo)
 
         self._save_manifest(product_state)
 
-        shutil.copyfile(self.build_config_path,
-                        self.options["PACK_DIR"] / self.build_config_path.name)
+        shutil.copyfile(self._config_path,
+                        self._options["PACK_DIR"] / self._config_path.name)
+
+        test_scenario = self._config_path.parent / f'{self._config_path.stem}_test{self._config_path.suffix}'
+        if test_scenario.exists():
+            shutil.copyfile(test_scenario,
+                            self._options["PACK_DIR"] / test_scenario.name)
 
         if not self._run_build_config_actions(Stage.EXTRACT.value):
             return False
@@ -685,14 +533,14 @@ class BuildGenerator(object):
         """
 
         print('-' * 50)
-        self.log.info("BUILDING")
+        self._log.info("BUILDING")
 
-        self.options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
+        self._options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
 
         if not self._run_build_config_actions(Stage.BUILD.value):
             return False
 
-        if self.options['STRIP_BINARIES']:
+        if self._options['STRIP_BINARIES']:
             if not self._strip_bins():
                 return False
 
@@ -706,9 +554,9 @@ class BuildGenerator(object):
         """
 
         print('-' * 50)
-        self.log.info("INSTALLING")
+        self._log.info("INSTALLING")
 
-        self.options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
+        self._options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
 
         if not self._run_build_config_actions(Stage.INSTALL.value):
             return False
@@ -731,9 +579,9 @@ class BuildGenerator(object):
         """
 
         print('-' * 50)
-        self.log.info("PACKING")
+        self._log.info("PACKING")
 
-        self.options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
+        self._options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         no_errors = True
 
@@ -745,29 +593,29 @@ class BuildGenerator(object):
         elif platform.system() == 'Linux':
             extension = "tar.gz"
         else:
-            self.log.critical(f'Can not pack data on this OS: {platform.system()}')
+            self._log.critical(f'Can not pack data on this OS: {platform.system()}')
             return False
 
         # creating install package
-        if self.install_pkg_data_to_archive:
-            if not make_archive(self.options["PACK_DIR"] / f"install_pkg.{extension}",
-                                self.install_pkg_data_to_archive):
+        if self._install_pkg_data_to_archive:
+            if not make_archive(self._options["PACK_DIR"] / f"install_pkg.{extension}",
+                                self._install_pkg_data_to_archive):
                 no_errors = False
         else:
-            self.log.info('Install package empty. Skip packing.')
+            self._log.info('Install package empty. Skip packing.')
 
         # creating developer package
-        if self.dev_pkg_data_to_archive:
-            if not make_archive(self.options["PACK_DIR"] / f"developer_pkg.{extension}",
-                                self.dev_pkg_data_to_archive):
+        if self._dev_pkg_data_to_archive:
+            if not make_archive(self._options["PACK_DIR"] / f"developer_pkg.{extension}",
+                                self._dev_pkg_data_to_archive):
                 no_errors = False
         else:
-            self.log.info('Developer package empty. Skip packing.')
+            self._log.info('Developer package empty. Skip packing.')
 
         # creating logs package
         logs_data = [
             {
-                'from_path': self.options['ROOT_DIR'],
+                'from_path': self._options['ROOT_DIR'],
                 'relative': [
                     {
                         'path': 'logs'
@@ -775,12 +623,12 @@ class BuildGenerator(object):
                 ]
             },
         ]
-        if not make_archive(self.options["PACK_DIR"] / f"logs.{extension}",
+        if not make_archive(self._options["PACK_DIR"] / f"logs.{extension}",
                             logs_data):
             no_errors = False
 
         if not no_errors:
-            self.log.error('Not all data was packed')
+            self._log.error('Not all data was packed')
             return False
 
         return True
@@ -793,17 +641,17 @@ class BuildGenerator(object):
         """
 
         print('-' * 50)
-        self.log.info("COPYING")
+        self._log.info("COPYING")
 
         branch = 'unknown'
         commit_id = 'unknown'
 
-        if self.changed_repo:
-            repo_name, branch, commit_id = self.changed_repo.split(':')
+        if self._changed_repo:
+            repo_name, branch, commit_id = self._changed_repo.split(':')
             if commit_id == 'HEAD':
-                commit_id = ProductState.get_head_revision(self.options['REPOS_DIR'] / repo_name)
-        elif self.repo_states:
-            for repo in self.repo_states.values():
+                commit_id = ProductState.get_head_revision(self._options['REPOS_DIR'] / repo_name)
+        elif self._repo_states:
+            for repo in self._repo_states.values():
                 if repo['trigger']:
                     branch = repo['branch']
                     commit_id = repo['commit_id']
@@ -813,36 +661,36 @@ class BuildGenerator(object):
             commit_id = 'HEAD'
 
         build_dir = MediaSdkDirectories.get_build_dir(
-            branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"], product=self.product)
+            branch, self._build_event, commit_id,
+            self._product_type, self._options["BUILD_TYPE"], product=self._product)
 
         build_url = MediaSdkDirectories.get_build_url(
-            branch, self.build_event, commit_id,
-            self.product_type, self.options["BUILD_TYPE"], product=self.product)
+            branch, self._build_event, commit_id,
+            self._product_type, self._options["BUILD_TYPE"], product=self._product)
 
         build_root_dir = MediaSdkDirectories.get_root_builds_dir()
         rotate_dir(build_dir)
 
-        self.log.info('Copy to %s', build_dir)
-        self.log.info('Artifacts are available by: %s', build_url)
+        self._log.info('Copy to %s', build_dir)
+        self._log.info('Artifacts are available by: %s', build_url)
 
         # Workaround for copying to samba share on Linux
         # to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
         shutil.copystat = lambda x, y, follow_symlinks=True: x
-        shutil.copytree(self.options['PACK_DIR'], build_dir)
+        shutil.copytree(self._options['PACK_DIR'], build_dir)
         shutil.copystat = _orig_copystat
 
         if not self._run_build_config_actions(Stage.COPY.value):
             return False
 
-        if self.build_state_file.exists():
-            with self.build_state_file.open() as state:
+        if self._build_state_file.exists():
+            with self._build_state_file.open() as state:
                 build_state = json.load(state)
 
                 if build_state['status'] == "PASS":
                     last_build_path = build_dir.relative_to(build_root_dir)
-                    last_build_file = build_dir.parent.parent / f'last_build_{self.product_type}'
+                    last_build_file = build_dir.parent.parent / f'last_build_{self._product_type}'
                     last_build_file.write_text(str(last_build_path))
 
         return True
@@ -854,8 +702,8 @@ class BuildGenerator(object):
         :return: Boolean
         """
 
-        self.log.info('-' * 80)
-        self.log.info(f'Stripping binaries')
+        self._log.info('-' * 80)
+        self._log.info(f'Stripping binaries')
 
         system_os = platform.system()
 
@@ -863,7 +711,7 @@ class BuildGenerator(object):
             bins_to_strip = []
             binaries_with_error = []
             executable_bin_filter = ['', '.so']
-            search_results = self.options['BUILD_DIR'].rglob('*')
+            search_results = self._options['BUILD_DIR'].rglob('*')
 
             for path in search_results:
                 if path.is_file():
@@ -873,8 +721,8 @@ class BuildGenerator(object):
             for result in bins_to_strip:
                 orig_file = str(result.absolute())
                 debug_file = str((result.parent / f'{result.stem}.sym').absolute())
-                self.log.debug('-' * 80)
-                self.log.debug(f'Stripping {orig_file}')
+                self._log.debug('-' * 80)
+                self._log.debug(f'Stripping {orig_file}')
 
                 strip_commands = OrderedDict([
                     ('copy_debug', ['objcopy',
@@ -897,27 +745,27 @@ class BuildGenerator(object):
                 check_binary_command = f'file {orig_file} | grep ELF'
 
                 for command in strip_commands.values():
-                    err, out = cmd_exec(command, shell=False, log=self.log, verbose=False)
+                    err, out = cmd_exec(command, shell=False, log=self._log, verbose=False)
                     if err:
                         # Not strip file if it is not binary
-                        return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self.log,
+                        return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self._log,
                                                                  verbose=False)
                         if return_code:
-                            self.log.warning(f"File {orig_file} is not binary")
+                            self._log.warning(f"File {orig_file} is not binary")
                             break
                         if orig_file not in binaries_with_error:
                             binaries_with_error.append(orig_file)
-                        self.log.error(out)
+                        self._log.error(out)
                         continue
 
             if binaries_with_error:
-                self.log.error('Stripping for next binaries was failed. See full log for details:\n%s',
+                self._log.error('Stripping for next binaries was failed. See full log for details:\n%s',
                                '\n'.join(binaries_with_error))
                 return False
         elif system_os == 'Windows':
             pass
         else:
-            self.log.error(f'Can not strip binaries on {system_os}')
+            self._log.error(f'Can not strip binaries on {system_os}')
             return False
 
         return True
@@ -938,7 +786,7 @@ class BuildGenerator(object):
         major_version = minor_version = "0"
         header_name = 'mfxdefs.h'
 
-        mfxdefs_path = self.options['REPOS_DIR'] / repo_name / 'include' / header_name
+        mfxdefs_path = self._options['REPOS_DIR'] / repo_name / 'include' / header_name
         if mfxdefs_path.exists():
             is_major_version_found = False
             is_minor_version_found = False
@@ -957,14 +805,14 @@ class BuildGenerator(object):
                         is_minor_version_found = True
 
             if not is_major_version_found:
-                self.log.warning(f'MFX_VERSION_MAJOR does not exist')
+                self._log.warning(f'MFX_VERSION_MAJOR does not exist')
 
             if not is_minor_version_found:
-                self.log.warning(f'MFX_VERSION_MINOR does not exist')
+                self._log.warning(f'MFX_VERSION_MINOR does not exist')
         else:
-            self.log.warning(f'{header_name} does not exist')
+            self._log.warning(f'{header_name} does not exist')
 
-        self.log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
+        self._log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
 
     def _update_config(self, pkgconfig_dir, update_data, copy_to=None):
@@ -977,8 +825,8 @@ class BuildGenerator(object):
         :param update_data: new data to write to pkgconfigs
         :type: dict
 
-        :param optional: optional params to define if it is needed to copy configs
-        :type: dict
+        :param copy_to: optional parameter for creating new dir for pkgconfigs
+        :type: String
 
         :return: Flag whether files were successfully modified
         """
@@ -988,15 +836,15 @@ class BuildGenerator(object):
             try:
                 copytree(pkgconfig_dir, copy_to)
                 pkgconfig_dir = copy_to
-                self.log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
+                self._log.debug(f"update_config: pkgconfigs were copied from {pkgconfig_dir} to {copy_to}")
             except OSError:
-                self.log.error(f"update_config: Failed to copy package configs from {pkgconfig_dir} to {copy_to}")
+                self._log.error(f"update_config: Failed to copy package configs from {pkgconfig_dir} to {copy_to}")
                 raise
 
         files_list = pkgconfig_dir.glob('*.pc')
         for pkgconfig in files_list:
             with pkgconfig.open('r+') as fd:
-                self.log.debug(f"update_config: Start updating {pkgconfig}")
+                self._log.debug(f"update_config: Start updating {pkgconfig}")
                 try:
                     current_config_data = fd.readlines()
                     fd.seek(0)
@@ -1005,26 +853,26 @@ class BuildGenerator(object):
                         for pattern, data in update_data.items():
                             line = re.sub(pattern, data, line)
                         fd.write(line)
-                    self.log.debug(f"update_config: {pkgconfig} is updated")
+                    self._log.debug(f"update_config: {pkgconfig} is updated")
                 except OSError:
-                    self.log.error(f"update_config: Failed to update package config: {pkgconfig}")
+                    self._log.error(f"update_config: Failed to update package config: {pkgconfig}")
                     raise
 
     def _get_dependencies(self):
-        deps = self.config_variables.get("DEPENDENCIES", {})
+        deps = self._config_variables.get("DEPENDENCIES", {})
         if not deps:
             return True
 
         try:
-            deps_dir = self.options['DEPENDENCIES_DIR']
-            self.log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
+            deps_dir = self._options['DEPENDENCIES_DIR']
+            self._log.info(f'Dependencies was found. Trying to extract to {deps_dir}')
             deps_dir.mkdir(parents=True, exist_ok=True)
 
-            self.log.info(f'Creating manifest')
+            self._log.info(f'Creating manifest')
 
             for dependency in deps:
-                self.log.info(f'Getting component {dependency}')
-                comp = self.manifest.get_component(dependency)
+                self._log.info(f'Getting component {dependency}')
+                comp = self._manifest.get_component(dependency)
                 if comp:
                     trigger_repo = comp.trigger_repository
                     if trigger_repo:
@@ -1038,20 +886,20 @@ class BuildGenerator(object):
                         )
 
                         try:
-                            self.log.info(f'Extracting {dependency} {comp.product_type} artifacts')
+                            self._log.info(f'Extracting {dependency} {comp.product_type} artifacts')
                             # TODO: Extension hardcoded for open source. Need to use only .zip in future.
                             extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
                         except Exception:
-                            self.log.exception('Can not extract archive')
+                            self._log.exception('Can not extract archive')
                             return False
                     else:
-                        self.log.error('There is no repository as a trigger')
+                        self._log.error('There is no repository as a trigger')
                         return False
                 else:
-                    self.log.error(f'Component {dependency} does not exist in manifest')
+                    self._log.error(f'Component {dependency} does not exist in manifest')
                     return False
         except Exception:
-            self.log.exception('Exception occurred:')
+            self._log.exception('Exception occurred:')
             return False
 
         return True
@@ -1069,11 +917,11 @@ class BuildGenerator(object):
                 )
             )
 
-        component = self.manifest.get_component(self.product)
+        component = self._manifest.get_component(self._product)
         version = component.version if component else '1'
 
-        self.manifest.add_component(Component(self.product, version, repos, self.product_type), replace=True)
-        self.manifest.save_manifest(self.options["PACK_DIR"] / 'manifest.yml')
+        self._manifest.add_component(Component(self._product, version, repos, self._product_type), replace=True)
+        self._manifest.save_manifest(self._options["PACK_DIR"] / 'manifest.yml')
 
 
 def main():
@@ -1168,7 +1016,7 @@ in format: <repo_name>:<branch>:<commit_id>
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
         # prepare build configuration
-        if build_config.generate_build_config():
+        if build_config.generate_config():
             # run stage of build
             no_errors = build_config.run_stage(parsed_args.stage)
         else:
@@ -1184,11 +1032,11 @@ in format: <repo_name>:<branch>:<commit_id>
         if not build_state_file.exists():
             build_state_file.write_text(json.dumps({'status': "PASS"}))
         log.info('-' * 50)
-        log.info("%sING COMPLETED", parsed_args.stage.upper())
+        log.info("%s STAGE COMPLETED", parsed_args.stage.upper())
     else:
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
         log.error('-' * 50)
-        log.error("%sING FAILED", parsed_args.stage.upper())
+        log.error("%s STAGE FAILED", parsed_args.stage.upper())
         exit(ErrorCode.CRITICAL.value)
 
 
