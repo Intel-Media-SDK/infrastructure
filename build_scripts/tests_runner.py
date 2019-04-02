@@ -108,8 +108,8 @@ class TestRunner(ConfigGenerator):
         components = self._config_variables.get('INSTALL', [])
 
         if not components:
-            self._log.info('Nothing to install')
-            return True
+            self._log.error('Nothing to install')
+            return False
 
         return install_components(self._manifest, components)
 
