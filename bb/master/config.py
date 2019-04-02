@@ -80,6 +80,85 @@ BUILDERS = {
               # Triggerable is not needed
               "add_triggerable_sheduler": False},
 
+# TODO: Set correct values for dependencies
+# TODO: Change triggers for mediasdk builders
+#     "build-gmmlib": {
+#         "factory": FACTORIES.init_build_factory,
+#         "product_conf_file": "conf_linux_public.py",
+#         "product_type": Product_type.PUBLIC_LINUX.value,
+#         "build_type": Build_type.RELEASE.value,
+#         "api_latest": False,
+#         "fastboot": False,
+#         "compiler": "gcc",
+#         "compiler_version": "6.3.1",
+#         "worker": "centos",
+#         # Builder is enabled for all branches
+#         'triggers': [{'repositories': PRODUCTION_REPOS,
+#                       'branches': lambda branch: True}]
+#     },
+#
+#     "build-igc": {
+#         "factory": FACTORIES.init_build_factory,
+#         "product_conf_file": "conf_linux_public.py",
+#         "product_type": Product_type.PUBLIC_LINUX.value,
+#         "build_type": Build_type.RELEASE.value,
+#         "api_latest": False,
+#         "fastboot": False,
+#         "compiler": "gcc",
+#         "compiler_version": "6.3.1",
+#         "worker": "centos",
+#         # Builder is enabled for all branches
+#         'triggers': [{'repositories': PRODUCTION_REPOS,
+#                       'branches': lambda branch: True}]
+#     },
+#
+#     "build-LibVa": {
+#         "factory": FACTORIES.init_build_factory,
+#         "product_conf_file": "conf_linux_public.py",
+#         "product_type": Product_type.PUBLIC_LINUX.value,
+#         "build_type": Build_type.RELEASE.value,
+#         "api_latest": False,
+#         "fastboot": False,
+#         "compiler": "gcc",
+#         "compiler_version": "6.3.1",
+#         "worker": "centos",
+#         # Builder is enabled for all branches
+#         'triggers': [{'repositories': PRODUCTION_REPOS,
+#                       'branches': lambda branch: True}]
+#     },
+#
+#     "build-driver": {
+#         "factory": FACTORIES.init_build_factory,
+#         "product_conf_file": "conf_linux_public.py",
+#         "product_type": Product_type.PUBLIC_LINUX.value,
+#         "build_type": Build_type.RELEASE.value,
+#         "api_latest": False,
+#         "fastboot": False,
+#         "compiler": "gcc",
+#         "compiler_version": "6.3.1",
+#         "worker": "centos",
+#         # Builder is enabled for all branches
+#         'triggers': [{'repositories': PRODUCTION_REPOS,
+#                       'branches': lambda branch: True,
+#                       'builders': ['build-LibVa', 'build-gmmlib']}]
+#     },
+#
+#     "build-OpenCL": {
+#         "factory": FACTORIES.init_build_factory,
+#         "product_conf_file": "conf_linux_public.py",
+#         "product_type": Product_type.PUBLIC_LINUX.value,
+#         "build_type": Build_type.RELEASE.value,
+#         "api_latest": False,
+#         "fastboot": False,
+#         "compiler": "gcc",
+#         "compiler_version": "6.3.1",
+#         "worker": "centos",
+#         # Builder is enabled for all branches
+#         'triggers': [{'repositories': PRODUCTION_REPOS,
+#                       'branches': lambda branch: True,
+#                       'builders': ['build-igc']}]
+#     },
+
     "build": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",

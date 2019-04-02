@@ -187,7 +187,7 @@ class StepsGenerator(steps.BuildStep):
         builder_names_for_triggering_after_check = []
         for builder, triggers in self.build_specification['next_builders'].items():
             for trigger in triggers:
-                if project in trigger.get('projects', []) and trigger.get('branches')(branch):
+                if project in trigger.get('repositories', []) and trigger.get('branches')(branch):
                     builder_names_for_triggering_after_check.append(builder)
                     break
 
