@@ -213,14 +213,15 @@ def init_test_factory(test_specification, props):
                                                              test_specification['product_type'],
                                                              test_specification['build_type'],
                                                              product='driver')
-    command = [config.RUN_COMMAND, "test_adapter.py",
+    command = [config.RUN_COMMAND, "tests_runner.py",
                '--artifacts', str(driver_manifest_path),
                '--root-dir', util.Interpolate('%(prop:builddir)s'),
                '--stage']
 
     for test_stage in TestStage:
         test_factory.append(
-            steps.ShellCommand(command=command+[test_stage.value],
+            steps.ShellCommand(name='test',
+                               command=command+[test_stage.value],
                                workdir=r"infrastructure/build_scripts"))
     return test_factory
 
