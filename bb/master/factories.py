@@ -70,7 +70,7 @@ def get_root_build_id(build_id, master):
 @defer.inlineCallbacks
 def get_triggered_builds(build_id, master):
     """
-    Recursively gets all triggered builds to identify current status of pipline
+    Recursively gets all triggered builds to identify current status of pipeline
 
     :param build_id: int
     :param master: BuildMaster object from buildbot.master
@@ -120,7 +120,7 @@ class Flow:
 
     def _prepare_flow(self):
         """
-        Add 'next_builders' dict to builder if others builders in triggers property has name of yhis builder.
+        Add 'next_builders' dict to builder if others builders in triggers property has name of this builder.
 
         Later this dict will be used for checking statuses of dependent builders in
         StepsGenerator.is_trigger_needed function
@@ -140,7 +140,7 @@ class Flow:
                     else:
                         self.builder_spec[parent_builder]['next_builders'] = {builder_name: [trigger]}
 
-    def get_builders(self):
+    def get_prepared_builders(self):
         """
         Create factories for builders.
 
@@ -187,7 +187,7 @@ class StepsGenerator(steps.BuildStep):
         builder_names_for_triggering_after_check = []
         for builder, triggers in self.build_specification['next_builders'].items():
             for trigger in triggers:
-                if project in trigger.get('projects', []) and trigger.get('branch')(branch):
+                if project in trigger.get('projects', []) and trigger.get('branches')(branch):
                     builder_names_for_triggering_after_check.append(builder)
                     break
 

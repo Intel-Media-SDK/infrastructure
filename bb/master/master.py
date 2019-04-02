@@ -65,7 +65,7 @@ c["schedulers"] = [
                                      treeStableTimer=config.BUILDBOT_TREE_STABLE_TIMER,
                                      builderNames=[config.TRIGGER])]
 
-for builder_name, properties in config.FLOW.get_builders().items():
+for builder_name, properties in config.FLOW.get_prepared_builders().items():
     if properties.get('add_triggerable_sheduler', True):
         c["schedulers"].append(schedulers.Triggerable(name=builder_name,
                                                       builderNames=[builder_name]))

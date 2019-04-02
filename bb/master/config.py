@@ -76,7 +76,7 @@ Specification of BUILDERS:
 BUILDERS = {
 
     TRIGGER: {"factory": FACTORIES.init_trigger_factory,
-              # SingleBranchScheduler will use for this builder (see master.py), so default
+              # SingleBranchScheduler will be used for this builder (see master.py), so default
               # Triggerable is not needed
               "add_triggerable_sheduler": False},
 
@@ -91,8 +91,9 @@ BUILDERS = {
         "compiler_version": "6.3.1",
         "worker": "centos",
         # Builder is enabled for all branches
+        # TODO: create class for triggers
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: True}]
+                      'branches': lambda branch: True}]
     },
 
     "build-api-next": {
@@ -107,7 +108,7 @@ BUILDERS = {
         "worker": "centos",
         # Builder is enabled for not release branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
     "build-gcc-8.2.0": {
@@ -121,7 +122,7 @@ BUILDERS = {
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
     "build-clang-6.0": {
@@ -135,7 +136,7 @@ BUILDERS = {
         "compiler_version": "6.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
     # Fastboot is a special configuration of MediaSDK, when we 
@@ -155,7 +156,7 @@ BUILDERS = {
         "worker": "centos",
         # mss2018_r2 branch not supported building fastboot configuration
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: branch != 'mss2018_r2'}]
+                      'branches': lambda branch: branch != 'mss2018_r2'}]
     },
 
     "build-fastboot-gcc-8.2.0": {
@@ -169,7 +170,7 @@ BUILDERS = {
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
     "build-api-next-defconfig": {
@@ -183,7 +184,7 @@ BUILDERS = {
         "compiler_version": "6.3.1",
         "worker": "centos_defconfig",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
     },
 
     "test": {
@@ -192,7 +193,7 @@ BUILDERS = {
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda x: True,
+                      'branches': lambda x: True,
                       'builders': ['build']}]
     },
 
@@ -202,7 +203,7 @@ BUILDERS = {
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branch': lambda x: True,
+                      'branches': lambda x: True,
                       'builders': ['build-api-next']}]
     }
 }
