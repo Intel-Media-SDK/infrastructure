@@ -55,10 +55,22 @@ BUILDERS = [
     }
 ]
 
+TESTERS = [
+    {
+        "name": "test",
+        "product_type": Product_type.PUBLIC_LINUX.value,
+        "build_type": Build_type.RELEASE.value,
+        "worker": "centos_test"
+    }
+]
+
 WORKER_PASS = msdk_secrets.WORKER_PASS
 WORKERS = {
     "centos": {
         "b-1-14": {}
+    },
+    "centos_test": {
+        "b-1-17": {}
     }
 }
 
