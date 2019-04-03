@@ -660,3 +660,14 @@ def get_packing_cmd(pack_type, pack_dir, enable_ruby, version, source_name):
     if int(major_version) < 7:
         return f'{enable_ruby} && {command}'
     return command
+
+
+def create_file(config: dict):
+    """
+    Create file(s) according config
+    :param config: dict = {directory: 'data to write'}
+    """
+    for file_path, data in config.items():
+        with pathlib.Path(file_path).open('w') as fw:
+            fw.write(data)
+
