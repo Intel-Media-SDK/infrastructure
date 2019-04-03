@@ -58,7 +58,7 @@ BUILDERS = [
 TESTERS = [
     {
         "name": "test",
-        "product_type": Product_type.PUBLIC_LINUX.value,
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test"
     }
@@ -70,7 +70,7 @@ WORKERS = {
         "b-1-14": {}
     },
     "centos_test": {
-        "b-1-17": {}
+        "t-1-17": {}
     }
 }
 
