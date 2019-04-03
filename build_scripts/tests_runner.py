@@ -126,6 +126,7 @@ class TestRunner(ConfigGenerator):
         self._log.info("COPYING")
 
         # TODO: Save results on share
+        return True
 
 
 def main():

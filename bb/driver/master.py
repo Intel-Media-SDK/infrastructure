@@ -212,7 +212,7 @@ def init_test_factory(test_specification, props):
                                                              props['revision'],
                                                              test_specification['product_type'],
                                                              test_specification['build_type'],
-                                                             product='driver')
+                                                             product='media-driver')
     command = [config.RUN_COMMAND, "tests_runner.py",
                '--artifacts', str(driver_manifest_path),
                '--root-dir', util.Interpolate('%(prop:builddir)s'),
@@ -220,7 +220,7 @@ def init_test_factory(test_specification, props):
 
     for test_stage in TestStage:
         test_factory.append(
-            steps.ShellCommand(name='test',
+            steps.ShellCommand(name=test_stage.value,
                                command=command+[test_stage.value],
                                workdir=r"infrastructure/build_scripts"))
     return test_factory
@@ -284,7 +284,7 @@ c["services"] = [
                                startDescription="Started",
                                endDescription="Done",
                                verbose=True,
-                               builders=['build'])]
+                               builders=['build', 'test'])]
 
 # Get changes
 c["change_source"] = []
