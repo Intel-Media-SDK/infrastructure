@@ -50,7 +50,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, Action, RunnerException
 from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
-    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive
+    copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive, create_file
 
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
@@ -343,7 +343,8 @@ class BuildGenerator(ConfigGenerator):
             'get_packing_cmd': get_packing_cmd,
             'get_commit_number': ProductState.get_commit_number,
             'copytree': copytree,
-            'manifest': self._manifest
+            'manifest': self._manifest,
+            'create_file': create_file
         })
 
     def _get_config_vars(self):

@@ -665,3 +665,17 @@ def get_packing_cmd(pack_type, pack_dir, enable_ruby, version, source_name):
     if int(major_version) < 7:
         return f'{enable_ruby} && {command}'
     return command
+
+
+def create_file(file_path, data):
+    """
+    Create file and write data
+
+    :param file_path: path to file
+    :type: String
+
+    :param data: data to write
+    :type: String
+    """
+
+    pathlib.Path(file_path).write_text(data, encoding='utf-8')
