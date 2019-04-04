@@ -118,7 +118,6 @@ class Product_type(Enum):
 
     # public
     PUBLIC_WINDOWS = 'public_windows'
-    PUBLIC_LINUX_DRIVER = 'public_linux_driver'
     PUBLIC_LINUX = 'public_linux'
     PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
     PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
@@ -131,8 +130,12 @@ class Product_type(Enum):
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
     PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
 
+    # Components
     PUBLIC_LINUX_LIBVA = 'public_linux_libva'
     PUBLIC_LINUX_GMMLIB = 'public_linux_gmmlib'
+    PUBLIC_LINUX_DRIVER = 'public_linux_driver'
+    PUBLIC_LINUX_IGC = 'public_linux_igc'
+    PUBLIC_LINUX_OPENCL_RUNTIME = 'public_linux_opencl_runtime'
 
 
 class Build_type(Enum):
