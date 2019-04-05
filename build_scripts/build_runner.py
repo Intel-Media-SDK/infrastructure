@@ -518,10 +518,10 @@ class BuildGenerator(ConfigGenerator):
             shutil.copyfile(test_scenario,
                             self._options["PACK_DIR"] / test_scenario.name)
 
-        if not self._run_build_config_actions(Stage.EXTRACT.value):
+        if not self._get_dependencies():
             return False
 
-        if not self._get_dependencies():
+        if not self._run_build_config_actions(Stage.EXTRACT.value):
             return False
 
         return True
