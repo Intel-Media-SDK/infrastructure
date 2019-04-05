@@ -308,6 +308,7 @@ class BuildGenerator(ConfigGenerator):
                 raise Exception(f'{repo_states_file} does not exist')
         else:
             self.branch_name = 'master'
+            self.changed_repo_name = None
 
     def _update_global_vars(self):
         self._global_vars.update({
