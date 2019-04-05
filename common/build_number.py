@@ -132,6 +132,11 @@ def increase_build_number(local_repo_path, os_type, branch):
             with latest_build_number_path.open('r+') as build_number_file:
                 build_numbers = json.load(build_number_file)
 
+                if not build_numbers[os_type].get(branch):
+                    log.warning(f'Branch {branch} does not exist. '
+                                f'Increase build number of "master" branch')
+                    branch = 'master'
+
                 new_build_number = build_numbers[os_type][branch] + 1
                 build_numbers[os_type][branch] = new_build_number
 
