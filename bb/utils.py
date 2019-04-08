@@ -24,17 +24,37 @@ Module contains shared functions for buildbot configurations
 
 import ssl
 import json
+import pathlib
 import urllib.request
 
 from enum import Enum
+from collections import defaultdict
 from buildbot.plugins import util
+from twisted.internet import defer
 
-from common.mediasdk_directories import MediaSdkDirectories
+from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
     TEST_MODE = "test_mode"
+
+
+def get_path_on_os(os):
+    """
+    Convert path for specified os
+    Implemented as closure to improve usability
+    """
+
+    def get_path(path):
+        if os == OsType.windows:
+            return str(pathlib.PureWindowsPath(path))
+        elif os == OsType.linux:
+            return str(pathlib.PurePosixPath(path))
+        raise OSError(f'Unknown os type {os}')
+
+    return get_path
+
 
 class BuildStatus(Enum):
     """
@@ -53,6 +73,68 @@ class BuildStatus(Enum):
     # Custom status for builds, that is not created yet
     # In this case buildbot return empty list instead dict with 'result' key
     NOT_STARTED = 99
+
+
+@defer.inlineCallbacks
+def get_root_build_id(build_id, master):
+    """
+    Recursively gets ids of parent builds to find root builder (trigger) id
+
+    :param build_id: int
+    :param master: BuildMaster object from buildbot.master
+    :return: int
+    """
+    build = yield master.data.get(('builds', build_id))
+    buildrequest_id = build['buildrequestid']
+    buildrequest = yield master.data.get(('buildrequests', buildrequest_id))
+    buildset_id = buildrequest['buildsetid']
+    buildset = yield master.data.get(('buildsets', buildset_id))
+    parent_build_id = buildset['parent_buildid']
+    if parent_build_id is not None:
+        build_id = yield get_root_build_id(parent_build_id, master)
+    defer.returnValue(build_id)
+
+
+@defer.inlineCallbacks
+def get_triggered_builds(build_id, master):
+    """
+    Recursively gets all triggered builds to identify current status of pipeline
+
+    :param build_id: int
+    :param master: BuildMaster object from buildbot.master
+    :return: defaultdict
+        Example: {'builder_name': {'buildrequest_id': str,
+                                   'result': BuildStatus,
+                                   'build_id': None or int},
+                  ....}
+    """
+    triggered_builds = defaultdict(dict)
+    parent_build_trigger_step = yield master.db.steps.getStep(
+        buildid=build_id,
+        name='trigger')
+    if parent_build_trigger_step is None:
+        return triggered_builds
+
+    requests = parent_build_trigger_step.get('urls')
+    for request in requests:
+        builder_name, request_id = request['name'].split(' #')
+        triggered_builds[builder_name]['buildrequest_id'] = request_id
+        builds_for_request = yield master.db.builds.getBuilds(buildrequestid=request_id)
+        if builds_for_request:
+            # It is sorted to get the latest started build, because Buildbot's list of builds is not ordered
+            last_build = max(builds_for_request, key=lambda r: r['started_at'])
+
+            triggered_builds[builder_name]['result'] = BuildStatus(last_build['results'])
+            triggered_builds[builder_name]['build_id'] = last_build['id']
+
+            new_builds = yield get_triggered_builds(last_build['id'], master)
+            triggered_builds.update(new_builds)
+
+        else:
+            triggered_builds[builder_name]['result'] = BuildStatus.NOT_STARTED
+            triggered_builds[builder_name]['build_id'] = None
+
+    defer.returnValue(triggered_builds)
 
 
 def is_comitter_the_org_member(pull_request, token=None):
@@ -117,8 +199,21 @@ class ChangeChecker:
     """
     This is a change filter for Buildbot masters
     """
+
     def __init__(self, token=None):
         self.token = token
+
+    def get_pull_request_default_properties(self, pull_request, files):
+        """
+        Set these pull request properties as default properties.
+        """
+        self.default_properties = {'target_branch': pull_request['base']['ref']}
+
+    def get_commit_default_properties(self, repository, branch, revision, files, category):
+        """
+        Set these commit properties as default properties.
+        """
+        self.default_properties = {}
 
     def get_pull_request(self, repository, branch):
         """
@@ -138,7 +233,7 @@ class ChangeChecker:
         """
         is_request_needed = is_comitter_the_org_member(pull_request, self.token)
         if is_request_needed:
-            return {'target_branch': pull_request['base']['ref']}
+            return self.default_properties
         return None
 
     def commit_filter(self, repository, branch, revision, files, category):
@@ -146,19 +241,23 @@ class ChangeChecker:
         Special entry point for filtration commits. No filtering by default.
         :return None if change is not needed or dict with properties otherwise
         """
-        return {}
+        return self.default_properties
 
     def __call__(self, repository, branch, revision, files, category):
         """
         Redefine __call__ to implement closure api
+        First step is getting default properties for change. This needed to avoid specifying default
+        properties in filters - just return self.default_properties
 
         :return None if change is not needed or dict with properties otherwise
         """
         if branch.startswith('refs/pull/'):
             pull_request = self.get_pull_request(repository, branch)
+            self.get_pull_request_default_properties(pull_request, files)
             if pull_request:
                 return self.pull_request_filter(pull_request, files)
             return None
+        self.get_commit_default_properties(repository, branch, revision, files, category)
         return self.commit_filter(repository, branch, revision, files, category)
 
 
@@ -199,3 +298,18 @@ def get_repository_name_by_url(repo_url):
     """
 
     return repo_url.split('/')[-1][:-4]
+
+
+@util.renderer
+def get_changed_repo(props):
+    """
+    Create string that describes commit information.
+
+    :param props: Properties object from buildbot.process.properties
+    :return: str
+        Example: MediaSDK:refs/pull/1303/head:ef64b58af5988ed7762661e9591d10f593b55bcb
+    """
+    repo_url = props.getProperty('repository')
+    branch = props.getProperty('branch')
+    revision = props.getProperty('revision')
+    return f"{get_repository_name_by_url(repo_url)}:{branch}:{revision}"

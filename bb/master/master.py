@@ -27,8 +27,7 @@ from buildbot.plugins import schedulers, util, worker, reporters
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 import config
 
-from bb.utils import ChangeChecker, is_release_branch, \
-    get_repository_name_by_url, get_open_pull_request_branches
+import bb.utils
 
 c = BuildmasterConfig = {}
 
@@ -91,10 +90,10 @@ c["services"] = [
 c["change_source"] = []
 
 
-class MediasdkChangeChecker(ChangeChecker):
+class MediasdkChangeChecker(bb.utils.ChangeChecker):
     # No filtration
     def pull_request_filter(self, pull_request, files):
-        return {'target_branch': pull_request['base']['ref']}
+        return self.default_properties
 
 
 REPOSITORIES = [
@@ -104,7 +103,10 @@ REPOSITORIES = [
     {'name': config.PRODUCT_CONFIGS_REPO,
      # Pull requests only for members of Intel-Media-SDK organization
      # This filter is needed for security, because via product configs can do everything
-     'change_filter': ChangeChecker(config.GITHUB_TOKEN)}
+     'change_filter': bb.utils.ChangeChecker(config.GITHUB_TOKEN)},
+    {'name': config.INFRASTRUCTURE_REPO,
+     # All changes
+     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
 ]
 
 for repo in REPOSITORIES:
@@ -120,10 +122,10 @@ for repo in REPOSITORIES:
         # pull_request (add branches of open pull request)
         # *fetch branches*
         # change_filter (checking changes)
-        branches=is_release_branch,
-        pull_request_branches=get_open_pull_request_branches(config.MEDIASDK_ORGANIZATION,
-                                                             repo['name'],
-                                                             token=config.GITHUB_TOKEN),
+        branches=bb.utils.is_release_branch,
+        pull_request_branches=bb.utils.get_open_pull_request_branches(config.MEDIASDK_ORGANIZATION,
+                                                                      repo['name'],
+                                                                      token=config.GITHUB_TOKEN),
         change_filter=repo['change_filter'],
         category="mediasdk",
         pollInterval=config.POLL_INTERVAL,

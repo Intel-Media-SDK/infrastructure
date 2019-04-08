@@ -292,7 +292,7 @@ c["change_source"] = []
 class DriverChecker(ChangeChecker):
     # No filtration
     def pull_request_filter(self, pull_request, files):
-        return {'target_branch': pull_request['base']['ref']}
+        return self.default_properties
 
 
 class ProductConfigsChecker(ChangeChecker):
@@ -300,12 +300,12 @@ class ProductConfigsChecker(ChangeChecker):
     # or infrastructure_version.py were modified.
     def commit_filter(self, repository, branch, revision, files, category):
         if any([file for file in files if file.startswith('driver/') or file == 'infrastructure_version.py']):
-            return {}
+            return self.default_properties
         return None
 
     def pull_request_filter(self, pull_request, files):
         if any([file for file in files if file.startswith('driver/') or file == 'infrastructure_version.py']):
-            return {'target_branch': pull_request['base']['ref']}
+            return self.default_properties
         return None
 
 
