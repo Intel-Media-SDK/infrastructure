@@ -291,24 +291,24 @@ class BuildGenerator(ConfigGenerator):
 
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
-            self.branch_name = changed_repo_dict[1]
-            self.changed_repo_name = changed_repo_dict[0]
+            self._branch_name = changed_repo_dict[1]
+            self._changed_repo_name = changed_repo_dict[0]
         elif repo_states_file_path:
-            self.branch_name = 'master'
+            self._branch_name = 'master'
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
                 with repo_states_file.open() as repo_states_json:
-                    self.repo_states = json.load(repo_states_json)
-                    for repo_name, repo_state in self.repo_states.items():
+                    self._repo_states = json.load(repo_states_json)
+                    for repo_name, repo_state in self._repo_states.items():
                         if repo_state['trigger']:
-                            self.branch_name = repo_state['branch']
-                            self.changed_repo_name = repo_name
+                            self._branch_name = repo_state['branch']
+                            self._changed_repo_name = repo_name
                             break
             else:
                 raise Exception(f'{repo_states_file} does not exist')
         else:
-            self.branch_name = 'master'
-            self.changed_repo_name = None
+            self._branch_name = 'master'
+            self._changed_repo_name = None
 
     def _update_global_vars(self):
         self._global_vars.update({
@@ -323,8 +323,8 @@ class BuildGenerator(ConfigGenerator):
             'INSTALL_PKG_DATA_TO_ARCHIVE': self._install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
-            'branch_name': self.branch_name,
-            'changed_repo_name': self.changed_repo_name,
+            'branch_name': self._branch_name,
+            'changed_repo_name': self._changed_repo_name,
             'update_config': self._update_config,
             'target_arch': self._target_arch,
             'commit_time': self._commit_time,
