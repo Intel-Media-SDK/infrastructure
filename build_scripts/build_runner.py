@@ -331,6 +331,7 @@ class BuildGenerator(ConfigGenerator):
             'get_packing_cmd': get_packing_cmd,
             'get_commit_number': ProductState.get_commit_number,
             'copytree': copytree,
+            'manifest': self._manifest
         })
 
     def _get_config_vars(self):
