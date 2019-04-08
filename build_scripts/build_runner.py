@@ -815,7 +815,7 @@ class BuildGenerator(ConfigGenerator):
         self._log.info(f'Returned versions: MAJOR {major_version}, MINOR {minor_version}')
         return major_version, minor_version
 
-    def _update_config(self, pkgconfig_dir, update_data, copy_to=None, suffix='pc'):
+    def _update_config(self, pkgconfig_dir, update_data, copy_to=None, pattern='*.pc'):
         """
         Change prefix in pkgconfigs
 
@@ -841,7 +841,7 @@ class BuildGenerator(ConfigGenerator):
                 self._log.error(f"update_config: Failed to copy package configs from {pkgconfig_dir} to {copy_to}")
                 raise
 
-        files_list = pkgconfig_dir.glob(f'*.{suffix}')
+        files_list = pkgconfig_dir.glob(pattern)
         for pkgconfig in files_list:
             with pkgconfig.open('r+') as fd:
                 self._log.debug(f"update_config: Start updating {pkgconfig}")
