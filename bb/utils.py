@@ -203,13 +203,13 @@ class ChangeChecker:
     def __init__(self, token=None):
         self.token = token
 
-    def get_pull_request_default_properties(self, pull_request, files):
+    def set_pull_request_default_properties(self, pull_request, files):
         """
         Set these pull request properties as default properties.
         """
         self.default_properties = {'target_branch': pull_request['base']['ref']}
 
-    def get_commit_default_properties(self, repository, branch, revision, files, category):
+    def set_commit_default_properties(self, repository, branch, revision, files, category):
         """
         Set these commit properties as default properties.
         """
@@ -253,11 +253,11 @@ class ChangeChecker:
         """
         if branch.startswith('refs/pull/'):
             pull_request = self.get_pull_request(repository, branch)
-            self.get_pull_request_default_properties(pull_request, files)
+            self.set_pull_request_default_properties(pull_request, files)
             if pull_request:
                 return self.pull_request_filter(pull_request, files)
             return None
-        self.get_commit_default_properties(repository, branch, revision, files, category)
+        self.set_commit_default_properties(repository, branch, revision, files, category)
         return self.commit_filter(repository, branch, revision, files, category)
 
 
