@@ -33,17 +33,15 @@ import os
 import pathlib
 import tarfile
 import traceback
+import logging
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-import adapter_conf
-import logging
-import common.package_manager as PackageManager
+from ted_adapter import adapter_conf
 from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
 from common.helper import TestReturnCodes, Product_type, Build_type, Build_event, rotate_dir
 from smoke_test.config import LOG_PATH, LOG_NAME
-from common.system_info import get_pkg_type
 from common.logger_conf import configure_logger
-
+from test_scripts import components_installer
 
 
 class TedAdapter(object):
@@ -85,7 +83,6 @@ class TedAdapter(object):
         configure_logger(logs_path=self.test_adapter_log_dir / 'test_adapter.log')
         self.log = logging.getLogger(self.test_adapter_log_name)
 
-
     def _get_artifacts(self):
         """
         Get artifacts archive from share
@@ -97,7 +94,7 @@ class TedAdapter(object):
         pkg_name = 'install_pkg.tar.gz'
         remote_pkg = self.build_artifacts_dir / pkg_name
 
-        #TODO: implement exceptions
+        # TODO: implement exceptions
 
         # Clean workdir and re-create it
         self._remove(str(self.root_dir))
@@ -122,35 +119,18 @@ class TedAdapter(object):
         :rtype: Bool
         """
 
-        pkg_type = get_pkg_type()
-        # TODO: define package directory
-        pkg_dir = self.build_artifacts_dir
+        # Workaround for manual artifacts copying
+        # Change permission of folder /opt/intel/mediasdk for mediasdk user to call rm without sudo
+        if adapter_conf.MEDIASDK_PATH.exists():
+            self._change_permission(adapter_conf.MEDIASDK_PATH)
+        if clean_dir and self._remove(adapter_conf.MEDIASDK_PATH) != 0:
+            # Force clean up package directory
+            self.log.info(f'Directory {adapter_conf.MEDIASDK_PATH} was not cleaned up')
 
-        for pkg_name in pkgs:
-            packages = [pkg_path for pkg_path in pkg_dir.glob(f'*.{pkg_type}')
-                        if pkg_name in pkg_path.name.lower()]
+        manifest_path = self.build_artifacts_dir / 'manifest.yml'
+        if not components_installer.install_components(manifest_path, pkgs):
+            return False
 
-            if len(packages) > 1:
-                self.log.info(f'Found multiple "{pkg_name}" packages {packages} in {pkg_dir}')
-                return False
-            if len(packages) == 0:
-                self.log.info(f'Package "{pkg_name}" was not found in {pkg_dir}')
-                return False
-
-            if not PackageManager.uninstall_pkg(pkg_name):
-                self.log.info(f'Package "{pkg_name}" was not uninstalled')
-                return False
-
-            # Workaround for manual artifacts copying
-            # Change permission of folder /opt/intel/mediasdk for mediasdk user to call rm without sudo
-            if adapter_conf.MEDIASDK_PATH.exists():
-                self._change_permission(adapter_conf.MEDIASDK_PATH)
-            if clean_dir and self._remove(adapter_conf.MEDIASDK_PATH) != 0:
-                # Force clean up package directory
-                self.log.info(f'Directory {adapter_conf.MEDIASDK_PATH} was not cleaned up')
-            if not PackageManager.install_pkg(packages[0]):
-                self.log.info(f'Package "{pkg_name}" was not installed')
-                return False
         if adapter_conf.MEDIASDK_PATH.exists():
             self._change_permission(adapter_conf.MEDIASDK_PATH)
 
@@ -210,10 +190,10 @@ class TedAdapter(object):
                         str(self.root_dir / self.test_adapter_log_name))
         shutil.copystat = _orig_copystat
 
-# Direct calls of rm, cp commands needs to use them with `sudo`
-# because we need to copy CI build artifacts to the
-# `/opt/intel/mediasdk`
-# Note: user should be sudoer without asking the password!
+    # Direct calls of rm, cp commands needs to use them with `sudo`
+    # because we need to copy CI build artifacts to the
+    # `/opt/intel/mediasdk`
+    # Note: user should be sudoer without asking the password!
     def _remove(self, directory: str, sudo=False):
         return self._execute_command(f"rm -rf {directory}", sudo)
 
@@ -244,6 +224,7 @@ class TedAdapter(object):
 def _driver_exists():
     return (adapter_conf.DRIVER_PATH / adapter_conf.DRIVER).exists()
 
+
 def check_driver():
     if not _driver_exists():
         print(f"Driver was not found in this location: {adapter_conf.DRIVER_PATH}")
@@ -258,9 +239,8 @@ def main():
     :return: None
     """
 
-    #Check existence of driver
+    # Check existence of driver
     check_driver()
-
 
     parser = argparse.ArgumentParser(prog="test_adapter.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -294,7 +274,8 @@ def main():
     tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
     log = logging.getLogger('test_adapter.log')
-    adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url, root_dir=pathlib.Path(args.root_dir))
+    adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url,
+                         root_dir=pathlib.Path(args.root_dir))
 
     # Install third parties for msdk
     if not adapter.install_pkgs(THIRD_PARTY):
@@ -321,12 +302,13 @@ def main():
         tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
 
     try:
-         adapter.copy_logs_to_share()
+        adapter.copy_logs_to_share()
     except Exception:
-         print("Exception occurred while copying results:\n", traceback.format_exc())
-         tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
+        print("Exception occurred while copying results:\n", traceback.format_exc())
+        tests_return_code |= TestReturnCodes.INFRASTRUCTURE_ERROR.value
 
     exit(tests_return_code)
+
 
 if __name__ == '__main__':
     main()

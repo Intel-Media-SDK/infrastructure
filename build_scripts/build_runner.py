@@ -219,7 +219,7 @@ class BuildGenerator(ConfigGenerator):
 
     def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
                  commit_time=None, changed_repo=None, repo_states_file_path=None, target_arch=None,
-                 custom_cli_args=None, target_branch=None):
+                 custom_cli_args=None, target_branch=None, manifest_file=None, component_name=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -284,31 +284,42 @@ class BuildGenerator(ConfigGenerator):
         self._custom_cli_args = custom_cli_args
         self._target_arch = target_arch
         self._target_branch = target_branch
+        self._manifest_file = manifest_file
+
         try:
-            self._manifest = Manifest(self._config_path.parent / 'manifest.yml')
+            if manifest_file:
+                self._manifest = Manifest(manifest_file)
+            else:
+                self._manifest = Manifest(self._config_path.parent / 'manifest.yml')
         except Exception:
+            self._log.warning('Created empty manifest.')
             self._manifest = Manifest()
 
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
-            self.branch_name = changed_repo_dict[1]
-            self.changed_repo_name = changed_repo_dict[0]
+            self._branch_name = changed_repo_dict[1]
+            self._changed_repo_name = changed_repo_dict[0]
         elif repo_states_file_path:
-            self.branch_name = 'master'
+            self._branch_name = 'master'
             repo_states_file = pathlib.Path(repo_states_file_path)
             if repo_states_file.exists():
                 with repo_states_file.open() as repo_states_json:
-                    self.repo_states = json.load(repo_states_json)
-                    for repo_name, repo_state in self.repo_states.items():
+                    self._repo_states = json.load(repo_states_json)
+                    for repo_name, repo_state in self._repo_states.items():
                         if repo_state['trigger']:
-                            self.branch_name = repo_state['branch']
-                            self.changed_repo_name = repo_name
+                            self._branch_name = repo_state['branch']
+                            self._changed_repo_name = repo_name
                             break
             else:
                 raise Exception(f'{repo_states_file} does not exist')
+        elif manifest_file:
+            component = self._manifest.get_component(component_name)
+            repo = component.trigger_repository
+            self._branch_name = repo.branch
+            self._changed_repo_name = repo.name
         else:
-            self.branch_name = 'master'
-            self.changed_repo_name = None
+            self._branch_name = 'master'
+            self._changed_repo_name = None
 
     def _update_global_vars(self):
         self._global_vars.update({
@@ -323,14 +334,15 @@ class BuildGenerator(ConfigGenerator):
             'INSTALL_PKG_DATA_TO_ARCHIVE': self._install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
-            'branch_name': self.branch_name,
-            'changed_repo_name': self.changed_repo_name,
+            'branch_name': self._branch_name,
+            'changed_repo_name': self._changed_repo_name,
             'update_config': self._update_config,
             'target_arch': self._target_arch,
             'commit_time': self._commit_time,
             'get_packing_cmd': get_packing_cmd,
             'get_commit_number': ProductState.get_commit_number,
             'copytree': copytree,
+            'manifest': self._manifest
         })
 
     def _get_config_vars(self):
@@ -498,6 +510,16 @@ class BuildGenerator(ConfigGenerator):
                     self._product_repos[repo_name]['commit_id'] = values['commit_id']
                     self._product_repos[repo_name]['url'] = values['url']
                     self._product_repos[repo_name]['trigger'] = values['trigger']
+        elif self._manifest_file:
+            component = self._manifest.get_component(self._product)
+            for repo in component.repositories:
+                if repo.name in self._product_repos:
+                    if repo.is_trigger:
+                        triggered_repo = repo.name
+                    self._product_repos[repo.name]['branch'] = repo.branch
+                    self._product_repos[repo.name]['commit_id'] = repo.revision
+                    self._product_repos[repo.name]['url'] = repo.url
+                    self._product_repos[repo.name]['trigger'] = repo.is_trigger
 
         product_state = ProductState(self._product_repos,
                                      self._options["REPOS_DIR"],
@@ -518,10 +540,10 @@ class BuildGenerator(ConfigGenerator):
             shutil.copyfile(test_scenario,
                             self._options["PACK_DIR"] / test_scenario.name)
 
-        if not self._run_build_config_actions(Stage.EXTRACT.value):
+        if not self._get_dependencies():
             return False
 
-        if not self._get_dependencies():
+        if not self._run_build_config_actions(Stage.EXTRACT.value):
             return False
 
         return True
@@ -944,6 +966,10 @@ in format: <repo_name>:<branch>:<commit_id>
 (ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
     parser.add_argument('-s', "--repo-states", metavar="PATH",
                         help="Path to repo_states.json file")
+    parser.add_argument('-m', "--manifest", metavar="PATH",
+                        help="Path to manifest.yml file")
+    parser.add_argument('-c', "--component", metavar="String",
+                        help="Component name that will be built from manifest")
     parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
                         choices=[build_type.value for build_type in Build_type],
                         help='Type of build')
@@ -1003,16 +1029,20 @@ in format: <repo_name>:<branch>:<commit_id>
         custom_cli_args=custom_cli_args,
         stage=parsed_args.stage,
         target_arch=target_arch,
-        target_branch=parsed_args.target_branch
+        target_branch=parsed_args.target_branch,
+        manifest_file=parsed_args.manifest,
+        component_name=parsed_args.component
     )
 
     # We must create BuildGenerator anyway.
     # If generate_build_config will be inside constructor
     # and fails, class will not be created.
     try:
-        if not parsed_args.changed_repo and not parsed_args.repo_states:
-            log.warning('"--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and '
-                        '"master" branch will be used')
+        if not parsed_args.changed_repo \
+                and not parsed_args.repo_states \
+                and not parsed_args.manifest or not parsed_args.component:
+            log.warning('"--changed-repo" or "--repo-states" or "--manifest" and "--component" '
+                        'arguments are not set, "HEAD" revision and "master" branch will be used')
         elif parsed_args.changed_repo and parsed_args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
