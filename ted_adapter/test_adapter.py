@@ -128,7 +128,8 @@ class TedAdapter(object):
             self.log.info(f'Directory {adapter_conf.MEDIASDK_PATH} was not cleaned up')
 
         manifest_path = self.build_artifacts_dir / 'manifest.yml'
-        components_installer.install_components(manifest_path, pkgs)
+        if not components_installer.install_components(manifest_path, pkgs):
+            return False
 
         if adapter_conf.MEDIASDK_PATH.exists():
             self._change_permission(adapter_conf.MEDIASDK_PATH)
