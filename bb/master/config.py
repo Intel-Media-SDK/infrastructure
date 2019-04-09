@@ -19,14 +19,13 @@
 # SOFTWARE.
 
 import sys
-from enum import Enum
 
 import factories
 from bb.utils import Mode
 
 from common import msdk_secrets
 from common.helper import Product_type, Build_type
-from common.mediasdk_directories import MediaSdkDirectories
+from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 
 CURRENT_MODE = Mode.PRODUCTION_MODE
@@ -42,16 +41,18 @@ elif CURRENT_MODE == Mode.TEST_MODE:
 else:
     sys.exit(f"Mode {CURRENT_MODE} is not defined")
 
+INFRASTRUCTURE_REPO = "infrastructure"
 PRODUCT_CONFIGS_REPO = "product-configs"
 PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO]
 
-RUN_COMMAND = "python3"
+PYTHON_EXECUTABLE = {OsType.linux: r'python3',
+                     OsType.windows: r'py'}
 TRIGGER = 'trigger'
 
 # Give possibility to enable/disable auto deploying infrastructure on workers
 DEPLOYING_INFRASTRUCTURE = True
 
-FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE, RUN_COMMAND)
+FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE, PYTHON_EXECUTABLE)
 
 """
 Specification of BUILDERS:
@@ -291,20 +292,20 @@ FLOW = factories.Flow(BUILDERS, FACTORIES)
 
 WORKERS = {
     "centos": {
-        "b-1-10": {},
-        "b-1-22": {}
+        "b-1-10": {"os": OsType.linux},
+        "b-1-22": {"os": OsType.linux}
     },
     "centos_defconfig": {
         # Workaroud for running 'trigger' builder in parallel with build
-        "b-1-20": {'max_builds': 2},
+        "b-1-20": {"os": OsType.linux, 'max_builds': 2},
     },
     "ubuntu": {
-        "b-1-18": {},
-        "b-1-18aux": {}
+        "b-1-18": {"os": OsType.linux},
+        "b-1-18aux": {"os": OsType.linux}
     },
     "centos_test": {
-        "t-1-17": {},
-        "t-1-16": {}
+        "t-1-17": {"os": OsType.linux},
+        "t-1-16": {"os": OsType.linux}
     },
 }
 
