@@ -50,6 +50,8 @@ REPOSITORIES = {
     'llvm-patches': 'https://github.com/intel/llvm-patches',
     # open source intel-graphics-compiler
     'intel-graphics-compiler': 'https://github.com/intel/intel-graphics-compiler',
+    # ffmpeg for media-driver testing
+    'FFmpeg': 'https://github.com/FFmpeg/FFmpeg'
 }
 
 PROXIES = {}

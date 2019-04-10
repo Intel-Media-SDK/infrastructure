@@ -136,6 +136,7 @@ class Product_type(Enum):
     PUBLIC_LINUX_DRIVER = 'public_linux_driver'
     PUBLIC_LINUX_IGC = 'public_linux_igc'
     PUBLIC_LINUX_OPENCL_RUNTIME = 'public_linux_opencl_runtime'
+    PUBLIC_LINUX_FFMPEG = 'public_linux_ffmpeg'
 
 
 class Build_type(Enum):

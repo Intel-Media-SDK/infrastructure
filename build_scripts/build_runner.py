@@ -292,6 +292,7 @@ class BuildGenerator(ConfigGenerator):
             else:
                 self._manifest = Manifest(self._config_path.parent / 'manifest.yml')
         except Exception:
+            self._log.exception('Exception occurred:')
             self._log.warning('Created empty manifest.')
             self._manifest = Manifest()
 
