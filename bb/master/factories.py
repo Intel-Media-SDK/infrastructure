@@ -26,9 +26,18 @@ import time
 
 from twisted.internet import defer
 from buildbot.plugins import util, steps
+from buildbot.process import buildstep, logobserver
 
 import bb.utils
 from common.helper import Stage
+
+
+@util.renderer
+def is_build_dependency_needed(props):
+    if props.hasProperty(bb.utils.SKIP_BUILDING_DEPENDENCY_PROPERTY):
+        props.build.currentStep.descriptionDone = 'Already built'
+        return False
+    return True
 
 
 class Flow:
@@ -77,6 +86,24 @@ class Flow:
                 props['factory'], props)
 
         return self.builder_spec
+
+
+class DependencyChecker(buildstep.ShellMixin, steps.BuildStep):
+    def __init__(self, **kwargs):
+        kwargs = self.setupShellMixin(kwargs)
+        steps.BuildStep.__init__(self, **kwargs)
+        self.observer = logobserver.BufferLogObserver()
+        self.addLogObserver('stdio', self.observer)
+
+    @defer.inlineCallbacks
+    def run(self):
+        cmd = yield self.makeRemoteShellCommand()
+        yield self.runCommand(cmd)
+
+        stdout = self.observer.getStdout()
+        if bb.utils.SKIP_BUILDING_DEPENDENCY_PHRASE in stdout:
+            self.build.setProperty(bb.utils.SKIP_BUILDING_DEPENDENCY_PROPERTY, True, 'Build')
+        defer.returnValue(util.SUCCESS)
 
 
 class StepsGenerator(steps.BuildStep):
@@ -321,13 +348,25 @@ class Factories:
             shell_commands.append("fastboot=True")
         if props.hasProperty('target_branch'):
             shell_commands += ['--target-branch', props['target_branch']]
-        #
+
+        dependency_name = props.getProperty('dependency_name')
+        if dependency_name:
+            build_factory.append(
+                DependencyChecker(
+                    name=f"Check {dependency_name} on share",
+                    command=[self.run_command[worker_os], 'component_checker.py',
+                             '--path-to-manifest',
+                             util.Interpolate(get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
+                             '--component-name', dependency_name],
+                    workdir=get_path(r'infrastructure/common')))
+
         # Build by stages: clean, extract, build, install, pack, copy
         for stage in Stage:
             build_factory.append(
                 steps.ShellCommand(command=shell_commands + ["--stage", stage.value],
                                    workdir=get_path(r"infrastructure/build_scripts"),
-                                   name=stage.value))
+                                   name=stage.value,
+                                   doStepIf=is_build_dependency_needed))
         return build_factory
 
     def init_test_factory(self, test_specification, props):
