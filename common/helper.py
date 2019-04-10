@@ -677,13 +677,9 @@ def create_file(file_path, data):
     :param data: data to write
     :type: String
     """
-    log = logging.getLogger('helper.create_file')
-
-    log.info('-' * 50)
-    log.info(f'create file {file_path}')
 
     try:
         pathlib.Path(file_path).write_text(data, encoding='utf-8')
-    except Exception as error:
-        log.error(f"Can not create file {file_path}: {error}")
+    except Exception:
+        raise
 

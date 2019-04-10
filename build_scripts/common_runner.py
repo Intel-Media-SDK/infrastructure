@@ -27,7 +27,7 @@ import os
 import pathlib
 import platform
 from collections import defaultdict
-from common.helper import cmd_exec, Stage
+from common.helper import cmd_exec, Stage, ErrorCode
 
 
 class RunnerException(Exception):
@@ -93,7 +93,12 @@ class Action(object):
             self.log.info('args: %s', args)
             self.log.info('kwargs: %s', kwargs)
 
-            func(*args, **kwargs)
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                error_code = ErrorCode.CRITICAL.value
+                self.log.error(e)
+                return error_code
 
         if self.cmd:
             if isinstance(self.cmd, list):
