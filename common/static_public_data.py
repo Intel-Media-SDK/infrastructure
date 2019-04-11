@@ -24,6 +24,8 @@ SHARE_PATHS = {'build_linux': r'/media/builds',
 REPOSITORIES = {
     # linux_open_source
     'MediaSDK': 'https://github.com/Intel-Media-SDK/MediaSDK',
+    # Media SDK tools
+    'tools': 'https://github.com/Intel-Media-SDK/tools.git',
     # open source libva
     'libva': 'https://github.com/intel/libva',
     # open source libva-utils
