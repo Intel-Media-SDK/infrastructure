@@ -30,7 +30,7 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.mediasdk_directories import MediaSdkDirectories
 from common.manifest_manager import Manifest
-from common.helper import Build_type, Build_event
+from common.helper import Build_type, Build_event, ErrorCode
 from common.logger_conf import configure_logger
 from bb.utils import SKIP_BUILDING_DEPENDENCY_PHRASE
 
@@ -49,28 +49,30 @@ def check_component_existence(path_to_manifest, component_name):
         Build_type.RELEASE.value,
         product=component_name)
     if component_dir.exists():
-        log.info(f'Directory {component_dir} is exist')
+        log.info(f"Directory {component_dir} exist")
         # This is stop phrase for buildbot to skip all build stages
         log.info(SKIP_BUILDING_DEPENDENCY_PHRASE)
     else:
-        log.info(f'Directory {component_dir} is not exist')
+        log.info(f"Directory {component_dir} doesn't exist")
 
 
 def main():
     parser = argparse.ArgumentParser(prog="component_checker.py",
+                                     description='Checks existence of component on share',
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-p', '--path-to-manifest', help='Path to manifest file', required=True)
-    parser.add_argument('-c', '--component-name', help='Name component to checking', required=True)
+    parser.add_argument('-c', '--component-name', help='Component name to check', required=True)
     args = parser.parse_args()
 
     configure_logger()
     log = logging.getLogger('component_checker.main')
 
-    # Exit code of this script must be 0, because its status can affect Buildbot pipeline.
     try:
         check_component_existence(args.path_to_manifest, args.component_name)
     except Exception:
         log.exception('Exception occurred')
+        exit(ErrorCode.CRITICAL.value)
+    exit(0)
 
 
 if __name__ == '__main__':

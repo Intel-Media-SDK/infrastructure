@@ -20,7 +20,7 @@
 
 import sys
 
-import factories
+from bb import factories
 from bb.utils import Mode
 
 from common import msdk_secrets
@@ -276,7 +276,7 @@ BUILDERS = {
     },
 
     "test": {
-        "factory": FACTORIES.init_test_factory,
+        "factory": FACTORIES.init_mediasdk_test_factory,
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
@@ -286,7 +286,7 @@ BUILDERS = {
     },
 
     "test-api-next": {
-        "factory": FACTORIES.init_test_factory,
+        "factory": FACTORIES.init_mediasdk_test_factory,
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
@@ -309,7 +309,8 @@ WORKERS = {
     },
     "ubuntu": {
         "b-1-18": {"os": OsType.linux},
-        "b-1-18aux": {"os": OsType.linux}
+        "b-1-18aux": {"os": OsType.linux},
+        "b-1-24": {"os": OsType.linux}
     },
     "centos_test": {
         "t-1-17": {"os": OsType.linux},
@@ -335,6 +336,4 @@ MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 
 TRIGGER = 'trigger'
 
-GITHUB_REPOSITORY = f"{MEDIASDK_ORGANIZATION}/{MEDIASDK_REPO}"
-REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"
-PRODUCT_CONFIGS_REPO_URL = f"https://github.com/{MEDIASDK_ORGANIZATION}/{PRODUCT_CONFIGS_REPO}.git"
+REPO_URL = f"https://github.com/{MEDIASDK_ORGANIZATION}/{MEDIASDK_REPO}"

@@ -29,7 +29,8 @@ from buildbot.plugins import util, steps
 from buildbot.process import buildstep, logobserver
 
 import bb.utils
-from common.helper import Stage
+from common.helper import Stage, TestStage
+from common.mediasdk_directories import MediaSdkDirectories
 
 
 @util.renderer
@@ -320,8 +321,8 @@ class Factories:
         conf_file = build_specification["product_conf_file"]
         product_type = build_specification["product_type"]
         build_type = build_specification["build_type"]
-        api_latest = build_specification["api_latest"]
-        fastboot = build_specification["fastboot"]
+        api_latest = build_specification.get("api_latest")
+        fastboot = build_specification.get("fastboot")
         compiler = build_specification["compiler"]
         compiler_version = build_specification["compiler_version"]
         build_factory = self.factory_with_deploying_infrastructure_step(props)
@@ -349,11 +350,11 @@ class Factories:
         if props.hasProperty('target_branch'):
             shell_commands += ['--target-branch', props['target_branch']]
 
-        dependency_name = props.getProperty('dependency_name')
+        dependency_name = build_specification.get('dependency_name')
         if dependency_name:
             build_factory.append(
                 DependencyChecker(
-                    name=f"Check {dependency_name} on share",
+                    name=f"check {dependency_name} on share",
                     command=[self.run_command[worker_os], 'component_checker.py',
                              '--path-to-manifest',
                              util.Interpolate(get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
@@ -369,7 +370,7 @@ class Factories:
                                    doStepIf=is_build_dependency_needed))
         return build_factory
 
-    def init_test_factory(self, test_specification, props):
+    def init_mediasdk_test_factory(self, test_specification, props):
         product_type = test_specification["product_type"]
         build_type = test_specification["build_type"]
 
@@ -389,4 +390,27 @@ class Factories:
                                         "--root-dir",
                                         util.Interpolate(get_path(r"%(prop:builddir)s/build_dir"))],
                                workdir=get_path(r"infrastructure/ted_adapter")))
+        return test_factory
+
+    def init_driver_test_factory(self, test_specification, props):
+        test_factory = self.factory_with_deploying_infrastructure_step(props)
+
+        worker_os = props['os']
+        get_path = bb.utils.get_path_on_os(worker_os)
+
+        driver_manifest_path = MediaSdkDirectories.get_build_dir(props['branch'], 'commit',
+                                                                 props['revision'],
+                                                                 test_specification['product_type'],
+                                                                 test_specification['build_type'],
+                                                                 product='media-driver')
+        command = [self.run_command[worker_os], "tests_runner.py",
+                   '--artifacts', str(driver_manifest_path),
+                   '--root-dir', util.Interpolate('%(prop:builddir)s'),
+                   '--stage']
+
+        for test_stage in TestStage:
+            test_factory.append(
+                steps.ShellCommand(name=test_stage.value,
+                                   command=command + [test_stage.value],
+                                   workdir=get_path(r"infrastructure/build_scripts")))
         return test_factory
