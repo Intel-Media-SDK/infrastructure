@@ -292,6 +292,7 @@ class BuildGenerator(ConfigGenerator):
             else:
                 self._manifest = Manifest(self._config_path.parent / 'manifest.yml')
         except Exception:
+            self._log.exception('Exception occurred:')
             self._log.warning('Created empty manifest.')
             self._manifest = Manifest()
 
@@ -1040,7 +1041,7 @@ in format: <repo_name>:<branch>:<commit_id>
     try:
         if not parsed_args.changed_repo \
                 and not parsed_args.repo_states \
-                and not parsed_args.manifest or not parsed_args.component:
+                and (not parsed_args.manifest or not parsed_args.component):
             log.warning('"--changed-repo" or "--repo-states" or "--manifest" and "--component" '
                         'arguments are not set, "HEAD" revision and "master" branch will be used')
         elif parsed_args.changed_repo and parsed_args.repo_states:
