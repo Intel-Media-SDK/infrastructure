@@ -310,8 +310,10 @@ class Factories:
         files = props.build.allFiles()
         for file_name in files:
             if file_name.endswith('.py'):
+                # Length of step name must not be longer 50 symbols
+                step_name = ('..' + file_name[-35:]) if len(file_name) > 35 else file_name
                 trigger_factory.append(
-                    steps.ShellCommand(name=f'pylint check for {file_name}',
+                    steps.ShellCommand(name=f'pylint: {step_name}',
                                        # pylint checks always passed
                                        command=['pylint', file_name, '--exit-zero'],
                                        workdir=get_path(f'repositories/{repository_name}')))
@@ -330,26 +332,6 @@ class Factories:
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
 
-        shell_commands = [self.run_command[worker_os],
-                          "build_runner.py",
-                          "--build-config",
-                          util.Interpolate(
-                              get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
-                          "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
-                          "--changed-repo", bb.utils.get_changed_repo,
-                          "--build-type", build_type,
-                          "--build-event", "commit",
-                          "--product-type", product_type,
-                          f"compiler={compiler}",
-                          f"compiler_version={compiler_version}",
-                          ]
-        if api_latest:
-            shell_commands.append("api_latest=True")
-        if fastboot:
-            shell_commands.append("fastboot=True")
-        if props.hasProperty('target_branch'):
-            shell_commands += ['--target-branch', props['target_branch']]
-
         dependency_name = build_specification.get('dependency_name')
         if dependency_name:
             build_factory.append(
@@ -357,9 +339,37 @@ class Factories:
                     name=f"check {dependency_name} on share",
                     command=[self.run_command[worker_os], 'component_checker.py',
                              '--path-to-manifest',
-                             util.Interpolate(get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
+                             util.Interpolate(
+                                 get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
                              '--component-name', dependency_name],
                     workdir=get_path(r'infrastructure/common')))
+
+        shell_commands = [self.run_command[worker_os],
+                          "build_runner.py",
+                          "--build-config",
+                          util.Interpolate(
+                              get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
+                          "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
+                          "--build-type", build_type,
+                          "--build-event", "commit",
+                          "--product-type", product_type,
+                          f"compiler={compiler}",
+                          f"compiler_version={compiler_version}",
+                          ]
+        if dependency_name:
+            shell_commands += ['--manifest',
+                             util.Interpolate(
+                                 get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
+                               '--component', dependency_name]
+        else:
+            shell_commands += ["--changed-repo", bb.utils.get_changed_repo]
+
+        if api_latest:
+            shell_commands.append("api_latest=True")
+        if fastboot:
+            shell_commands.append("fastboot=True")
+        if props.hasProperty('target_branch'):
+            shell_commands += ['--target-branch', props['target_branch']]
 
         # Build by stages: clean, extract, build, install, pack, copy
         for stage in Stage:

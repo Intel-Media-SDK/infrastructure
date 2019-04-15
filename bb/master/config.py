@@ -154,7 +154,7 @@ BUILDERS = {
         "fastboot": False,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
-        "worker": "centos_defconfig",
+        "worker": "centos",
         "dependency_name": 'libva',
         # Builder is enabled for all branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
@@ -260,20 +260,23 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-api-next-defconfig": {
-        "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
-        "build_type": Build_type.RELEASE.value,
-        "api_latest": True,
-        "fastboot": False,
-        "compiler": "gcc",
-        "compiler_version": "6.3.1",
-        "worker": "centos_defconfig",
-        'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
-                      'builders': ['build-libva']}]
-    },
+    # TODO: Enable builder
+    # Temporary disabled due to transition to 7.x centos
+    #
+    # "build-api-next-defconfig": {
+    #     "factory": FACTORIES.init_build_factory,
+    #     "product_conf_file": "conf_linux_public.py",
+    #     "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
+    #     "build_type": Build_type.RELEASE.value,
+    #     "api_latest": True,
+    #     "fastboot": False,
+    #     "compiler": "gcc",
+    #     "compiler_version": "6.3.1",
+    #     "worker": "centos_defconfig",
+    #     'triggers': [{'repositories': PRODUCTION_REPOS,
+    #                   'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
+    #                   'builders': ['build-libva']}]
+    # },
 
     "test": {
         "factory": FACTORIES.init_mediasdk_test_factory,
