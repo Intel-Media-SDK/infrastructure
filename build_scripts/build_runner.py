@@ -679,6 +679,11 @@ class BuildGenerator(ConfigGenerator):
                 if repo['trigger']:
                     branch = repo['branch']
                     commit_id = repo['commit_id']
+        elif self._manifest_file:
+            component = self._manifest.get_component(self._product)
+            repo = component.trigger_repository
+            branch = repo.branch
+            commit_id = repo.revision
         else:
             # "--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and "master" branch are used
             branch = 'master'

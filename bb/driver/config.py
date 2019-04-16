@@ -18,15 +18,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from enum import Enum
+from bb.utils import Mode
+from bb import factories
 
 from common import msdk_secrets
 from common.helper import Product_type, Build_type
+from common.mediasdk_directories import OsType
 
 
-class Mode(Enum):
-    PRODUCTION_MODE = "production_mode"
-    TEST_MODE = "test_mode"
+CURRENT_MODE = Mode.PRODUCTION_MODE
+
+TRIGGER = 'trigger'
+PYTHON_EXECUTABLE = {OsType.linux: r'python3'}
+
+# Give possibility to enable/disable auto deploying infrastructure on workers
+DEPLOYING_INFRASTRUCTURE = True
+
+FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE, PYTHON_EXECUTABLE)
+
+MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
+PRODUCT_CONFIGS_REPO = "product-configs"
+
+DRIVER_ORGANIZATION = 'intel'
+DRIVER_REPO = 'media-driver'
+
+PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, DRIVER_REPO]
 
 """
 Specification of BUILDERS:
@@ -38,44 +54,76 @@ Specification of BUILDERS:
 "compiler"          - compiler which should be used (env and product_config should support this key)
 "compiler_version"  - version of compiler
 "worker"            - worker(s) which should be used from `WORKERS`
-"branch"            - function takes one argument (branch)
+"triggers"          - list of dicts with following keys:
+    "branches"      - function takes one argument (branch)
                       function must return True if builder should be activated, otherwise False
+    "repositories"  - list of repositories (str)
+    "builders"      - list of builder names (str)
+                      builder will be run only if all builds of specified "builders" passed  
 """
-BUILDERS = [
-    {
-        "name": "build",
+
+# All builders will use Triggerable scheduler by default
+# To disable default scheduler add "add_triggerable_sheduler": False in builder dict
+BUILDERS = {
+
+    TRIGGER: {"factory": FACTORIES.init_trigger_factory,
+              # SingleBranchScheduler will be used for this builder (see master.py), so default
+              # Triggerable is not needed
+              "add_triggerable_sheduler": False},
+
+    "build-libva": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_libva.py",
+        "product_type": Product_type.PUBLIC_LINUX_LIBVA.value,
+        "build_type": Build_type.RELEASE.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'libva',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
+    "build": {
+        "factory": FACTORIES.init_build_factory,
         "product_conf_file": "driver/conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.RELEASE.value,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
-        # Builder is enabled for all branches
-        "branch": lambda branch: True
-    }
-]
+        # TODO: create class for triggers
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva']}]
+    },
 
-TESTERS = [
-    {
-        "name": "test",
+    "test": {
+        "factory": FACTORIES.init_driver_test_factory,
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.RELEASE.value,
-        "worker": "centos_test"
+        "worker": "centos_test",
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda x: True,
+                      'builders': ['build']}]
     }
-]
+}
+
+FLOW = factories.Flow(BUILDERS, FACTORIES)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 WORKERS = {
     "centos": {
-        "b-1-14": {}
+        "b-1-14": {"os": OsType.linux},
+        "b-1-23": {"os": OsType.linux}
     },
     "centos_test": {
-        "t-1-17": {}
+        "t-1-17": {"os": OsType.linux}
     }
 }
 
-TRIGGER = 'trigger'
-RUN_COMMAND = "python3"
+
 PORT = "6000"
 WORKER_PORT = "6100"
 BUILDBOT_NET_USAGE_DATA = None # "None" disables the sending of usage analysis info to buildbot.net
@@ -89,19 +137,8 @@ POLL_INTERVAL = 60 # Poll Github for new changes (in seconds)
 DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/driver_buildbot"
 
-REPO_URL = 'https://github.com/intel/media-driver'
+REPO_URL = f'https://github.com/{DRIVER_ORGANIZATION}/{DRIVER_REPO}'
 
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 
 BUILDBOT_URL = "http://mediasdk.intel.com/driver/"
-
-CURRENT_MODE = Mode.PRODUCTION_MODE
-
-MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
-PRODUCT_CONFIGS_REPO = "product-configs"
-
-DRIVER_ORGANIZATION = 'intel'
-DRIVER_REPO = 'media-driver'
-
-# Give possibility to enable/disable auto deploying infrastructure on workers
-DEPLOYING_INFRASTRUCTURE = True

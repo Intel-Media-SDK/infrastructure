@@ -20,7 +20,7 @@
 
 import sys
 
-import factories
+from bb import factories
 from bb.utils import Mode
 
 from common import msdk_secrets
@@ -113,21 +113,6 @@ BUILDERS = {
 #                       'branches': lambda branch: True}]
 #     },
 #
-#     "build-LibVa": {
-#         "factory": FACTORIES.init_build_factory,
-#         "product_conf_file": "conf_linux_public.py",
-#         "product_type": Product_type.PUBLIC_LINUX.value,
-#         "build_type": Build_type.RELEASE.value,
-#         "api_latest": False,
-#         "fastboot": False,
-#         "compiler": "gcc",
-#         "compiler_version": "6.3.1",
-#         "worker": "centos",
-#         # Builder is enabled for all branches
-#         'triggers': [{'repositories': PRODUCTION_REPOS,
-#                       'branches': lambda branch: True}]
-#     },
-#
 #     "build-driver": {
 #         "factory": FACTORIES.init_build_factory,
 #         "product_conf_file": "conf_linux_public.py",
@@ -160,6 +145,22 @@ BUILDERS = {
 #                       'builders': ['build-igc']}]
 #     },
 
+    "build-libva": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_libva.py",
+        "product_type": Product_type.PUBLIC_LINUX_LIBVA.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'libva',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
     "build": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
@@ -173,7 +174,8 @@ BUILDERS = {
         # Builder is enabled for all branches
         # TODO: create class for triggers
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: True}]
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva']}]
     },
 
     "build-api-next": {
@@ -188,7 +190,8 @@ BUILDERS = {
         "worker": "centos",
         # Builder is enabled for not release branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
+                      'builders': ['build-libva']}]
     },
 
     "build-gcc-8.2.0": {
@@ -202,7 +205,8 @@ BUILDERS = {
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
+                      'builders': ['build-libva']}]
     },
 
     "build-clang-6.0": {
@@ -216,7 +220,8 @@ BUILDERS = {
         "compiler_version": "6.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
+                      'builders': ['build-libva']}]
     },
 
     # Fastboot is a special configuration of MediaSDK, when we 
@@ -236,7 +241,8 @@ BUILDERS = {
         "worker": "centos",
         # mss2018_r2 branch not supported building fastboot configuration
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch != 'mss2018_r2'}]
+                      'branches': lambda branch: branch != 'mss2018_r2',
+                      'builders': ['build-libva']}]
     },
 
     "build-fastboot-gcc-8.2.0": {
@@ -250,25 +256,30 @@ BUILDERS = {
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
+                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
+                      'builders': ['build-libva']}]
     },
 
-    "build-api-next-defconfig": {
-        "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
-        "build_type": Build_type.RELEASE.value,
-        "api_latest": True,
-        "fastboot": False,
-        "compiler": "gcc",
-        "compiler_version": "6.3.1",
-        "worker": "centos_defconfig",
-        'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch)}]
-    },
+    # TODO: Enable builder
+    # Temporary disabled due to transition to 7.x centos
+    #
+    # "build-api-next-defconfig": {
+    #     "factory": FACTORIES.init_build_factory,
+    #     "product_conf_file": "conf_linux_public.py",
+    #     "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
+    #     "build_type": Build_type.RELEASE.value,
+    #     "api_latest": True,
+    #     "fastboot": False,
+    #     "compiler": "gcc",
+    #     "compiler_version": "6.3.1",
+    #     "worker": "centos_defconfig",
+    #     'triggers': [{'repositories': PRODUCTION_REPOS,
+    #                   'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
+    #                   'builders': ['build-libva']}]
+    # },
 
     "test": {
-        "factory": FACTORIES.init_test_factory,
+        "factory": FACTORIES.init_mediasdk_test_factory,
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
@@ -278,7 +289,7 @@ BUILDERS = {
     },
 
     "test-api-next": {
-        "factory": FACTORIES.init_test_factory,
+        "factory": FACTORIES.init_mediasdk_test_factory,
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
@@ -301,7 +312,8 @@ WORKERS = {
     },
     "ubuntu": {
         "b-1-18": {"os": OsType.linux},
-        "b-1-18aux": {"os": OsType.linux}
+        "b-1-18aux": {"os": OsType.linux},
+        "b-1-24": {"os": OsType.linux}
     },
     "centos_test": {
         "t-1-17": {"os": OsType.linux},
@@ -327,6 +339,4 @@ MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 
 TRIGGER = 'trigger'
 
-GITHUB_REPOSITORY = f"{MEDIASDK_ORGANIZATION}/{MEDIASDK_REPO}"
-REPO_URL = f"https://github.com/{GITHUB_REPOSITORY}"
-PRODUCT_CONFIGS_REPO_URL = f"https://github.com/{MEDIASDK_ORGANIZATION}/{PRODUCT_CONFIGS_REPO}.git"
+REPO_URL = f"https://github.com/{MEDIASDK_ORGANIZATION}/{MEDIASDK_REPO}"

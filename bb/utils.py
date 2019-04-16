@@ -35,6 +35,10 @@ from twisted.internet import defer
 from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 
+# This is stop phrase for buildbot to skip all build stages
+SKIP_BUILDING_DEPENDENCY_PHRASE = 'REBUILD IS NOT NEEDED'
+SKIP_BUILDING_DEPENDENCY_PROPERTY = 'skip_building_dependency'
+
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
     TEST_MODE = "test_mode"
