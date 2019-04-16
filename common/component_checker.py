@@ -49,7 +49,7 @@ def check_component_existence(path_to_manifest, component_name):
         Build_type.RELEASE.value,
         product=component_name)
     if component_dir.exists():
-        log.info(f"Directory {component_dir} exist")
+        log.info(f"Directory {component_dir} exists")
         # This is stop phrase for buildbot to skip all build stages
         log.info(SKIP_BUILDING_DEPENDENCY_PHRASE)
     else:
