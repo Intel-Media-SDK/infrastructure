@@ -132,7 +132,8 @@ class StepsGenerator(steps.BuildStep):
         build_id = step.build.buildid
         project = bb.utils.get_repository_name_by_url(
             step.build.properties.getProperty('repository'))
-        branch = step.build.properties.getProperty('branch')
+        branch = step.build.properties.getProperty('target_branch') or \
+                 step.build.properties.getProperty('branch')
 
         builder_names_for_triggering = []
 
@@ -358,8 +359,8 @@ class Factories:
                           ]
         if dependency_name:
             shell_commands += ['--manifest',
-                             util.Interpolate(
-                                 get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
+                               util.Interpolate(
+                                   get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
                                '--component', dependency_name]
         else:
             shell_commands += ["--changed-repo", bb.utils.get_changed_repo]
