@@ -678,8 +678,4 @@ def create_file(file_path, data):
     :type: String
     """
 
-    try:
-        pathlib.Path(file_path).write_text(data, encoding='utf-8')
-    except Exception:
-        raise
-
+    pathlib.Path(file_path).write_text(data, encoding='utf-8')
