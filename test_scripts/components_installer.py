@@ -48,6 +48,7 @@ def install_components(manifest, components):
     log = logging.getLogger('install_components')
 
     for component in components:
+        log.info(f'Installing component: {component}')
         comp = manifest.get_component(component)
         if not comp:
             log.error(f'{component} does not exist in manifest')
@@ -80,4 +81,4 @@ def install_components(manifest, components):
         if not package_manager.install_pkg(packages[0]):
             return False
 
-        return True
+    return True
