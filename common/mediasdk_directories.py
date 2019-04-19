@@ -33,7 +33,7 @@ LOGICAL_DRIVE = 3  # Drive type from MSDN
 
 # Set the order of installing packages
 # TODO: Add all dependencies in dependency ordering
-THIRD_PARTY = ('libva',)  # Third party components for Media SDK
+THIRD_PARTY = ('libva', 'gmmlib', 'media-driver')  # Third party components for Media SDK
 
 # TODO: Pattern for closed source
 OPEN_SOURCE_RELEASE_BRANCH_PATTERN = ['^intel-mediasdk-\d+\.\w', '^mss2018_r2$']
