@@ -203,10 +203,11 @@ class Factories:
     Implemented as class for sharing common parameters between all factories.
     """
 
-    def __init__(self, mode, deploying_infrastructure, run_command):
+    def __init__(self, mode, deploying_infrastructure, run_command, ci_service):
         self.mode = mode
         self.deploying_infrastructure = deploying_infrastructure
         self.run_command = run_command
+        self.ci_service = ci_service
 
     def dynamic_factory(self, default_factory, build_specification):
         """
@@ -335,13 +336,18 @@ class Factories:
 
         dependency_name = build_specification.get('dependency_name')
         if dependency_name:
+            path_to_manifest = r"%(prop:builddir)s/product-configs/"
+            if self.ci_service == bb.utils.CIService.DRIVER:
+                path_to_manifest += 'driver/'
+            path_to_manifest += 'manifest.yml'
+
             build_factory.append(
                 DependencyChecker(
                     name=f"check {dependency_name} on share",
                     command=[self.run_command[worker_os], 'component_checker.py',
                              '--path-to-manifest',
                              util.Interpolate(
-                                 get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
+                                 get_path(path_to_manifest)),
                              '--component-name', dependency_name],
                     workdir=get_path(r'infrastructure/common')))
 
@@ -360,7 +366,7 @@ class Factories:
         if dependency_name:
             shell_commands += ['--manifest',
                                util.Interpolate(
-                                   get_path(r"%(prop:builddir)s/product-configs/manifest.yml")),
+                                   get_path(path_to_manifest)),
                                '--component', dependency_name]
         else:
             shell_commands += ["--changed-repo", bb.utils.get_changed_repo]

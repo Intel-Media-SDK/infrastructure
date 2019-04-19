@@ -18,14 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from bb.utils import Mode
+from bb.utils import Mode, CIService
 from bb import factories
 
 from common import msdk_secrets
 from common.helper import Product_type, Build_type
 from common.mediasdk_directories import OsType
 
-
+CI_SERVICE = CIService.DRIVER
 CURRENT_MODE = Mode.PRODUCTION_MODE
 
 TRIGGER = 'trigger'
@@ -34,7 +34,8 @@ PYTHON_EXECUTABLE = {OsType.linux: r'python3'}
 # Give possibility to enable/disable auto deploying infrastructure on workers
 DEPLOYING_INFRASTRUCTURE = True
 
-FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE, PYTHON_EXECUTABLE)
+FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE,
+                                PYTHON_EXECUTABLE, CI_SERVICE)
 
 MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 PRODUCT_CONFIGS_REPO = "product-configs"
@@ -85,6 +86,22 @@ BUILDERS = {
                       'branches': lambda branch: True}]
     },
 
+    "build-gmmlib": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_gmmlib.py",
+        "product_type": Product_type.PUBLIC_LINUX_GMMLIB.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'gmmlib',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
     "build": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "driver/conf_media_driver.py",
@@ -96,7 +113,7 @@ BUILDERS = {
         # TODO: create class for triggers
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: True,
-                      'builders': ['build-libva']}]
+                      'builders': ['build-libva', 'build-gmmlib']}]
     },
 
     "test": {

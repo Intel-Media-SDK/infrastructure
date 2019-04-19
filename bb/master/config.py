@@ -21,13 +21,14 @@
 import sys
 
 from bb import factories
-from bb.utils import Mode
+from bb.utils import Mode, CIService
 
 from common import msdk_secrets
 from common.helper import Product_type, Build_type
 from common.mediasdk_directories import MediaSdkDirectories, OsType
 
-
+# TODO: use this variable in notifications and other services
+CI_SERVICE = CIService.MEDIASDK
 CURRENT_MODE = Mode.PRODUCTION_MODE
 # CURRENT_MODE = Mode.TEST_MODE
 
@@ -52,7 +53,8 @@ TRIGGER = 'trigger'
 # Give possibility to enable/disable auto deploying infrastructure on workers
 DEPLOYING_INFRASTRUCTURE = True
 
-FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE, PYTHON_EXECUTABLE)
+FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE,
+                                PYTHON_EXECUTABLE, CI_SERVICE)
 
 """
 Specification of BUILDERS:
@@ -83,21 +85,6 @@ BUILDERS = {
 
 # TODO: Set correct values for dependencies
 # TODO: Change triggers for mediasdk builders
-#     "build-gmmlib": {
-#         "factory": FACTORIES.init_build_factory,
-#         "product_conf_file": "conf_linux_public.py",
-#         "product_type": Product_type.PUBLIC_LINUX.value,
-#         "build_type": Build_type.RELEASE.value,
-#         "api_latest": False,
-#         "fastboot": False,
-#         "compiler": "gcc",
-#         "compiler_version": "6.3.1",
-#         "worker": "centos",
-#         # Builder is enabled for all branches
-#         'triggers': [{'repositories': PRODUCTION_REPOS,
-#                       'branches': lambda branch: True}]
-#     },
-#
 #     "build-igc": {
 #         "factory": FACTORIES.init_build_factory,
 #         "product_conf_file": "conf_linux_public.py",
@@ -111,22 +98,6 @@ BUILDERS = {
 #         # Builder is enabled for all branches
 #         'triggers': [{'repositories': PRODUCTION_REPOS,
 #                       'branches': lambda branch: True}]
-#     },
-#
-#     "build-driver": {
-#         "factory": FACTORIES.init_build_factory,
-#         "product_conf_file": "conf_linux_public.py",
-#         "product_type": Product_type.PUBLIC_LINUX.value,
-#         "build_type": Build_type.RELEASE.value,
-#         "api_latest": False,
-#         "fastboot": False,
-#         "compiler": "gcc",
-#         "compiler_version": "6.3.1",
-#         "worker": "centos",
-#         # Builder is enabled for all branches
-#         'triggers': [{'repositories': PRODUCTION_REPOS,
-#                       'branches': lambda branch: True,
-#                       'builders': ['build-LibVa', 'build-gmmlib']}]
 #     },
 #
 #     "build-OpenCL": {
@@ -159,6 +130,40 @@ BUILDERS = {
         # Builder is enabled for all branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: True}]
+    },
+
+    "build-gmmlib": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_gmmlib.py",
+        "product_type": Product_type.PUBLIC_LINUX_GMMLIB.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'gmmlib',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
+
+    "build-driver": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'media-driver',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva', 'build-gmmlib']}]
     },
 
     "build": {
@@ -282,7 +287,7 @@ BUILDERS = {
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda x: True,
-                      'builders': ['build']}]
+                      'builders': ['build', 'build-driver']}]
     },
 
     "test-api-next": {

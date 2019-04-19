@@ -35,6 +35,10 @@ from twisted.internet import defer
 from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 
+class CIService(Enum):
+    MEDIASDK = "mediasdk"
+    DRIVER = "driver"
+
 # This is stop phrase for buildbot to skip all build stages
 SKIP_BUILDING_DEPENDENCY_PHRASE = 'REBUILD IS NOT NEEDED'
 SKIP_BUILDING_DEPENDENCY_PROPERTY = 'skip_building_dependency'
