@@ -43,7 +43,6 @@ def install_components(manifest, components):
     if not isinstance(manifest, Manifest):
         manifest = Manifest(manifest)
 
-    components = components
     pkg_type = get_pkg_type()
     log = logging.getLogger('install_components')
 
