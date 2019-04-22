@@ -63,7 +63,7 @@ class TestRunner(ConfigGenerator):
     def __init__(self, artifacts, root_dir, current_stage):
         self._artifacts_dir = None
         self._manifest = None
-        self._infrastructure_path = pathlib.Path(__file__).parents[1]
+        self._infrastructure_path = pathlib.Path(__file__).resolve().parents[1]
 
         if artifacts.exists():
             if artifacts.is_file():
