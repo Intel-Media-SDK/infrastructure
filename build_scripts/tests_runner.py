@@ -39,10 +39,18 @@ from common.manifest_manager import Manifest
 
 
 class ArtifactsNotFoundException(RunnerException):
+    """
+        Exception for artifacts existence
+    """
+
     pass
 
 
 class TestScenarioNotFoundException(RunnerException):
+    """
+        Exception for test scenario
+    """
+
     pass
 
 
@@ -132,6 +140,12 @@ class TestRunner(ConfigGenerator):
 
 
 def main():
+    """
+        Run stages of test product
+
+        :return: None
+    """
+
     parser = argparse.ArgumentParser(prog="tests_runner.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-ar', "--artifacts", metavar="PATH", required=True,
