@@ -55,6 +55,7 @@ class TestRunner(ConfigGenerator):
     def __init__(self, artifacts, root_dir, current_stage):
         self._artifacts_dir = None
         self._manifest = None
+        self._infrastructure_path = pathlib.Path(__file__).parents[1]
 
         if artifacts.exists():
             if artifacts.is_file():
@@ -76,7 +77,8 @@ class TestRunner(ConfigGenerator):
 
     def _update_global_vars(self):
         self._global_vars.update({
-            'stage': TestStage
+            'stage': TestStage,
+            'infra_path': self._infrastructure_path
         })
 
     def _clean(self):
