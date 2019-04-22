@@ -1,0 +1,14 @@
+Test Id,Feature,Command-line,Reference Type,Reference Value
+#decode
+#avc decode
+CABA1_SVA_B,decode,"ffmpeg -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -v verbose -i content/avc/CABA1_SVA_B.264 -pix_fmt yuv420p -f rawvideo -vsync passthrough -vframes 17 -y temp/CABA1_SVA_B/CABA1_SVA_B.yuv",psnr,30
+CABA1_Sony_D,decode,"ffmpeg -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -v verbose -i content/avc/CABA1_Sony_D.jsv -pix_fmt yuv420p -f rawvideo -vsync passthrough -vframes 50 -y temp/CABA1_Sony_D/CABA1_Sony_D.yuv",psnr,30
+
+#encode
+#avc encode
+avc_cbr_001,encode,"ffmpeg -hwaccel vaapi -vaapi_device /dev/dri/renderD128 -v verbose -f rawvideo -pix_fmt yuv420p -s:v 176x144 -r:v 30 -i content/yuv/CABA1_SVA_B.yuv -vf 'format=nv12,hwupload' -c:v h264_vaapi -profile:v main -g 30 -bf 2 -slices 1 -b:v 500k -maxrate 500k -vframes 17 -y temp/avc_cbr_001/CABA1_SVA_B.264",psnr,30
+avc_cqp_001,encode,"ffmpeg -hwaccel vaapi -vaapi_device /dev/dri/renderD128 -v verbose -f rawvideo -pix_fmt yuv420p -s:v 176x144 -i content/yuv/CABA1_SVA_B.yuv -vf 'format=nv12,hwupload' -c:v h264_vaapi -profile:v high -g 30 -qp 28 -bf 2 -quality 4 -slices 1 -vframes 17 -y temp/avc_cqp_001/CABA1_SVA_B.264",psnr,30
+
+#vpp 
+#vpp scale
+scale_001,vp,"ffmpeg -hwaccel vaapi -vaapi_device /dev/dri/renderD128 -v debug -f rawvideo -pix_fmt nv12 -s:v 176x144 -i content/yuv/CABA1_SVA_B.yuv -vf 'format=nv12,hwupload,scale_vaapi=w=88:h=72,hwdownload,format=nv12' -pix_fmt nv12 -vframes 27 -y temp/scale_001/CABA1_SVA_B_88x72.yuv",psnr,28

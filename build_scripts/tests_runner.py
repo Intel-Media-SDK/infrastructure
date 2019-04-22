@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -39,10 +39,18 @@ from common.manifest_manager import Manifest
 
 
 class ArtifactsNotFoundException(RunnerException):
+    """
+        Exception for artifacts existence
+    """
+
     pass
 
 
 class TestScenarioNotFoundException(RunnerException):
+    """
+        Exception for test scenario
+    """
+
     pass
 
 
@@ -55,6 +63,7 @@ class TestRunner(ConfigGenerator):
     def __init__(self, artifacts, root_dir, current_stage):
         self._artifacts_dir = None
         self._manifest = None
+        self._infrastructure_path = pathlib.Path(__file__).parents[1]
 
         if artifacts.exists():
             if artifacts.is_file():
@@ -76,7 +85,8 @@ class TestRunner(ConfigGenerator):
 
     def _update_global_vars(self):
         self._global_vars.update({
-            'stage': TestStage
+            'stage': TestStage,
+            'infra_path': self._infrastructure_path
         })
 
     def _clean(self):
@@ -130,6 +140,12 @@ class TestRunner(ConfigGenerator):
 
 
 def main():
+    """
+        Run stages of test product
+
+        :return: None
+    """
+
     parser = argparse.ArgumentParser(prog="tests_runner.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-ar', "--artifacts", metavar="PATH", required=True,
