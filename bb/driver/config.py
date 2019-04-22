@@ -102,6 +102,36 @@ BUILDERS = {
                       'branches': lambda branch: True}]
     },
 
+    "build-ffmpeg": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_ffmpeg.py",
+        "product_type": Product_type.PUBLIC_LINUX_FFMPEG.value,
+        "build_type": Build_type.RELEASE.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'ffmpeg',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
+    "build-metrics-calc": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_metrics_calc.py",
+        "product_type": Product_type.PUBLIC_LINUX_METRICS_CALC.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'metrics_calc_lite',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
     "build": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "driver/conf_media_driver.py",
@@ -123,7 +153,7 @@ BUILDERS = {
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda x: True,
-                      'builders': ['build']}]
+                      'builders': ['build', 'build-ffmpeg', 'build-metrics-calc']}]
     }
 }
 
