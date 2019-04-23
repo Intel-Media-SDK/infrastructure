@@ -80,8 +80,7 @@ c["services"] = [
                                context=util.Interpolate("media-driver/%(prop:buildername)s"),
                                startDescription="Started",
                                endDescription="Done",
-                               verbose=True,
-                               builders=['build', 'test'])]
+                               verbose=True)]
 
 # Get changes
 c["change_source"] = []

@@ -422,7 +422,7 @@ class Factories:
                                                                  product='media-driver')
         command = [self.run_command[worker_os], "tests_runner.py",
                    '--artifacts', str(driver_manifest_path),
-                   '--root-dir', util.Interpolate('%(prop:builddir)s'),
+                   '--root-dir', util.Interpolate('%(prop:builddir)s/test_dir'),
                    '--stage']
 
         for test_stage in TestStage:
