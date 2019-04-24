@@ -146,6 +146,7 @@ class Build_type(Enum):
     """
 
     RELEASE = 'release'
+    RELEASE_INTERNAL = 'release-internal'
     DEBUG = 'debug'
 
 
