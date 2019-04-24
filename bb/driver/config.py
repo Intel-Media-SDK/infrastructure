@@ -142,6 +142,34 @@ BUILDERS = {
                       'builders': ['build-libva', 'build-gmmlib']}]
     },
 
+    "build-debug": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
+        "build_type": Build_type.DEBUG.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        # TODO: create class for triggers
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva', 'build-gmmlib']}]
+    },
+
+    "build-release-internal": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
+        "build_type": Build_type.RELEASE_INTERNAL.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        # TODO: create class for triggers
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva', 'build-gmmlib']}]
+    },
+
     "test": {
         "factory": FACTORIES.init_driver_test_factory,
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
