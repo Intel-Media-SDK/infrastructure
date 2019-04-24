@@ -56,7 +56,7 @@ def install_pkg(pkg_path):
     log = logging.getLogger('package_manager.install_pkg')
 
     cmd = _CMD_PATTERN["INSTALL"].get(get_os_name()).format(pkg_path=pkg_path)
-    err, out = cmd_exec(cmd)
+    err, out = cmd_exec(f'{cmd} && sudo ldconfig')
 
     if err == 0:
         log.info(f'Package "{pkg_path}" was installed')

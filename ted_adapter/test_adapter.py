@@ -71,6 +71,10 @@ class TedAdapter(object):
         :type root_dir: pathlib.Path
         """
 
+        # Clean workdir and re-create it
+        self._remove(str(root_dir))
+        self._mkdir(str(root_dir))
+
         self.build_artifacts_dir = build_artifacts_dir
         self.tests_artifacts_dir = tests_artifacts_dir
         self.tests_artifacts_url = tests_artifacts_url
@@ -144,7 +148,8 @@ class TedAdapter(object):
         :rtype: Integer | Exception
         """
 
-        self._get_artifacts()
+        # Disabled getting artifacts from archive (rpm/deb package is used)
+        # self._get_artifacts()
 
         # Path to mediasdk fodler which will be tested
         self.env['MFX_HOME'] = adapter_conf.MEDIASDK_PATH
@@ -239,9 +244,6 @@ def main():
     :return: None
     """
 
-    # Check existence of driver
-    check_driver()
-
     parser = argparse.ArgumentParser(prog="test_adapter.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
@@ -273,6 +275,7 @@ def main():
     tests_artifacts_dir = MediaSdkDirectories.get_test_dir(**directories_layout)
     tests_artifacts_url = MediaSdkDirectories.get_test_url(**directories_layout)
 
+
     log = logging.getLogger('test_adapter.log')
     adapter = TedAdapter(build_artifacts_dir, tests_artifacts_dir, tests_artifacts_url,
                          root_dir=pathlib.Path(args.root_dir))
@@ -281,6 +284,9 @@ def main():
     if not adapter.install_pkgs(THIRD_PARTY):
         log.info(f'Required packages "{THIRD_PARTY}" were not installed\n')
         exit(TestReturnCodes.INFRASTRUCTURE_ERROR.value)
+
+    # Check existence of driver
+    check_driver()
 
     # Install msdk
     if not adapter.install_pkgs(['mediasdk'], clean_dir=True):
