@@ -56,7 +56,7 @@ class GitRepo(object):
         Class for work with repositories
     """
 
-    def __init__(self, root_repo_dir, repo_name, branch, url, commit_id=None, is_trigger=False):
+    def __init__(self, root_repo_dir, repo_name, branch, url, commit_id=None, is_trigger=False, target_branch=None):
         """
         :param root_repo_dir: Directory where repositories will clone
         :param repo_name: Name of repository
@@ -71,6 +71,7 @@ class GitRepo(object):
         self.local_repo_dir = root_repo_dir / repo_name
         self.repo = None
         self.is_trigger = is_trigger
+        self.target_branch = target_branch
 
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -277,11 +278,12 @@ class ProductState(object):
 
         for repo_name, data in sources_list.items():
             branch = data.get('branch') or 'master'
+            target_branch = data.get('target_branch') or None
             commit_id = data.get('commit_id') or 'HEAD'
             is_trigger = data.get('trigger') or False
 
             self.repo_states.append(
-                GitRepo(root_repo_dir, repo_name, branch, data['url'], commit_id, is_trigger))
+                GitRepo(root_repo_dir, repo_name, branch, data['url'], commit_id, is_trigger, target_branch))
 
     def extract_all_repos(self):
         """
@@ -342,6 +344,8 @@ class ProductState(object):
                     'commit_time': str(state.repo.commit().committed_datetime.astimezone()),
                     'trigger': True if trigger == state.repo_name else False
                 }
+                if state.target_branch:
+                    states[state.repo_name]['target_branch'] = state.target_branch
 
             sources_state.write(json.dumps(states, indent=4, sort_keys=True))
 

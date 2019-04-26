@@ -363,10 +363,11 @@ class Repository:
     Container for repository information
     """
 
-    def __init__(self, name, url, branch='master', revision='HEAD', source_type='git', trigger=False):
+    def __init__(self, name, url, branch='master', target_branch=None, revision='HEAD', source_type='git', trigger=False):
         self._name = name
         self._url = url
         self._branch = branch
+        self._target_branch = target_branch
         self._revision = revision
         self._type = source_type
         self._trigger = trigger
@@ -375,6 +376,8 @@ class Repository:
         yield 'name', self._name
         yield 'url', self._url
         yield 'branch', self._branch
+        if self._target_branch:
+            yield 'target_branch', self._target_branch
         yield 'revision', self._revision
         yield 'type', self._type
         yield 'trigger', self._trigger
@@ -395,6 +398,7 @@ class Repository:
             repo = Repository(repo_data['name'],
                               repo_data['url'],
                               repo_data['branch'],
+                              repo_data.get('target_branch'),
                               repo_data['revision'],
                               repo_data['type'],
                               repo_data['trigger'])
@@ -434,6 +438,17 @@ class Repository:
         """
 
         return self._branch
+
+    @property
+    def target_branch(self):
+        """
+        get target_branch of repo
+
+        :return: Branch name
+        :rtype: String
+        """
+
+        return self._target_branch
 
     @property
     def revision(self):
