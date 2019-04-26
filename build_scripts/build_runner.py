@@ -42,7 +42,7 @@ import re
 import shutil
 import sys
 import logging
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -64,8 +64,6 @@ class UnsupportedVSError(RunnerException):
     Error, which need to be raised
     if Visual Studio version not supported
     """
-
-    pass
 
 
 class VsComponent(Action):
@@ -286,15 +284,12 @@ class BuildGenerator(ConfigGenerator):
         self._target_branch = target_branch
         self._manifest_file = manifest_file
 
-        try:
-            if manifest_file:
-                self._manifest = Manifest(manifest_file)
-            else:
-                self._manifest = Manifest(self._config_path.parent / 'manifest.yml')
-        except Exception:
-            self._log.exception('Exception occurred:')
-            self._log.warning('Created empty manifest.')
+        manifest_path = manifest_file if manifest_file else self._config_path.parent / 'manifest.yml'
+        if manifest_path.exists():
+            self._manifest = Manifest(manifest_path)
+        else:
             self._manifest = Manifest()
+            self._log.warning('Created empty manifest.')
 
         if changed_repo:
             changed_repo_dict = changed_repo.split(':')
@@ -790,7 +785,7 @@ class BuildGenerator(ConfigGenerator):
 
             if binaries_with_error:
                 self._log.error('Stripping for next binaries was failed. See full log for details:\n%s',
-                               '\n'.join(binaries_with_error))
+                                '\n'.join(binaries_with_error))
                 return False
         elif system_os == 'Windows':
             pass
@@ -823,13 +818,13 @@ class BuildGenerator(ConfigGenerator):
 
             with open(mfxdefs_path, 'r') as lines:
                 for line in lines:
-                    major_version_pattern = re.search("MFX_VERSION_MAJOR\s(\d+)", line)
+                    major_version_pattern = re.search(r'MFX_VERSION_MAJOR\s(\d+)', line)
                     if major_version_pattern:
                         major_version = major_version_pattern.group(1)
                         is_major_version_found = True
                         continue
 
-                    minor_version_pattern = re.search("MFX_VERSION_MINOR\s(\d+)", line)
+                    minor_version_pattern = re.search(r'MFX_VERSION_MINOR\s(\d+)', line)
                     if minor_version_pattern:
                         minor_version = minor_version_pattern.group(1)
                         is_minor_version_found = True
@@ -1024,27 +1019,24 @@ in format: <repo_name>:<branch>:<commit_id>
     else:
         commit_time = None
 
-    build_config = BuildGenerator(
-        build_config_path=pathlib.Path(parsed_args.build_config).absolute(),
-        root_dir=pathlib.Path(parsed_args.root_dir).absolute(),
-        build_type=parsed_args.build_type,
-        product_type=parsed_args.product_type,
-        build_event=parsed_args.build_event,
-        commit_time=commit_time,
-        changed_repo=parsed_args.changed_repo,
-        repo_states_file_path=parsed_args.repo_states,
-        custom_cli_args=custom_cli_args,
-        stage=parsed_args.stage,
-        target_arch=target_arch,
-        target_branch=parsed_args.target_branch,
-        manifest_file=parsed_args.manifest,
-        component_name=parsed_args.component
-    )
-
-    # We must create BuildGenerator anyway.
-    # If generate_build_config will be inside constructor
-    # and fails, class will not be created.
     try:
+        build_config = BuildGenerator(
+            build_config_path=pathlib.Path(parsed_args.build_config).absolute(),
+            root_dir=pathlib.Path(parsed_args.root_dir).absolute(),
+            build_type=parsed_args.build_type,
+            product_type=parsed_args.product_type,
+            build_event=parsed_args.build_event,
+            commit_time=commit_time,
+            changed_repo=parsed_args.changed_repo,
+            repo_states_file_path=parsed_args.repo_states,
+            custom_cli_args=custom_cli_args,
+            stage=parsed_args.stage,
+            target_arch=target_arch,
+            target_branch=parsed_args.target_branch,
+            manifest_file=parsed_args.manifest,
+            component_name=parsed_args.component
+        )
+
         if not parsed_args.changed_repo \
                 and not parsed_args.repo_states \
                 and (not parsed_args.manifest or not parsed_args.component):
