@@ -83,39 +83,6 @@ BUILDERS = {
               # Triggerable is not needed
               "add_triggerable_sheduler": False},
 
-# TODO: Set correct values for dependencies
-# TODO: Change triggers for mediasdk builders
-#     "build-igc": {
-#         "factory": FACTORIES.init_build_factory,
-#         "product_conf_file": "conf_linux_public.py",
-#         "product_type": Product_type.PUBLIC_LINUX.value,
-#         "build_type": Build_type.RELEASE.value,
-#         "api_latest": False,
-#         "fastboot": False,
-#         "compiler": "gcc",
-#         "compiler_version": "6.3.1",
-#         "worker": "centos",
-#         # Builder is enabled for all branches
-#         'triggers': [{'repositories': PRODUCTION_REPOS,
-#                       'branches': lambda branch: True}]
-#     },
-#
-#     "build-OpenCL": {
-#         "factory": FACTORIES.init_build_factory,
-#         "product_conf_file": "conf_linux_public.py",
-#         "product_type": Product_type.PUBLIC_LINUX.value,
-#         "build_type": Build_type.RELEASE.value,
-#         "api_latest": False,
-#         "fastboot": False,
-#         "compiler": "gcc",
-#         "compiler_version": "6.3.1",
-#         "worker": "centos",
-#         # Builder is enabled for all branches
-#         'triggers': [{'repositories': PRODUCTION_REPOS,
-#                       'branches': lambda branch: True,
-#                       'builders': ['build-igc']}]
-#     },
-
     "build-libva": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_libva.py",
@@ -146,6 +113,39 @@ BUILDERS = {
         # Builder is enabled for all branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: True}]
+    },
+
+    "build-igc": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_igc.py",
+        "product_type": Product_type.PUBLIC_LINUX_IGC.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'intel-graphics-compiler',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1']}]
+    },
+
+    "build-opencl": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_opencl.py",
+        "product_type": Product_type.PUBLIC_LINUX_OPENCL_RUNTIME.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'opencl_runtime',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-igc']}]
     },
 
 
@@ -285,9 +285,13 @@ BUILDERS = {
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
         "worker": "centos_test",
+        # build-opencl builder is enabled only for master branch
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda x: True,
-                      'builders': ['build', 'build-driver']}]
+                      'branches': lambda branch: branch not in ['master', 'intel-mediasdk-19.1'],
+                      'builders': ['build', 'build-driver']},
+                     {'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1'],
+                      'builders': ['build', 'build-driver', 'build-opencl']}]
     },
 
     "test-api-next": {
