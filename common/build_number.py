@@ -110,8 +110,15 @@ def increase_build_number(local_repo_path, os_type, branch):
         remove_directory(str(temp_dir))
 
     temp_dir.mkdir(exist_ok=True)
-    extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
-                 branch=branch, commit_id='HEAD')
+    try:
+        extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
+                     branch=branch, commit_id='HEAD')
+    except Exception:
+        log.warning(f'It looks like {branch} branch does not exist\n'
+                    f'Redefine {branch} to "master"')
+        branch = 'master'
+        extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
+                     branch=branch, commit_id='HEAD')
 
     log.info(
         f'Getting build number from HEAD of {branch} branch for repo in {latest_version_repo_path}')
@@ -131,11 +138,6 @@ def increase_build_number(local_repo_path, os_type, branch):
             log.info(f'\tChanging build numbers file')
             with latest_build_number_path.open('r+') as build_number_file:
                 build_numbers = json.load(build_number_file)
-
-                if not build_numbers[os_type].get(branch):
-                    log.warning(f'Branch {branch} does not exist. '
-                                f'Increase build number of "master" branch')
-                    branch = 'master'
 
                 new_build_number = build_numbers[os_type][branch] + 1
                 build_numbers[os_type][branch] = new_build_number
