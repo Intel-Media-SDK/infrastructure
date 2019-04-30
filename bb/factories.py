@@ -358,7 +358,6 @@ class Factories:
                               get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                           "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
                           "--build-type", build_type,
-                          "--build-event", "commit",
                           "--product-type", product_type,
                           f"compiler={compiler}",
                           f"compiler_version={compiler_version}",
@@ -367,16 +366,20 @@ class Factories:
             shell_commands += ['--manifest',
                                util.Interpolate(
                                    get_path(path_to_manifest)),
-                               '--component', dependency_name]
+                               '--component', dependency_name,
+                               "--build-event", "commit"]
         else:
             shell_commands += ["--changed-repo", bb.utils.get_changed_repo]
+            if props.hasProperty('target_branch'):
+                shell_commands += ["--build-event", "pre_commit",
+                                   '--target-branch', props['target_branch']]
+            else:
+                shell_commands += ["--build-event", "commit"]
 
         if api_latest:
             shell_commands.append("api_latest=True")
         if fastboot:
             shell_commands.append("fastboot=True")
-        if props.hasProperty('target_branch'):
-            shell_commands += ['--target-branch', props['target_branch']]
 
         # Build by stages: clean, extract, build, install, pack, copy
         for stage in Stage:
@@ -395,12 +398,16 @@ class Factories:
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
-
+        
+        branch = props.getProperty('target_branch') or props.getProperty('branch')
+        
         test_factory.append(
             steps.ShellCommand(command=[self.run_command[worker_os],
                                         "test_adapter.py",
-                                        "--branch", util.Interpolate(r"%(prop:branch)s"),
-                                        "--build-event", "commit",
+                                        "--branch", branch,
+                                        "--build-event",
+                                        "pre_commit" if props.hasProperty(
+                                            'target_branch') else 'commit',
                                         "--product-type", product_type,
                                         "--commit-id", util.Interpolate(r"%(prop:revision)s"),
                                         "--build-type", build_type,
@@ -414,12 +421,16 @@ class Factories:
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
+        
+        branch = props.getProperty('target_branch') or props.getProperty('branch')
 
-        driver_manifest_path = MediaSdkDirectories.get_build_dir(props['branch'], 'commit',
-                                                                 props['revision'],
-                                                                 test_specification['product_type'],
-                                                                 test_specification['build_type'],
-                                                                 product='media-driver')
+        driver_manifest_path = MediaSdkDirectories.get_build_dir(
+            branch,
+            "pre_commit" if props.hasProperty('target_branch') else 'commit',
+            props['revision'],
+            test_specification['product_type'],
+            test_specification['build_type'],
+            product='media-driver')
         command = [self.run_command[worker_os], "tests_runner.py",
                    '--artifacts', str(driver_manifest_path),
                    '--root-dir', util.Interpolate('%(prop:builddir)s/test_dir'),
