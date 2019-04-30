@@ -398,11 +398,13 @@ class Factories:
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
-
+        
+        branch = props.getProperty('target_branch') or props.getProperty('branch')
+        
         test_factory.append(
             steps.ShellCommand(command=[self.run_command[worker_os],
                                         "test_adapter.py",
-                                        "--branch", util.Interpolate(r"%(prop:branch)s"),
+                                        "--branch", branch,
                                         "--build-event",
                                         "pre_commit" if props.hasProperty(
                                             'target_branch') else 'commit',
@@ -419,9 +421,11 @@ class Factories:
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
+        
+        branch = props.getProperty('target_branch') or props.getProperty('branch')
 
         driver_manifest_path = MediaSdkDirectories.get_build_dir(
-            props['branch'],
+            branch,
             "pre_commit" if props.hasProperty('target_branch') else 'commit',
             props['revision'],
             test_specification['product_type'],
