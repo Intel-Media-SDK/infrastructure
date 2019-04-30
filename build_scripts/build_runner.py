@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -284,7 +284,7 @@ class BuildGenerator(ConfigGenerator):
         self._target_branch = target_branch
         self._manifest_file = manifest_file
 
-        manifest_path = manifest_file if manifest_file else self._config_path.parent / 'manifest.yml'
+        manifest_path = pathlib.Path(manifest_file) if manifest_file else self._config_path.parent / 'manifest.yml'
         if manifest_path.exists():
             self._manifest = Manifest(manifest_path)
         else:
@@ -305,6 +305,7 @@ class BuildGenerator(ConfigGenerator):
                         if repo_state['trigger']:
                             self._branch_name = repo_state['branch']
                             self._changed_repo_name = repo_name
+                            self._target_branch = repo_state.get('target_branch')
                             break
             else:
                 raise Exception(f'{repo_states_file} does not exist')
@@ -313,6 +314,7 @@ class BuildGenerator(ConfigGenerator):
             repo = component.trigger_repository
             self._branch_name = repo.branch
             self._changed_repo_name = repo.name
+            self._target_branch = repo.target_branch
         else:
             self._branch_name = 'master'
             self._changed_repo_name = None
@@ -490,6 +492,8 @@ class BuildGenerator(ConfigGenerator):
                 data['trigger'] = False
                 if repo == repo_name:
                     data['trigger'] = True
+                    if self._target_branch:
+                        data['target_branch'] = self._target_branch
                     if not data.get('branch'):
                         data['branch'] = branch
                         data['commit_id'] = commit_id
@@ -503,6 +507,8 @@ class BuildGenerator(ConfigGenerator):
                 if repo_name in self._product_repos:
                     if values['trigger']:
                         triggered_repo = repo_name
+                        if values.get('target_branch'):
+                            self._product_repos[repo_name]['target_branch'] = values['target_branch']
                     self._product_repos[repo_name]['branch'] = values['branch']
                     self._product_repos[repo_name]['commit_id'] = values['commit_id']
                     self._product_repos[repo_name]['url'] = values['url']
@@ -513,6 +519,8 @@ class BuildGenerator(ConfigGenerator):
                 if repo.name in self._product_repos:
                     if repo.is_trigger:
                         triggered_repo = repo.name
+                        if repo.target_branch:
+                            self._product_repos[repo.name]['target_branch'] = repo.target_branch
                     self._product_repos[repo.name]['branch'] = repo.branch
                     self._product_repos[repo.name]['commit_id'] = repo.revision
                     self._product_repos[repo.name]['url'] = repo.url
@@ -668,17 +676,19 @@ class BuildGenerator(ConfigGenerator):
 
         if self._changed_repo:
             repo_name, branch, commit_id = self._changed_repo.split(':')
+            if self._target_branch:
+                branch = self._target_branch
             if commit_id == 'HEAD':
                 commit_id = ProductState.get_head_revision(self._options['REPOS_DIR'] / repo_name)
         elif self._repo_states:
             for repo in self._repo_states.values():
                 if repo['trigger']:
-                    branch = repo['branch']
+                    branch = repo['target_branch'] if repo.get('target_branch') else repo['branch']
                     commit_id = repo['commit_id']
         elif self._manifest_file:
             component = self._manifest.get_component(self._product)
             repo = component.trigger_repository
-            branch = repo.branch
+            branch = repo.target_branch if repo.target_branch else repo.branch
             commit_id = repo.revision
         else:
             # "--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and "master" branch are used
@@ -902,7 +912,7 @@ class BuildGenerator(ConfigGenerator):
                     trigger_repo = comp.trigger_repository
                     if trigger_repo:
                         dep_dir = MediaSdkDirectories.get_build_dir(
-                            trigger_repo.branch,
+                            trigger_repo.target_branch if trigger_repo.target_branch else trigger_repo.branch,
                             Build_event.COMMIT.value,
                             trigger_repo.revision,
                             comp.product_type,
@@ -937,6 +947,7 @@ class BuildGenerator(ConfigGenerator):
                     name=repo.repo_name,
                     url=repo.url,
                     branch=repo.branch_name,
+                    target_branch=repo.target_branch,
                     revision=repo.commit_id,
                     trigger=repo.is_trigger
                 )
