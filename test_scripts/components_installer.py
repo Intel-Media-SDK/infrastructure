@@ -54,10 +54,10 @@ def install_components(manifest, components):
             return False
 
         repo = comp.trigger_repository
-
+        build_event = 'pre_commit' if repo.branch.startswith('refs/pull/') else 'commit'
         artifacts = MediaSdkDirectories.get_build_dir(
             branch=repo.branch,
-            build_event='commit',
+            build_event=build_event,
             commit_id=repo.revision,
             product_type=comp.product_type,
             build_type='release',
