@@ -18,6 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""
+Runner for driver tests
+"""
+
 import argparse
 import logging
 import os
@@ -27,12 +31,16 @@ import pathlib
 from copy import copy
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from common.helper import cmd_exec
+from common.helper import cmd_exec, ErrorCode
 from common.logger_conf import configure_logger
-from driver_tests.tests_cfg import TESTS 
+from driver_tests.tests_cfg import TESTS
 
 
 class Test:
+    """
+    Class for driver test
+    """
+
     def __init__(self, test_id, test_info):
         self._id = test_id
         self._feature = test_info['feature']
@@ -48,6 +56,12 @@ class Test:
         self.log = logging.getLogger(test_id)
 
     def _env_check(self):
+        """
+        Check test environment
+
+        :return: Boolean
+        """
+
         self.log.info('-'*80)
         self.log.info('Check environment')
 
@@ -55,8 +69,8 @@ class Test:
         if code:
             self.log.error("system does not load i915 module")
             return False
-        else:
-            self.log.info("i915 load successfully")
+
+        self.log.info("i915 load successfully")
 
         code, vainfo = cmd_exec('vainfo', log=self.log)
         if code:
@@ -82,6 +96,12 @@ class Test:
         return True
 
     def _get_info(self):
+        """
+        Get information of a test
+
+        :return: Boolean
+        """
+
         self.log.info('-' * 80)
         self.log.info('Get test info')
 
@@ -107,6 +127,12 @@ class Test:
         return True
 
     def _execute_test_cmd(self):
+        """
+        Run base command line of a test
+
+        :return: Boolean
+        """
+
         self.log.info('-' * 80)
         self.log.info('Execute test command line')
 
@@ -119,6 +145,12 @@ class Test:
         return True
 
     def _check_md5(self):
+        """
+        Compare reference md5sum with actual
+
+        :return: Boolean
+        """
+
         self.log.info('-' * 80)
         self.log.info('Check md5 sum')
 
@@ -141,7 +173,18 @@ class Test:
 
         return True
 
-    def _get_psnr(self, i1, i2, w, h):
+    def _get_psnr(self, first_file, second_file, width, height):
+        """
+        Get PSNR value
+
+        :param first_file: Name of first file to compare
+        :param second_file: Name of second file to compare
+        :param width: Width of sequences pixels
+        :param height: Height of sequences pixels
+
+        :return: PSNR | False
+        """
+
         self.log.info('-' * 80)
         self.log.info('Get PSNR')
 
@@ -156,10 +199,10 @@ class Test:
             'all'
         ]
 
-        metrics_calc_cmd.insert(metrics_calc_cmd.index('-i1') + 1, str(i1))
-        metrics_calc_cmd.insert(metrics_calc_cmd.index('-i2') + 1, str(i2))
-        metrics_calc_cmd.insert(metrics_calc_cmd.index('-w') + 1, w)
-        metrics_calc_cmd.insert(metrics_calc_cmd.index('-h') + 1, h)
+        metrics_calc_cmd.insert(metrics_calc_cmd.index('-i1') + 1, str(first_file))
+        metrics_calc_cmd.insert(metrics_calc_cmd.index('-i2') + 1, str(second_file))
+        metrics_calc_cmd.insert(metrics_calc_cmd.index('-w') + 1, width)
+        metrics_calc_cmd.insert(metrics_calc_cmd.index('-h') + 1, height)
 
         code, out = cmd_exec(metrics_calc_cmd, shell=False, log=self.log)
         if code:
@@ -170,11 +213,20 @@ class Test:
         psnr = re.search('<avg_metric=PSNR>(.*)</avg_metric>', out).group(1)
         return psnr
 
-    def _compare_files(self, f1, f2):
+    def _compare_files(self, first_file, second_file):
+        """
+        Compare two files byte by byte
+
+        :param first_file: Name of first file to compare
+        :param second_file: Name of second file to compare
+
+        :return: Boolean
+        """
+
         self.log.info('-' * 80)
         self.log.info('Compare files')
 
-        code, out = cmd_exec(['cmp', str(f1), str(f2)], shell=False, log=self.log)
+        code, out = cmd_exec(['cmp', str(first_file), str(second_file)], shell=False, log=self.log)
         if code:
             self.log.warning('md5 checksum IS NOT SAME with ffmpeg sw decode')
             self.log.warning(out)
@@ -184,6 +236,12 @@ class Test:
         return True
 
     def _check_psnr(self):
+        """
+        Check PSNR consistence
+
+        :return: Boolean
+        """
+
         self.log.info('-' * 80)
         self.log.info('Check PSNR')
 
@@ -223,7 +281,7 @@ class Test:
                 return False
             self.log.info(out)
 
-            resolution = re.search(f'.*Stream #.*, (\d*x\d*).*', out).group(1).strip()
+            resolution = re.search(rf'.*Stream #.*, (\d*x\d*).*', out).group(1).strip()
             self._width, self._height = resolution.split('x')
 
             # compare outputs
@@ -265,7 +323,8 @@ class Test:
                 if 'scale_vaapi' in vf_args:
                     sw_output_file = _output_file.parent / f'{_output_file.name}_sw.yuv'
 
-                    self._width, self._height = re.search('.*scale_vaapi=w=(\d+):h=(\d+).*', vf_args).groups()
+                    self._width, self._height = re.search(r'.*scale_vaapi=w=(\d+):h=(\d+).*',
+                                                          vf_args).groups()
                     self.log.info(f'Scale: width = {self._width}; height = {self._height}')
 
                     # remove -hwaccel
@@ -293,29 +352,36 @@ class Test:
 
                     # compare outputs
                     if not self._compare_files(self._output_file, sw_output_file):
-                        psnr = self._get_psnr(sw_output_file, self._output_file, self._width, self._height)
+                        psnr = self._get_psnr(sw_output_file, self._output_file,
+                                              self._width, self._height)
         else:
             self.log.error(f'Feature {self._feature} is not supported')
             return False
 
         if psnr is None:
             return True
-        elif not psnr:
+        if not psnr:
             return False
-        else:
-            self.log.info(f'reference psnr: {self._ref_value}')
-            self.log.info(f'actual psnr: {psnr}')
 
-            psnr_gap = 100*(float(psnr) - float(self._ref_value))/float(self._ref_value)
-            psnr_gap = round(psnr_gap, 4)
-            self.log.info(f'psnr gap: {psnr_gap}%')
+        self.log.info(f'reference psnr: {self._ref_value}')
+        self.log.info(f'actual psnr: {psnr}')
 
-            if psnr_gap < -5:
-                return False
+        psnr_gap = 100*(float(psnr) - float(self._ref_value))/float(self._ref_value)
+        psnr_gap = round(psnr_gap, 4)
+        self.log.info(f'psnr gap: {psnr_gap}%')
+
+        if psnr_gap < -5:
+            return False
 
         return True
 
     def run(self):
+        """
+        Run test
+
+        :return: Boolean
+        """
+
         if not self._env_check():
             return False
         if not self._get_info():
@@ -325,16 +391,21 @@ class Test:
 
         if self._ref_type.lower() == 'md5':
             return self._check_md5()
-        elif self._ref_type.lower() == 'psnr':
+        if self._ref_type.lower() == 'psnr':
             return self._check_psnr()
-        else:
-            if self._feature != 'playback':
-                self.log.error('Invaild reference type, only support md5 and psnr')
-                return False
-            return True
+
+        if self._feature != 'playback':
+            self.log.error('Invaild reference type, only support md5 and psnr')
+            return False
+
+        return True
 
 
 def main():
+    """
+    Arguments parser and test executor
+    """
+
     parser = argparse.ArgumentParser(prog="run_test.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('id', help="Id of a test")
@@ -345,7 +416,7 @@ def main():
     test_info = TESTS.get(args.id, None)
     if not test_info:
         test_info.log.error(f'{args.id} does not exist')
-        return False
+        exit(ErrorCode.CRITICAL)
     os.environ['DISPLAY'] = ":0.0"
 
     test = Test(args.id, test_info)
