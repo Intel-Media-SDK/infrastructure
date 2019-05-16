@@ -49,6 +49,7 @@ class ErrorCode(Enum):
     Container for custom error codes
     """
 
+    SUCCESS = 0
     CRITICAL = 1
 
 
