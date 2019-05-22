@@ -303,8 +303,8 @@ class ProductState(object):
                     repo.change_repo_state(branch_name=repo.branch_name)
                 else:
                     repo.change_repo_state()
-            if repo.is_trigger:
-                git_commit_date = repo.get_time()
+                if repo.is_trigger:
+                    git_commit_date = repo.get_time()
 
         commit_timestamp = self.commit_time.timestamp() \
             if self.commit_time \
