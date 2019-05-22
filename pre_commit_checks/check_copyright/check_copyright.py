@@ -76,7 +76,7 @@ def get_leading_comments(stream, file_extension):
         if not multiline_comment:
             found_pos = line.find(multy_pref)
             if found_pos >= 0:
-                if line.find(multy_suff, found_pos) == SUBSTRING_IS_NOT_FOUND:
+                if line.find(multy_suff, found_pos+len(multy_pref)) == SUBSTRING_IS_NOT_FOUND:
                     multiline_comment = True
                 comments.append(line)
                 continue
