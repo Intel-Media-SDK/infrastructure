@@ -24,6 +24,8 @@ This module contain all code for preparing factories for builders.
 
 import time
 
+from collections import OrderedDict
+
 from twisted.internet import defer
 from buildbot.plugins import util, steps
 from buildbot.process import buildstep, logobserver
@@ -118,6 +120,52 @@ class StepsGenerator(steps.BuildStep):
         self.default_factory = default_factory
         self.build_specification = build_specification
 
+    def _is_last_build(self, current_builder, all_builders):
+        """
+        Checks status of builds for all_buildrers; Return True if build of current_builder
+        is last build.
+
+        :param current_builder: str
+        :param all_builders: dict
+        :return: True or False
+        """
+
+        #  All builders must have build request (dict with status of build)
+        if not all(all_builders.values()):
+            return False
+
+        number_of_passed_builds = len([build for build in all_builders.values() if
+                                       build['result'] == bb.utils.BuildStatus.PASSED])
+
+        running_builds = {builder: build for builder, build in all_builders.items() if
+                          build['result'] == bb.utils.BuildStatus.RUNNING}
+
+        # All builds must be passed or running, builds with other statuses can not run anything
+        if number_of_passed_builds + len(running_builds) != len(all_builders):
+            return False
+
+        builds_executed_trigger = OrderedDict(
+            [(builder, build) for builder, build in running_builds.items() if
+             build.get('step_name') == 'trigger'])
+
+        if len(running_builds) != len(builds_executed_trigger):
+            return False
+
+        if len(builds_executed_trigger) == 1:
+            if number_of_passed_builds == len(all_builders) - 1:
+                return True
+        else:
+            if [build for build in builds_executed_trigger.values() if build.get('step_started_at') is None]:
+                return False
+
+            sorted_builds_executed_trigger = OrderedDict(
+                sorted(builds_executed_trigger.items(), key=lambda x: x[1]['step_started_at'],
+                       reverse=True))
+            if list(sorted_builds_executed_trigger.keys())[0] == current_builder:
+                return True
+
+        return False
+
     @defer.inlineCallbacks
     def is_trigger_needed(self, step):
         """
@@ -138,17 +186,17 @@ class StepsGenerator(steps.BuildStep):
         builder_names_for_triggering = []
 
         # Filtration next builders by branch and project
-        builder_names_for_triggering_after_check = []
+        builder_names_for_triggering_after_check = {}
         for builder, triggers in self.build_specification['next_builders'].items():
             for trigger in triggers:
                 if project in trigger.get('repositories', []) and trigger.get('branches')(branch):
-                    builder_names_for_triggering_after_check.append(builder)
+                    builder_names_for_triggering_after_check[builder] = trigger
                     break
 
         if step.build.builder.name == 'trigger':
             # These builders haven't dependencies, because it is root builders
             # All builders that can be triggered from these builders must be triggered without any checks
-            builder_names_for_triggering += builder_names_for_triggering_after_check
+            builder_names_for_triggering += list(builder_names_for_triggering_after_check.keys())
 
         else:
             # Get all builds triggered by parent of this build
@@ -158,16 +206,11 @@ class StepsGenerator(steps.BuildStep):
                 step.build.master)
 
             # Check dependencies for builders from builder_names_for_triggering_after_check
-            for next_builder in builder_names_for_triggering_after_check:
-                for dependency in self.build_specification['next_builders'][next_builder]:
-                    for dependent_builder in dependency.get('builders', []):
-                        build = triggered_builds_from_parent_build.get(dependent_builder)
-                        if build is None or build_id != build['build_id'] and build[
-                            'result'] != bb.utils.BuildStatus.PASSED:
-                            break
-                    else:
-                        builder_names_for_triggering.append(next_builder)
-                        break
+            for next_builder, dependency in builder_names_for_triggering_after_check.items():
+                dependent_builders = {k: triggered_builds_from_parent_build.get(k, None) for k
+                                      in dependency.get('builders', [])}
+                if self._is_last_build(step.build.builder.name, dependent_builders):
+                    builder_names_for_triggering.append(next_builder)
 
         # Update builder names for trigger step
         # NOTE: scheduler names are the same as builder names
@@ -398,9 +441,9 @@ class Factories:
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
-        
+
         branch = props.getProperty('target_branch') or props.getProperty('branch')
-        
+
         test_factory.append(
             steps.ShellCommand(command=[self.run_command[worker_os],
                                         "test_adapter.py",
@@ -421,7 +464,7 @@ class Factories:
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
-        
+
         branch = props.getProperty('target_branch') or props.getProperty('branch')
 
         driver_manifest_path = MediaSdkDirectories.get_build_dir(
