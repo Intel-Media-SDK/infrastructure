@@ -24,8 +24,6 @@ This module contain all code for preparing factories for builders.
 
 import time
 
-from collections import OrderedDict
-
 from twisted.internet import defer
 from buildbot.plugins import util, steps
 from buildbot.process import buildstep, logobserver
@@ -144,10 +142,11 @@ class StepsGenerator(steps.BuildStep):
         if number_of_passed_builds + len(running_builds) != len(all_builders):
             return False
 
-        builds_executed_trigger = OrderedDict(
-            [(builder, build) for builder, build in running_builds.items() if
-             build.get('step_name') == 'trigger'])
+        builds_executed_trigger = {builder: build for builder, build in running_builds.items() if
+                                   build.get('step_name') == 'trigger'}
 
+        # Current build is not last if any other build execute not trigger stage, because trigger is
+        # last stage in all builds
         if len(running_builds) != len(builds_executed_trigger):
             return False
 
@@ -155,13 +154,24 @@ class StepsGenerator(steps.BuildStep):
             if number_of_passed_builds == len(all_builders) - 1:
                 return True
         else:
-            if [build for build in builds_executed_trigger.values() if build.get('step_started_at') is None]:
-                return False
+            last_builder_name = None
+            # Can not use None, because it is key parameter for selection
+            last_trigger_creation_time = True
+            for builder, build in builds_executed_trigger:
+                # In this case the step is just started in not current build (current build always
+                # has this parameter), so current build is not last; return False
+                if build['step_started_at'] is None:
+                    last_builder_name = None
+                    break
+                # This block will be executed one time for first element only
+                elif last_trigger_creation_time == True:
+                    last_trigger_creation_time = build['step_started_at']
+                    last_builder_name = builder
+                elif build['step_started_at'] > last_trigger_creation_time:
+                    last_trigger_creation_time = build['step_started_at']
+                    last_builder_name = builder
 
-            sorted_builds_executed_trigger = OrderedDict(
-                sorted(builds_executed_trigger.items(), key=lambda x: x[1]['step_started_at'],
-                       reverse=True))
-            if list(sorted_builds_executed_trigger.keys())[0] == current_builder:
+            if last_builder_name == current_builder:
                 return True
 
         return False
