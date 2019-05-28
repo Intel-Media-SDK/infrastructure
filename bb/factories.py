@@ -157,7 +157,7 @@ class StepsGenerator(steps.BuildStep):
             last_builder_name = None
             # Can not use None, because it is key parameter for selection
             last_trigger_creation_time = True
-            for builder, build in builds_executed_trigger:
+            for builder, build in builds_executed_trigger.items():
                 # In this case the step is just started in not current build (current build always
                 # has this parameter), so current build is not last; return False
                 if build['step_started_at'] is None:
