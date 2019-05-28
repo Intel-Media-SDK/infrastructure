@@ -113,7 +113,11 @@ def get_triggered_builds(build_id, master):
     :return: defaultdict
         Example: {'builder_name': {'buildrequest_id': str,
                                    'result': BuildStatus,
-                                   'build_id': None or int},
+                                   'build_id': None or int,
+
+                                   # These parameters will be return if build ongoing
+                                   'step_name': str or None,
+                                   'step_started_at': Datetime or None},
                   ....}
     """
     triggered_builds = defaultdict(dict)
@@ -132,8 +136,20 @@ def get_triggered_builds(build_id, master):
             # It is sorted to get the latest started build, because Buildbot's list of builds is not ordered
             last_build = max(builds_for_request, key=lambda r: r['started_at'])
 
-            triggered_builds[builder_name]['result'] = BuildStatus(last_build['results'])
+            last_build_status = BuildStatus(last_build['results'])
+            triggered_builds[builder_name]['result'] = last_build_status
             triggered_builds[builder_name]['build_id'] = last_build['id']
+
+            # Add current step information if build ongoing
+            if last_build_status == BuildStatus.RUNNING:
+                last_build_steps = yield master.db.steps.getSteps(buildid=last_build['id'])
+                if last_build_steps:
+                    current_step_of_last_build = last_build_steps[-1]
+                    triggered_builds[builder_name]['step_name'] = current_step_of_last_build['name']
+                    triggered_builds[builder_name]['step_started_at'] = current_step_of_last_build['started_at']
+                else:
+                    triggered_builds[builder_name]['step_name'] = None
+                    triggered_builds[builder_name]['step_started_at'] = None
 
             new_builds = yield get_triggered_builds(last_build['id'], master)
             triggered_builds.update(new_builds)
