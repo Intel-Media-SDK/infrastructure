@@ -649,7 +649,6 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, hide=N
                                            check=True,
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT,
-                                           encoding='utf-8',
                                            errors='backslashreplace')
 
         return completed_process.returncode, completed_process.stdout
