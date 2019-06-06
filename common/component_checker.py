@@ -41,15 +41,18 @@ def check_component_existence(path_to_manifest, component_name):
     manifest = Manifest(pathlib.Path(path_to_manifest))
     component = manifest.get_component(component_name)
     repository = component.get_repository(component_name)
-    component_dir = MediaSdkDirectories.get_build_dir(
+    list_params_for_getting_artifacts = [
         repository.target_branch if repository.target_branch else repository.branch,
         Build_event.COMMIT.value,
         repository.revision,
         component.product_type,
         Build_type.RELEASE.value,
-        product=component_name)
+        component_name]
+    component_dir = MediaSdkDirectories.get_build_dir(*list_params_for_getting_artifacts)
     if component_dir.exists():
         log.info(f"Directory {component_dir} exists")
+        link_to_artifacts = MediaSdkDirectories.get_build_url(*list_params_for_getting_artifacts)
+        log.info(f"Artifacts are available by: {link_to_artifacts}")
         # This is stop phrase for buildbot to skip all build stages
         log.info(SKIP_BUILDING_DEPENDENCY_PHRASE)
     else:
