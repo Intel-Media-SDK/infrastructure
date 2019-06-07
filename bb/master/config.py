@@ -301,7 +301,7 @@ BUILDERS = {
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda x: True,
-                      'builders': ['build-api-next']}]
+                      'builders': ['build-api-next', 'build-driver', 'build-opencl']}]
     }
 }
 
