@@ -227,11 +227,11 @@ class Component:
         yield 'repositories', {repo: dict(data) for repo, data in self._repositories.items()}
 
     def _prepare_repositories(self, repositories):
-        for repo, data in repositories.items():
+        for repo in repositories.values():
             if isinstance(repo, Repository):
                 self._repositories[repo.name] = repo
             else:
-                self._repositories[repo] = Repository.from_dict(repo, data)
+                self._repositories[repo['name']] = Repository.from_dict(repo)
 
     @staticmethod
     def from_dict(comp_data):
@@ -386,12 +386,9 @@ class Repository:
         yield 'type', self._type
 
     @staticmethod
-    def from_dict(repo_name, repo_data):
+    def from_dict(repo_data):
         """
         Method for converting dictionary to object
-
-        :param repo_name: Repository name
-        :type repo_name: String
 
         :param repo_data: Repository data
         :type repo_data: Dictionary
@@ -401,7 +398,7 @@ class Repository:
         """
 
         try:
-            repo = Repository(repo_name,
+            repo = Repository(repo_data['name'],
                               repo_data['url'],
                               repo_data['branch'],
                               repo_data.get('target_branch'),
@@ -538,3 +535,43 @@ class BuildInfo:
         """
 
         return self._build_event
+
+    def set_trigger(self, trigger):
+        """
+        Trigger setter
+
+        :param trigger: Repository name
+        :type trigger: String
+        """
+
+        self._trigger = trigger
+
+    def set_product_type(self, product_type):
+        """
+        Product type setter
+
+        :param product_type: Product type
+        :type product_type: String
+        """
+
+        self._product_type = product_type
+
+    def set_build_type(self, build_type):
+        """
+        Build type setter
+
+        :param build_type: Build type
+        :type build_type: String
+        """
+
+        self._build_type = build_type
+
+    def set_build_event(self, build_event):
+        """
+        Build event setter
+
+        :param build_event: Build event
+        :type build_event: String
+        """
+
+        self._build_event = build_event
