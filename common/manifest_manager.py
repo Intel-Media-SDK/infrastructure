@@ -86,7 +86,7 @@ class Manifest:
                     'name': name,
                     'version': info['version'],
                     'repository': info['repository'],
-                    'product_type': info['product_type']})
+                    'build_info': info['build_info']})
         else:
             raise ManifestDoesNotExist(f'Can not find manifest "{self._manifest_file}"')
 
@@ -177,7 +177,7 @@ class Manifest:
             comp = dict(comp_data)
             manifest_data['components'][comp_name] = {
                 'repository': comp['repositories'],
-                'product_type': comp['product_type'],
+                'build_info': comp['build_info'],
                 'version': comp['version']
             }
 
@@ -194,7 +194,7 @@ class Component:
     Component wrapper
     """
 
-    def __init__(self, name, version, repositories, product_type):
+    def __init__(self, name, version, repositories, build_info):
         """
         :param name: Name of component
         :type name: String
@@ -204,11 +204,18 @@ class Component:
 
         :param repositories: List of Repository objects
         :type repositories: List
+
+        :param build_info: Dict of build info. It must contain:
+                           trigger (Name of triggered repo for component),
+                           product_type (Type of product, ex. public_linux),
+                           build_type (Type of build, ex. release),
+                           build_event (Event of build, ex. commit)
+        :type build_info: Dict
         """
 
         self._name = name
         self._version = version
-        self._product_type = product_type
+        self._build_info = BuildInfo(**build_info)
         self._repositories = {}
 
         self._prepare_repositories(repositories)
@@ -216,15 +223,15 @@ class Component:
     def __iter__(self):
         yield 'name', self._name
         yield 'version', self._version
-        yield 'product_type', self._product_type
-        yield 'repositories', [dict(repo) for repo in self._repositories.values()]
+        yield 'build_info', dict(self._build_info)
+        yield 'repositories', {repo: dict(data) for repo, data in self._repositories.items()}
 
     def _prepare_repositories(self, repositories):
-        for repo in repositories:
-            if isinstance(repo, dict):
-                self._repositories[repo['name']] = Repository.from_dict(repo)
-            elif isinstance(repo, Repository):
+        for repo, data in repositories.items():
+            if isinstance(repo, Repository):
                 self._repositories[repo.name] = repo
+            else:
+                self._repositories[repo] = Repository.from_dict(repo, data)
 
     @staticmethod
     def from_dict(comp_data):
@@ -242,7 +249,7 @@ class Component:
             component = Component(comp_data['name'],
                                   comp_data['version'],
                                   comp_data['repository'],
-                                  comp_data['product_type'])
+                                  comp_data['build_info'])
         except ManifestException:
             raise
         except Exception as ex:
@@ -272,6 +279,17 @@ class Component:
         return self._version
 
     @property
+    def build_info(self):
+        """
+        get build information
+
+        :return: BuildInfo object
+        :rtype: BuildInfo
+        """
+
+        return self._build_info
+
+    @property
     def repositories(self):
         """
         get repositories list
@@ -291,21 +309,7 @@ class Component:
         :rtype: Repository | None
         """
 
-        for repo in self._repositories.values():
-            if repo.is_trigger:
-                return repo
-        return None
-
-    @property
-    def product_type(self):
-        """
-        get product type
-
-        :return: Product type
-        :rtype: String
-        """
-
-        return self._product_type
+        return self._repositories[self._build_info.trigger]
 
     def get_repository(self, repository_name):
         """
@@ -363,14 +367,14 @@ class Repository:
     Container for repository information
     """
 
-    def __init__(self, name, url, branch='master', target_branch=None, revision='HEAD', source_type='git', trigger=False):
+    def __init__(self, name, url, branch='master', target_branch=None,
+                 revision='HEAD', source_type='git'):
         self._name = name
         self._url = url
         self._branch = branch
         self._target_branch = target_branch
         self._revision = revision
         self._type = source_type
-        self._trigger = trigger
 
     def __iter__(self):
         yield 'name', self._name
@@ -380,12 +384,14 @@ class Repository:
             yield 'target_branch', self._target_branch
         yield 'revision', self._revision
         yield 'type', self._type
-        yield 'trigger', self._trigger
 
     @staticmethod
-    def from_dict(repo_data):
+    def from_dict(repo_name, repo_data):
         """
         Method for converting dictionary to object
+
+        :param repo_name: Repository name
+        :type repo_name: String
 
         :param repo_data: Repository data
         :type repo_data: Dictionary
@@ -395,13 +401,12 @@ class Repository:
         """
 
         try:
-            repo = Repository(repo_data['name'],
+            repo = Repository(repo_name,
                               repo_data['url'],
                               repo_data['branch'],
                               repo_data.get('target_branch'),
                               repo_data['revision'],
-                              repo_data['type'],
-                              repo_data['trigger'])
+                              repo_data['type'])
         except Exception as ex:
             raise WrongRepositoryFormatError(ex)
         return repo
@@ -472,13 +477,64 @@ class Repository:
 
         return self._type
 
-    @property
-    def is_trigger(self):
-        """
-        Is triggered repository
 
-        :return: Boolean
-        :rtype: Boolean
+class BuildInfo:
+    """
+    Container for information about build
+    """
+
+    def __init__(self, trigger, product_type, build_type, build_event):
+        self._trigger = trigger
+        self._product_type = product_type
+        self._build_type = build_type
+        self._build_event = build_event
+
+    def __iter__(self):
+        yield 'trigger', self._trigger
+        yield 'product_type', self._product_type
+        yield 'build_type', self._build_type
+        yield 'build_event', self._build_event
+
+    @property
+    def trigger(self):
+        """
+        get triggered repository name
+
+        :return: Repository object | None
+        :rtype: Repository | None
         """
 
         return self._trigger
+
+    @property
+    def product_type(self):
+        """
+        get product type
+
+        :return: Product type
+        :rtype: String
+        """
+
+        return self._product_type
+
+    @property
+    def build_type(self):
+        """
+        get build type
+
+        :return: Build type
+        :rtype: String
+        """
+
+        return self._build_type
+
+    @property
+    def build_event(self):
+        """
+        get build event
+
+        :return: Build event
+        :rtype: String
+        """
+
+        return self._build_event
