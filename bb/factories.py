@@ -29,6 +29,7 @@ from buildbot.plugins import util, steps
 from buildbot.process import buildstep, logobserver
 
 import bb.utils
+import bb.buildbot_utils as buildbot_utils
 from common.helper import Stage, TestStage
 from common.mediasdk_directories import MediaSdkDirectories
 
@@ -133,10 +134,10 @@ class StepsGenerator(steps.BuildStep):
             return False
 
         number_of_passed_builds = len([build for build in all_builders.values() if
-                                       build['result'] == bb.utils.BuildStatus.PASSED])
+                                       build['result'] == buildbot_utils.BuildStatus.PASSED])
 
         running_builds = {builder: build for builder, build in all_builders.items() if
-                          build['result'] == bb.utils.BuildStatus.RUNNING}
+                          build['result'] == buildbot_utils.BuildStatus.RUNNING}
 
         # All builds must be passed or running, builds with other statuses can not run anything
         if number_of_passed_builds + len(running_builds) != len(all_builders):
@@ -185,7 +186,7 @@ class StepsGenerator(steps.BuildStep):
         :return: True or False
             WARNING: Also redefine step.schedulerNames parameter
         """
-        if step.build.results != bb.utils.BuildStatus.PASSED.value:
+        if step.build.results != buildbot_utils.BuildStatus.PASSED.value:
             defer.returnValue(False)
         build_id = step.build.buildid
         project = bb.utils.get_repository_name_by_url(
@@ -211,7 +212,7 @@ class StepsGenerator(steps.BuildStep):
         else:
             # Get all builds triggered by parent of this build
             parent_build_id = yield bb.utils.get_root_build_id(build_id, step.build.master)
-            triggered_builds_from_parent_build = yield bb.utils.get_triggered_builds(
+            triggered_builds_from_parent_build = yield buildbot_utils.get_triggered_builds(
                 parent_build_id,
                 step.build.master)
 
@@ -422,7 +423,7 @@ class Factories:
                                '--component', dependency_name,
                                "--build-event", "commit"]
         else:
-            shell_commands += ["--changed-repo", bb.utils.get_changed_repo]
+            shell_commands += ["--changed-repo", buildbot_utils.get_changed_repo]
             if props.hasProperty('target_branch'):
                 shell_commands += ["--build-event", "pre_commit",
                                    '--target-branch', props['target_branch']]
