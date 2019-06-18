@@ -58,7 +58,7 @@ class Action(object):
         :type cmd: String
 
         :param work_dir: Path where script will execute
-        :type work_dir: pathlib.Path
+        :type work_dir: pathlib.Path | None
 
         :param env: Environment variables for script
         :type env: Dict

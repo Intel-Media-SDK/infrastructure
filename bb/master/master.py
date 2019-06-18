@@ -79,12 +79,6 @@ c["services"] = [
                                startDescription="Started",
                                endDescription="Done",
                                verbose=True)]
-# Will be useful for implementing build notifications in the future
-#    reporters.GitHubCommentPush(token=config.GITHUB_TOKEN,
-#                                 startDescription="Started (comment)",
-#                                 endDescription="Done (comment)",
-#                                 verbose=True,
-#                                 debug=True)]
 
 # Get changes
 c["change_source"] = []
@@ -92,29 +86,31 @@ c["change_source"] = []
 
 class MediasdkChangeChecker(bb.utils.ChangeChecker):
     def pull_request_filter(self, pull_request, files):
-        # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
-        # so disable event this branch in all production Buildbots services.
-        # WARNING: this branch also disabled for MediaSDK
-        if pull_request['base']['ref'] == 'one_ci_dev':
-            return None
+
         return self.default_properties
 
 
 REPOSITORIES = [
     {'name': config.MEDIASDK_REPO,
+     'organization': config.MEDIASDK_ORGANIZATION,
      # All changes
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+    {'name': config.DRIVER_REPO,
+     'organization': config.DRIVER_ORGANIZATION,
+     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.PRODUCT_CONFIGS_REPO,
+     'organization': config.MEDIASDK_ORGANIZATION,
      # Pull requests only for members of Intel-Media-SDK organization
      # This filter is needed for security, because via product configs can do everything
      'change_filter': bb.utils.ChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.INFRASTRUCTURE_REPO,
+     'organization': config.MEDIASDK_ORGANIZATION,
      # All changes
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
 ]
 
 for repo in REPOSITORIES:
-    repo_url = f"https://github.com/{config.MEDIASDK_ORGANIZATION}/{repo['name']}.git"
+    repo_url = f"https://github.com/{repo['organization']}/{repo['name']}.git"
 
     c["change_source"].append(GitPoller(
         repourl=repo_url,
@@ -126,8 +122,8 @@ for repo in REPOSITORIES:
         # pull_request (add branches of open pull request)
         # *fetch branches*
         # change_filter (checking changes)
-        branches=bb.utils.is_release_branch,
-        pull_request_branches=bb.utils.get_open_pull_request_branches(config.MEDIASDK_ORGANIZATION,
+        branches=lambda branch: bb.utils.is_release_branch(branch),
+        pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),
         change_filter=repo['change_filter'],

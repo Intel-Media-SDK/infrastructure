@@ -33,6 +33,7 @@ During manual running, only the "build" step is performed if stage is not specif
 """
 
 import argparse
+import collections
 import json
 import os
 import pathlib
@@ -43,19 +44,16 @@ import sys
 import logging
 from collections import OrderedDict
 from copy import deepcopy
-from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, Action, RunnerException
-from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
+from common.helper import Stage, Product_type, Build_type, make_archive, \
     copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive, create_file
-
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
-from common.mediasdk_directories import MediaSdkDirectories
 from common.build_number import get_build_number
-from common.manifest_manager import Manifest, Component, Repository
+from common.manifest_manager import Manifest, get_build_dir, get_build_url
 
 
 class UnsupportedVSError(RunnerException):
@@ -220,9 +218,8 @@ class BuildGenerator(ConfigGenerator):
     Contains commands for building product.
     """
 
-    def __init__(self, build_config_path, root_dir, build_type, product_type, build_event, stage,
-                 commit_time=None, changed_repo=None, repo_states_file_path=None, target_arch=None,
-                 custom_cli_args=None, target_branch=None, manifest_file=None, component_name=None):
+    def __init__(self, build_config_path, root_dir, manifest, component,
+                 build_type, product_type, stage, target_arch=None, custom_cli_args=None):
         """
         :param build_config_path: Path to build configuration file
         :type build_config_path: pathlib.Path
@@ -230,27 +227,20 @@ class BuildGenerator(ConfigGenerator):
         :param root_dir: Main directory for product building
         :type root_dir: pathlib.Path
 
+        :param manifest: Path to a manifest file
+        :type manifest: String
+
+        :param component: Name of component
+        :type component: String
+
         :param build_type: Type of build (release|debug)
         :type build_type: String
 
         :param product_type: Type of product (linux|linux_embedded|linux_pre_si|windows)
         :type product_type: String
 
-        :param build_event: Event of build (pre_commit|commit|nightly|weekly)
-        :type build_event: String
-
         :param stage: Build stage
         :type stage: String
-
-        :param commit_time: Time for getting slice of commits of repositories
-        :type commit_time: datetime
-
-        :param changed_repo: Information about changed source repository
-        :type changed_repo: String
-
-        :param repo_states_file_path: Path to sources file with revisions
-                                      of repositories to reproduce the same build
-        :type repo_states_file_path: String
 
         :param target_arch: Architecture of target platform
         :type target_arch: List
@@ -262,13 +252,6 @@ class BuildGenerator(ConfigGenerator):
         self._default_stage = Stage.BUILD.value
         super().__init__(root_dir, build_config_path, stage)
 
-        self._product_repos = {}
-        self._product = None
-        self._product_type = product_type
-        self._build_event = build_event
-        self._commit_time = commit_time
-        self._changed_repo = changed_repo
-        self._repo_states = None
         self._build_state_file = root_dir / "build_state"
         self._options.update({
             "REPOS_DIR": root_dir / "repos",
@@ -279,47 +262,16 @@ class BuildGenerator(ConfigGenerator):
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
         })
+        self._product_repos = []
         self._dev_pkg_data_to_archive = []
         self._install_pkg_data_to_archive = []
         self._custom_cli_args = custom_cli_args
         self._target_arch = target_arch
-        self._target_branch = target_branch
-        self._manifest_file = manifest_file
 
-        manifest_path = pathlib.Path(manifest_file) if manifest_file else self._config_path.parent / 'manifest.yml'
-        if manifest_path.exists():
-            self._manifest = Manifest(manifest_path)
-        else:
-            self._manifest = Manifest()
-            self._log.warning('Created empty manifest.')
-
-        if changed_repo:
-            changed_repo_dict = changed_repo.split(':')
-            self._branch_name = changed_repo_dict[1]
-            self._changed_repo_name = changed_repo_dict[0]
-        elif repo_states_file_path:
-            self._branch_name = 'master'
-            repo_states_file = pathlib.Path(repo_states_file_path)
-            if repo_states_file.exists():
-                with repo_states_file.open() as repo_states_json:
-                    self._repo_states = json.load(repo_states_json)
-                    for repo_name, repo_state in self._repo_states.items():
-                        if repo_state['trigger']:
-                            self._branch_name = repo_state['branch']
-                            self._changed_repo_name = repo_name
-                            self._target_branch = repo_state.get('target_branch')
-                            break
-            else:
-                raise RunnerException(f'{repo_states_file} does not exist')
-        elif manifest_file:
-            component = self._manifest.get_component(component_name)
-            repo = component.trigger_repository
-            self._branch_name = repo.branch
-            self._changed_repo_name = repo.name
-            self._target_branch = repo.target_branch
-        else:
-            self._branch_name = 'master'
-            self._changed_repo_name = None
+        self._manifest = Manifest(manifest)
+        self._component = self._manifest.get_component(component)
+        self._component.build_info.set_build_type(build_type)
+        self._component.build_info.set_product_type(product_type)
 
     def _update_global_vars(self):
         self._global_vars.update({
@@ -327,18 +279,17 @@ class BuildGenerator(ConfigGenerator):
             'stage': Stage,
             'copy_win_files': copy_win_files,
             'args': self._custom_cli_args,
-            'product_type': self._product_type,
-            'build_event': self._build_event,
+            'product_type': self._component.build_info.product_type,
+            'build_event': self._component.build_info.build_event,
             # TODO should be in lower case
             'DEV_PKG_DATA_TO_ARCHIVE': self._dev_pkg_data_to_archive,
             'INSTALL_PKG_DATA_TO_ARCHIVE': self._install_pkg_data_to_archive,
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
-            'branch_name': self._branch_name,
-            'changed_repo_name': self._changed_repo_name,
+            'branch_name': self._component.trigger_repository.branch,
+            'changed_repo_name': self._manifest.event_repo.name,
             'update_config': self._update_config,
             'target_arch': self._target_arch,
-            'commit_time': self._commit_time,
             'get_packing_cmd': get_packing_cmd,
             'get_commit_number': ProductState.get_commit_number,
             'copytree': copytree,
@@ -347,16 +298,9 @@ class BuildGenerator(ConfigGenerator):
         })
 
     def _get_config_vars(self):
-        # TODO add product_repos to global_vars
         if 'PRODUCT_REPOS' in self._config_variables:
             for repo in self._config_variables['PRODUCT_REPOS']:
-                self._product_repos[repo['name']] = {
-                    'branch': repo.get('branch'),
-                    'commit_id': repo.get('commit_id'),
-                    'url': MediaSdkDirectories.get_repo_url_by_name(repo['name'])
-                }
-
-        self._product = self._config_variables.get('PRODUCT_NAME', 'mediasdk')
+                self._product_repos.append(repo['name'])
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
@@ -478,64 +422,23 @@ class BuildGenerator(ConfigGenerator):
         self._options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
         self._options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
-        triggered_repo = 'unknown'
+        repo_states = collections.defaultdict(dict)
+        for repo in self._component.repositories:
+            if not self._product_repos or repo.name in self._product_repos:
+                repo_states[repo.name]['target_branch'] = repo.target_branch
+                repo_states[repo.name]['branch'] = repo.branch
+                repo_states[repo.name]['commit_id'] = repo.revision
+                repo_states[repo.name]['url'] = repo.url
+                repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
 
-        if self._changed_repo:
-            repo_name, branch, commit_id = self._changed_repo.split(':')
-            triggered_repo = repo_name
-
-            if repo_name not in self._product_repos:
-                self._log.critical(f'{repo_name} repository is not defined in the product configuration PRODUCT_REPOS')
-                return False
-
-            for repo, data in self._product_repos.items():
-                data['trigger'] = False
-                if repo == repo_name:
-                    data['trigger'] = True
-                    if self._target_branch:
-                        data['target_branch'] = self._target_branch
-                    if not data.get('branch'):
-                        data['branch'] = branch
-                        data['commit_id'] = commit_id
-                elif not data.get('branch'):
-                    if self._target_branch and MediaSdkDirectories.is_release_branch(self._target_branch):
-                        data['branch'] = self._target_branch
-                    elif MediaSdkDirectories.is_release_branch(branch) and not self._target_branch:
-                        data['branch'] = branch
-        elif self._repo_states:
-            for repo_name, values in self._repo_states.items():
-                if repo_name in self._product_repos:
-                    if values['trigger']:
-                        triggered_repo = repo_name
-                        if values.get('target_branch'):
-                            self._product_repos[repo_name]['target_branch'] = values['target_branch']
-                    self._product_repos[repo_name]['branch'] = values['branch']
-                    self._product_repos[repo_name]['commit_id'] = values['commit_id']
-                    self._product_repos[repo_name]['url'] = values['url']
-                    self._product_repos[repo_name]['trigger'] = values['trigger']
-        elif self._manifest_file:
-            component = self._manifest.get_component(self._product)
-            for repo in component.repositories:
-                if repo.name in self._product_repos:
-                    if repo.is_trigger:
-                        triggered_repo = repo.name
-                        if repo.target_branch:
-                            self._product_repos[repo.name]['target_branch'] = repo.target_branch
-                    self._product_repos[repo.name]['branch'] = repo.branch
-                    self._product_repos[repo.name]['commit_id'] = repo.revision
-                    self._product_repos[repo.name]['url'] = repo.url
-                    self._product_repos[repo.name]['trigger'] = repo.is_trigger
-
-        product_state = ProductState(self._product_repos,
-                                     self._options["REPOS_DIR"],
-                                     self._commit_time)
+        product_state = ProductState(repo_states, self._options["REPOS_DIR"])
 
         product_state.extract_all_repos()
 
         product_state.save_repo_states(self._options["PACK_DIR"] / 'repo_states.json',
-                                       trigger=triggered_repo)
+                                       trigger=self._component.build_info.trigger)
 
-        self._save_manifest(product_state)
+        self._manifest.save_manifest(self._options["PACK_DIR"] / 'manifest.yml')
 
         shutil.copyfile(self._config_path,
                         self._options["PACK_DIR"] / self._config_path.name)
@@ -688,39 +591,9 @@ class BuildGenerator(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("COPYING")
 
-        branch = 'unknown'
-        commit_id = 'unknown'
-
-        if self._changed_repo:
-            repo_name, branch, commit_id = self._changed_repo.split(':')
-            if self._target_branch:
-                branch = self._target_branch
-            if commit_id == 'HEAD':
-                commit_id = ProductState.get_head_revision(self._options['REPOS_DIR'] / repo_name)
-        elif self._repo_states:
-            for repo in self._repo_states.values():
-                if repo['trigger']:
-                    branch = repo['target_branch'] if repo.get('target_branch') else repo['branch']
-                    commit_id = repo['commit_id']
-        elif self._manifest_file:
-            component = self._manifest.get_component(self._product)
-            repo = component.trigger_repository
-            branch = repo.target_branch if repo.target_branch else repo.branch
-            commit_id = repo.revision
-        else:
-            # "--changed-repo" or "--repo-states" arguments are not set, "HEAD" revision and "master" branch are used
-            branch = 'master'
-            commit_id = 'HEAD'
-
-        build_dir = MediaSdkDirectories.get_build_dir(
-            branch, self._build_event, commit_id,
-            self._product_type, self._options["BUILD_TYPE"], product=self._product)
-
-        build_url = MediaSdkDirectories.get_build_url(
-            branch, self._build_event, commit_id,
-            self._product_type, self._options["BUILD_TYPE"], product=self._product)
-
-        build_root_dir = MediaSdkDirectories.get_root_builds_dir()
+        build_dir = get_build_dir(self._manifest, self._component.name)
+        build_url = get_build_url(self._manifest, self._component.name)
+        build_root_dir = get_build_dir(self._manifest, self._component.name, link_type='root')
         rotate_dir(build_dir)
 
         self._log.info('Copy to %s', build_dir)
@@ -742,7 +615,7 @@ class BuildGenerator(ConfigGenerator):
 
                 if build_state['status'] == "PASS":
                     last_build_path = build_dir.relative_to(build_root_dir)
-                    last_build_file = build_dir.parent.parent / f'last_build_{self._product_type}'
+                    last_build_file = build_dir.parent.parent / f'last_build_{self._component.build_info.product_type}'
                     last_build_file.write_text(str(last_build_path))
 
         return True
@@ -800,8 +673,8 @@ class BuildGenerator(ConfigGenerator):
                     err, out = cmd_exec(command, shell=False, log=self._log, verbose=False)
                     if err:
                         # Not strip file if it is not binary
-                        return_code, out_check_binary = cmd_exec(check_binary_command, shell=True, log=self._log,
-                                                                 verbose=False)
+                        return_code, _ = cmd_exec(check_binary_command, shell=True, log=self._log,
+                                                  verbose=False)
                         if return_code:
                             self._log.warning(f"File {orig_file} is not binary")
                             break
@@ -811,7 +684,8 @@ class BuildGenerator(ConfigGenerator):
                         continue
 
             if binaries_with_error:
-                self._log.error('Stripping for next binaries was failed. See full log for details:\n%s',
+                self._log.error('Stripping for next binaries was failed. '
+                                'See full log for details:\n%s',
                                 '\n'.join(binaries_with_error))
                 return False
         elif system_os == 'Windows':
@@ -895,16 +769,16 @@ class BuildGenerator(ConfigGenerator):
 
         files_list = pkgconfig_dir.glob(pattern)
         for pkgconfig in files_list:
-            with pkgconfig.open('r+') as fd:
+            with pkgconfig.open('r+') as conf_file:
                 self._log.debug(f"update_config: Start updating {pkgconfig}")
                 try:
-                    current_config_data = fd.readlines()
-                    fd.seek(0)
-                    fd.truncate()
+                    current_config_data = conf_file.readlines()
+                    conf_file.seek(0)
+                    conf_file.truncate()
                     for line in current_config_data:
                         for pattern, data in update_data.items():
                             line = re.sub(pattern, data, line)
-                        fd.write(line)
+                        conf_file.write(line)
                     self._log.debug(f"update_config: {pkgconfig} is updated")
                 except OSError:
                     self._log.error(f"update_config: Failed to update package config: {pkgconfig}")
@@ -926,26 +800,15 @@ class BuildGenerator(ConfigGenerator):
                 self._log.info(f'Getting component {dependency}')
                 comp = self._manifest.get_component(dependency)
                 if comp:
-                    trigger_repo = comp.trigger_repository
-                    if trigger_repo:
-                        dep_dir = MediaSdkDirectories.get_build_dir(
-                            trigger_repo.target_branch if trigger_repo.target_branch else trigger_repo.branch,
-                            Build_event.COMMIT.value,
-                            trigger_repo.revision,
-                            comp.product_type,
-                            Build_type.RELEASE.value,
-                            product=dependency
-                        )
+                    try:
+                        dep_dir = get_build_dir(self._manifest, dependency)
+                        # TODO: Extension hardcoded for open source. Need to use only .zip in future.
+                        dep_pkg = dep_dir / f'install_pkg.tar.gz'
 
-                        try:
-                            self._log.info(f'Extracting {dependency} {comp.product_type} artifacts')
-                            # TODO: Extension hardcoded for open source. Need to use only .zip in future.
-                            extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
-                        except Exception:
-                            self._log.exception('Can not extract archive')
-                            return False
-                    else:
-                        self._log.error('There is no repository as a trigger')
+                        self._log.info(f'Extracting {dep_pkg}')
+                        extract_archive(dep_pkg, deps_dir / dependency)
+                    except Exception:
+                        self._log.exception('Can not extract archive')
                         return False
                 else:
                     self._log.error(f'Component {dependency} does not exist in manifest')
@@ -956,26 +819,6 @@ class BuildGenerator(ConfigGenerator):
 
         return True
 
-    def _save_manifest(self, product_state):
-        repos = []
-        for repo in product_state.repo_states:
-            repos.append(
-                Repository(
-                    name=repo.repo_name,
-                    url=repo.url,
-                    branch=repo.branch_name,
-                    target_branch=repo.target_branch,
-                    revision=repo.commit_id,
-                    trigger=repo.is_trigger
-                )
-            )
-
-        component = self._manifest.get_component(self._product)
-        version = component.version if component else '1'
-
-        self._manifest.add_component(Component(self._product, version, repos, self._product_type), replace=True)
-        self._manifest.save_manifest(self._options["PACK_DIR"] / 'manifest.yml')
-
 
 def main():
     """
@@ -985,20 +828,13 @@ def main():
     """
     parser = argparse.ArgumentParser(prog="build_runner.py",
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--version", action="version", version="%(prog)s 1.0")
     parser.add_argument('-bc', "--build-config", metavar="PATH", required=True,
                         help="Path to a build configuration")
     parser.add_argument('-d', "--root-dir", metavar="PATH", required=True,
                         help="Path to worker directory")
-    parser.add_argument('-r', "--changed-repo", metavar="String",
-                        help='''Changed repository information
-in format: <repo_name>:<branch>:<commit_id>
-(ex: MediaSDK:master:52199a19d7809a77e3a474b195592cc427226c61)''')
-    parser.add_argument('-s', "--repo-states", metavar="PATH",
-                        help="Path to repo_states.json file")
-    parser.add_argument('-m', "--manifest", metavar="PATH",
+    parser.add_argument('-m', "--manifest", metavar="PATH", required=True,
                         help="Path to manifest.yml file")
-    parser.add_argument('-c', "--component", metavar="String",
+    parser.add_argument('-c', "--component", metavar="String", required=True,
                         help="Component name that will be built from manifest")
     parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
                         choices=[build_type.value for build_type in Build_type],
@@ -1006,21 +842,14 @@ in format: <repo_name>:<branch>:<commit_id>
     parser.add_argument('-p', "--product-type", default=Product_type.CLOSED_LINUX.value,
                         choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
-    parser.add_argument('-e', "--build-event", default=Build_event.PRE_COMMIT.value,
-                        choices=[build_event.value for build_event in Build_event],
-                        help='Event of build')
     parser.add_argument("--stage", default=Stage.BUILD.value,
                         choices=[stage.value for stage in Stage],
                         help="Current executable stage")
-    parser.add_argument('-t', "--commit-time", metavar='datetime',
-                        help="Time of commits (ex. 2017-11-02 07:36:40)")
     parser.add_argument('-ta', "--target-arch",
                         nargs='*',
                         default=[target_arch.value for target_arch in TargetArch],
                         choices=[target_arch.value for target_arch in TargetArch],
                         help='Architecture of target platform')
-    parser.add_argument('-tb', "--target-branch",
-                        help=f'All not triggered repos will be checkout to this branch.')
 
     parsed_args, unknown_args = parser.parse_known_args()
 
@@ -1038,40 +867,22 @@ in format: <repo_name>:<branch>:<commit_id>
             try:
                 arg = arg.split('=')
                 custom_cli_args[arg[0]] = arg[1]
-            except:
+            except Exception:
                 log.exception(f'Wrong argument layout: {arg}')
                 exit(ErrorCode.CRITICAL)
-
-    if parsed_args.commit_time:
-        commit_time = datetime.strptime(parsed_args.commit_time, '%Y-%m-%d %H:%M:%S')
-    else:
-        commit_time = None
 
     try:
         build_config = BuildGenerator(
             build_config_path=pathlib.Path(parsed_args.build_config).absolute(),
             root_dir=pathlib.Path(parsed_args.root_dir).absolute(),
+            manifest=pathlib.Path(parsed_args.manifest),
+            component=parsed_args.component,
             build_type=parsed_args.build_type,
             product_type=parsed_args.product_type,
-            build_event=parsed_args.build_event,
-            commit_time=commit_time,
-            changed_repo=parsed_args.changed_repo,
-            repo_states_file_path=parsed_args.repo_states,
             custom_cli_args=custom_cli_args,
             stage=parsed_args.stage,
-            target_arch=target_arch,
-            target_branch=parsed_args.target_branch,
-            manifest_file=parsed_args.manifest,
-            component_name=parsed_args.component
+            target_arch=target_arch
         )
-
-        if not parsed_args.changed_repo \
-                and not parsed_args.repo_states \
-                and (not parsed_args.manifest or not parsed_args.component):
-            log.warning('"--changed-repo" or "--repo-states" or "--manifest" and "--component" '
-                        'arguments are not set, "HEAD" revision and "master" branch will be used')
-        elif parsed_args.changed_repo and parsed_args.repo_states:
-            log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
         # prepare build configuration
         if build_config.generate_config():

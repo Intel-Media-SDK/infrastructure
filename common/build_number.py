@@ -31,13 +31,13 @@ from common.helper import cmd_exec, remove_directory
 from common.extract_repo import extract_repo
 
 
-def get_build_number(repo_path, os_type, branch):
+def get_build_number(repo_path, component, branch):
     """
         Get build number from file in repository
         :param repo_path: path to repository with "build_numbers.json" file
         :type repo_path: String | pathlib.Path
-        :param os_type: OS type. Need for finding certain build number
-        :type os_type: String
+        :param component: Component name. Need for finding certain build number
+        :type component: String
         :param branch: Name of branch. Need for finding certain build number
         :type branch: String
 
@@ -55,14 +55,14 @@ def get_build_number(repo_path, os_type, branch):
     if build_numbers_path.exists():
         with build_numbers_path.open() as numbers_file:
             numbers = json.load(numbers_file)
-            if os_type in numbers:
-                if branch in numbers[os_type]:
-                    build_number = numbers[os_type][branch]
+            if component in numbers:
+                if branch in numbers[component]:
+                    build_number = numbers[component][branch]
                 else:
                     log.warning(f'Branch {branch} does not exist. Get number from master')
-                    build_number = numbers[os_type]['master']
+                    build_number = numbers[component]['master']
             else:
-                log.warning(f'OS {os_type} does not exist')
+                log.warning(f'Component {component} does not exist')
     else:
         log.warning(f'{build_numbers_path} does not exist')
 
@@ -70,7 +70,7 @@ def get_build_number(repo_path, os_type, branch):
     return build_number
 
 
-def increase_build_number(local_repo_path, os_type, branch):
+def increase_build_number(local_repo_path, component, branch):
     """
         Increase build number by 1 in remote repository, if it is the same for local and remote repositories
         This condition is needed to avoid increasing build number while rebuilds
@@ -81,23 +81,23 @@ def increase_build_number(local_repo_path, os_type, branch):
 
         :param local_repo_path: path to local repository with "build_numbers.json" file
         :type local_repo_path: String | pathlib.Path
-        :param os_type: OS type. Need for finding certain build number
-        :type os_type: String
+        :param component: Component name. Need for finding certain build number
+        :type component: String
         :param branch: Name of branch. Need for finding certain build number
         :type branch: String
     """
 
     log = logging.getLogger('build_number.increase_build_number')
-    log.info(f'Increasing build number in {branch} branch for {os_type} platform')
+    log.info(f'Increasing build number in {branch} branch for {component}')
 
     build_numbers_file = 'build_numbers.json'
 
     log.info(f'Get build number from local repository')
     current_build_number = get_build_number(repo_path=pathlib.Path(local_repo_path),
-                                            os_type=os_type, branch=branch)
+                                            component=component, branch=branch)
     if current_build_number == 0:
         log.error(f'Local build number must not be 0\n'
-                  f'Check that {pathlib.Path(local_repo_path) / build_numbers_file} contains appropriate {branch} branch for {os_type} platform')
+                  f'Check that {pathlib.Path(local_repo_path) / build_numbers_file} contains appropriate {branch} branch for {component}')
         return False
 
     repo_name = pathlib.Path(local_repo_path).name
@@ -120,7 +120,7 @@ def increase_build_number(local_repo_path, os_type, branch):
     log.info(
         f'Getting build number from HEAD of {branch} branch for repo in {latest_version_repo_path}')
     latest_git_build_number = get_build_number(repo_path=latest_version_repo_path,
-                                               os_type=os_type, branch=branch)
+                                               component=component, branch=branch)
 
     if current_build_number != latest_git_build_number:
         log.warning(
@@ -136,8 +136,8 @@ def increase_build_number(local_repo_path, os_type, branch):
             with latest_build_number_path.open('r+') as build_number_file:
                 build_numbers = json.load(build_number_file)
 
-                new_build_number = build_numbers[os_type][branch] + 1
-                build_numbers[os_type][branch] = new_build_number
+                new_build_number = build_numbers[component][branch] + 1
+                build_numbers[component][branch] = new_build_number
 
                 build_number_file.seek(0)
                 build_number_file.write(json.dumps(build_numbers, indent=4, sort_keys=True))
@@ -146,7 +146,7 @@ def increase_build_number(local_repo_path, os_type, branch):
             log.info(f'\tPush changes')
 
             push_change_commands = ['git add -A',
-                                    f'git commit -m "Increased build number of {branch} branch for {os_type} platform to {new_build_number}"',
+                                    f'git commit -m "Increased build number of {branch} branch for {component} to {new_build_number}"',
                                     f'git push origin HEAD:{branch}']
             for command in push_change_commands:
                 return_code, output = cmd_exec(command, cwd=latest_version_repo_path)

@@ -279,6 +279,19 @@ class Factories:
                                        hideStepIf=self.mode == bb.utils.Mode.PRODUCTION_MODE))
         return factory
 
+    def get_manifest_path(self, props):
+        """
+        Return path to main manifest on share as string for target worker.
+        get_path and util.Interpolate wrappers are not needed.
+        """
+        return str(MediaSdkDirectories.get_commit_dir(
+            props.getProperty('target_branch') or props.getProperty('branch'),
+            props.getProperty('event_type'),
+            props.getProperty("revision"),
+            os_type=props.getProperty('os'),
+            # TODO: import the const from common
+            product='manifest') / 'manifest.yml')
+
     def factory_with_deploying_infrastructure_step(self, props):
         factory = list()
         # return empty factory if deploying infrastructure is disabled
@@ -289,18 +302,24 @@ class Factories:
         @util.renderer
         @defer.inlineCallbacks
         def get_infrastructure_deploying_cmd(props):
-            infrastructure_deploying_cmd = [
+
+            infra_deploying_cmd = [
                 self.run_command[props['os']], 'extract_repo.py',
-                '--repo-name', 'OPEN_SOURCE_INFRA',
+                '--infra-type', 'OPEN_SOURCE_INFRA',
                 '--root-dir', props.getProperty("builddir")]
+
+            # TODO: create file with const
+            # TODO: Calculate manifest path in one place (now it implemented in deploy and build)
+            if props.getProperty('buildername') != 'trigger':
+                infra_deploying_cmd.extend(['--manifest-path', self.get_manifest_path(props)])
 
             # Changes from product-configs\fork of product configs repositories will be deployed as is.
             # Infrastructure for changes from other repos will be extracted from master\release branch of
             # Intel-Media-SDK/product-configs repository.
             if bb.utils.get_repository_name_by_url(
                     props.getProperty('repository')) == "product-configs":
-                infrastructure_deploying_cmd += ['--commit-id', props.getProperty("revision"),
-                                                 '--branch', props.getProperty("branch")]
+                infra_deploying_cmd += ['--commit-id', props.getProperty("revision"),
+                                        '--branch', props.getProperty("branch")]
 
             else:
                 build_id = props.build.buildid
@@ -310,14 +329,14 @@ class Factories:
                 formatted_sourcestamp_created_time = time.strftime('%Y-%m-%d %H:%M:%S',
                                                                    time.localtime(
                                                                        sourcestamps_created_time))
-                infrastructure_deploying_cmd += ['--commit-time',
-                                                 formatted_sourcestamp_created_time,
-                                                 # Set 'branch' value if 'target_branch' property not set.
-                                                 '--branch',
-                                                 util.Interpolate(
-                                                     '%(prop:target_branch:-%(prop:branch)s)s')]
+                infra_deploying_cmd += ['--commit-time',
+                                        formatted_sourcestamp_created_time,
+                                        # Set 'branch' value if 'target_branch' property not set.
+                                        '--branch',
+                                        util.Interpolate(
+                                            '%(prop:target_branch:-%(prop:branch)s)s')]
 
-            defer.returnValue(infrastructure_deploying_cmd)
+            defer.returnValue(infra_deploying_cmd)
 
         get_path = bb.utils.get_path_on_os(props['os'])
         factory.append(steps.ShellCommand(name='deploying infrastructure',
@@ -333,14 +352,17 @@ class Factories:
         repository_name = bb.utils.get_repository_name_by_url(props['repository'])
         trigger_factory.extend([
             steps.ShellCommand(
-                name='extract repository',
-                command=[self.run_command[worker_os], 'extract_repo.py',
+                name='create manifest',
+                command=[self.run_command[worker_os], 'manifest_runner.py',
                          '--root-dir',
                          util.Interpolate(get_path(r'%(prop:builddir)s/repositories')),
-                         '--repo-name', repository_name,
+                         '--repo', repository_name,
                          '--branch', util.Interpolate('%(prop:branch)s'),
-                         '--commit-id', util.Interpolate('%(prop:revision)s')],
-                workdir=get_path(r'infrastructure/common')),
+                         '--revision', util.Interpolate('%(prop:revision)s'),
+                         '--build-event', props['event_type'],
+                         '--commit-time', buildbot_utils.get_event_creation_time] +
+                        (['--target-branch', props['target_branch']] if props.hasProperty('target_branch') else []),
+                workdir=get_path(r'infrastructure/build_scripts')),
 
             steps.ShellCommand(
                 name='check author name and email',
@@ -388,22 +410,18 @@ class Factories:
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
 
+        # TODO: rename to component
         dependency_name = build_specification.get('dependency_name')
-        if dependency_name:
-            path_to_manifest = r"%(prop:builddir)s/product-configs/"
-            if self.ci_service == bb.utils.CIService.DRIVER:
-                path_to_manifest += 'driver/'
-            path_to_manifest += 'manifest.yml'
 
-            build_factory.append(
-                DependencyChecker(
-                    name=f"check {dependency_name} on share",
-                    command=[self.run_command[worker_os], 'component_checker.py',
-                             '--path-to-manifest',
-                             util.Interpolate(
-                                 get_path(path_to_manifest)),
-                             '--component-name', dependency_name],
-                    workdir=get_path(r'infrastructure/common')))
+        build_factory.append(
+            DependencyChecker(
+                name=f"check {dependency_name} on share",
+                command=[self.run_command[worker_os], 'component_checker.py',
+                         '--path-to-manifest', self.get_manifest_path(props),
+                         '--component-name', dependency_name,
+                         '--product-type', product_type,
+                         '--build-type', build_type],
+                workdir=get_path(r'infrastructure/common')))
 
         shell_commands = [self.run_command[worker_os],
                           "build_runner.py",
@@ -411,21 +429,12 @@ class Factories:
                           util.Interpolate(
                               get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                           "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
+                          "--manifest", self.get_manifest_path(props),
+                          "--component", dependency_name,
                           "--build-type", build_type,
-                          "--product-type", product_type]
-        if dependency_name:
-            shell_commands += ['--manifest',
-                               util.Interpolate(
-                                   get_path(path_to_manifest)),
-                               '--component', dependency_name,
-                               "--build-event", "commit"]
-        else:
-            shell_commands += ["--changed-repo", buildbot_utils.get_changed_repo]
-            if props.hasProperty('target_branch'):
-                shell_commands += ["--build-event", "pre_commit",
-                                   '--target-branch', props['target_branch']]
-            else:
-                shell_commands += ["--build-event", "commit"]
+                          "--product-type", product_type,
+                          f"compiler={compiler}",
+                          f"compiler_version={compiler_version}"]
 
         if api_latest:
             shell_commands.append("api_latest=True")
@@ -441,53 +450,29 @@ class Factories:
                                    workdir=get_path(r"infrastructure/build_scripts"),
                                    name=stage.value,
                                    doStepIf=is_build_dependency_needed,
-                                   timeout=60*60))  # 1 hour for IGC build
+                                   timeout=60 * 60)) # 1 hour for igc
         return build_factory
 
-    def init_mediasdk_test_factory(self, test_specification, props):
-        product_type = test_specification["product_type"]
-        build_type = test_specification["build_type"]
+    def init_test_factory(self, test_specification, props):
+        product_type = test_specification['product_type']
+        build_type = test_specification['build_type']
+        conf_file = test_specification["product_conf_file"]
+        custom_types = test_specification["custom_types"]
 
         test_factory = self.factory_with_deploying_infrastructure_step(props)
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
 
-        branch = props.getProperty('target_branch') or props.getProperty('branch')
-
-        test_factory.append(
-            steps.ShellCommand(command=[self.run_command[worker_os],
-                                        "test_adapter.py",
-                                        "--branch", branch,
-                                        "--build-event",
-                                        "pre_commit" if props.hasProperty(
-                                            'target_branch') else 'commit',
-                                        "--product-type", product_type,
-                                        "--commit-id", util.Interpolate(r"%(prop:revision)s"),
-                                        "--build-type", build_type,
-                                        "--root-dir",
-                                        util.Interpolate(get_path(r"%(prop:builddir)s/build_dir"))],
-                               workdir=get_path(r"infrastructure/ted_adapter")))
-        return test_factory
-
-    def init_driver_test_factory(self, test_specification, props):
-        test_factory = self.factory_with_deploying_infrastructure_step(props)
-
-        worker_os = props['os']
-        get_path = bb.utils.get_path_on_os(worker_os)
-
-        branch = props.getProperty('target_branch') or props.getProperty('branch')
-
-        driver_manifest_path = MediaSdkDirectories.get_build_dir(
-            branch,
-            "pre_commit" if props.hasProperty('target_branch') else 'commit',
-            props['revision'],
-            test_specification['product_type'],
-            test_specification['build_type'],
-            product='media-driver')
         command = [self.run_command[worker_os], "tests_runner.py",
-                   '--artifacts', str(driver_manifest_path),
+                   '--manifest', self.get_manifest_path(props),
+                   '--component', 'mediasdk',
+                   '--test-config', util.Interpolate(
+                              get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                    '--root-dir', util.Interpolate('%(prop:builddir)s/test_dir'),
+                   '--product-type', product_type,
+                   '--build-type', build_type,
+                   '--custom-types', custom_types,
                    '--stage']
 
         for test_stage in TestStage:

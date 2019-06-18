@@ -153,13 +153,14 @@ class ChangeChecker:
         """
         Set these pull request properties as default properties.
         """
-        self.default_properties = {'target_branch': pull_request['base']['ref']}
+        self.default_properties = {'target_branch': pull_request['base']['ref'],
+                                   'event_type': 'pre_commit'}
 
     def set_commit_default_properties(self, repository, branch, revision, files, category):
         """
         Set these commit properties as default properties.
         """
-        self.default_properties = {}
+        self.default_properties = {'event_type': 'commit'}
 
     def get_pull_request(self, repository, branch):
         """
@@ -177,12 +178,6 @@ class ChangeChecker:
         By default checks membership of committer in organization.
         :return None if change is not needed or dict with properties otherwise
         """
-
-        # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
-        # so disable event this branch in all production Buildbots services.
-
-        if pull_request['base']['ref'] == 'one_ci_dev':
-            return None
 
         is_request_needed = is_comitter_the_org_member(pull_request, self.token)
         if is_request_needed:

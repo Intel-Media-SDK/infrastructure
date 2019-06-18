@@ -58,6 +58,12 @@ REPOSITORIES = {
     'ffmpeg': 'https://github.com/FFmpeg/FFmpeg'
 }
 
+NON_STATIC_REPOSITORIES = [
+    'product-configs',
+    'MediaSDK',
+    'media-driver'
+]
+
 PROXIES = {}
 OPEN_SOURCE_PRODUCT_CONFIGS_REPO = 'product-configs'
 OPEN_SOURCE_INFRASTRUCTURE_REPO = 'infrastructure'

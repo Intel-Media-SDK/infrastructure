@@ -23,9 +23,7 @@ Module for installation packages of components from manifest file
 """
 
 import logging
-from common.manifest_manager import Manifest
-from common.mediasdk_directories import MediaSdkDirectories
-from common.helper import Build_event
+from common.manifest_manager import Manifest, get_build_dir
 from common import package_manager
 from common.system_info import get_pkg_type
 
@@ -54,24 +52,16 @@ def install_components(manifest, components):
             log.error(f'{component} does not exist in manifest')
             return False
 
-        repo = comp.trigger_repository
-        artifacts = MediaSdkDirectories.get_build_dir(
-            branch=repo.target_branch if repo.target_branch else repo.branch,
-            build_event=Build_event.PRE_COMMIT.value if repo.target_branch else Build_event.COMMIT.value,
-            commit_id=repo.revision,
-            product_type=comp.product_type,
-            build_type='release',
-            product=component)
-
+        artifacts = get_build_dir(manifest, component)
         packages = [pkg_path for pkg_path in artifacts.glob(f'*.{pkg_type}')
                     if component in pkg_path.name.lower()]
 
         # TODO: solve situation with multiple packages installation, e.g. "package" and "package-devel"
-        if len(packages) > 1:
-            log.info(f'Found multiple "{component}" packages {packages} in {artifacts}')
-            return False
-        if len(packages) == 0:
+        if not packages:
             log.info(f'Package "{component}" was not found in {artifacts}')
+            return False
+        elif len(packages) > 1:
+            log.info(f'Found multiple "{component}" packages {packages} in {artifacts}')
             return False
 
         if not package_manager.uninstall_pkg(component):

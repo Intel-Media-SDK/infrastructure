@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,10 +18,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pathlib
 
-#Here should be the driver `iHD_drv_video.so`
-DRIVER_PATH = pathlib.Path("/opt/intel/msdk_driver/lib64")
-DRIVER = "iHD_drv_video.so"
+def convert_branch(branch):
+    """
+    Convert release branch to MediaSDK and Media-driver branches
 
-MEDIASDK_PATH = pathlib.Path("/opt/intel/mediasdk")
+    :param branch: Branch name
+    :type branch: String
+
+    :return: MediaSDK branch, Media-driver branch
+    :rtype: tuple
+    """
+
+    if branch == 'mss2018_r2':
+        return branch, 'master'
+
+    if 'sdk' in branch:
+        sdk_branch = branch
+        driver_branch = branch.replace('sdk', '')
+    else:
+        sdk_branch = branch.replace('media', 'mediasdk')
+        driver_branch = branch
+
+    return sdk_branch, driver_branch
