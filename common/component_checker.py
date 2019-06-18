@@ -28,31 +28,26 @@ import argparse
 import pathlib
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from common.mediasdk_directories import MediaSdkDirectories
-from common.manifest_manager import Manifest
-from common.helper import Build_type, Build_event, ErrorCode
+from common.manifest_manager import Manifest, get_build_dir, get_build_url
+from common.helper import ErrorCode, Product_type, Build_type
 from common.logger_conf import configure_logger
 from bb.utils import SKIP_BUILDING_DEPENDENCY_PHRASE
 
 
-def check_component_existence(path_to_manifest, component_name):
+def check_component_existence(path_to_manifest, component_name, product_type, build_type):
     log = logging.getLogger('component_checker')
     log.info(f"Getting data for {component_name} from {path_to_manifest}")
     manifest = Manifest(pathlib.Path(path_to_manifest))
-    component = manifest.get_component(component_name)
-    repository = component.get_repository(component_name)
-    list_params_for_getting_artifacts = {
-        'branch': repository.target_branch if repository.target_branch else repository.branch,
-        'build_event': Build_event.COMMIT.value,
-        'commit_id': repository.revision,
-        'product_type': component.product_type,
-        'build_type': Build_type.RELEASE.value,
-        'product': component_name
-    }
-    component_dir = MediaSdkDirectories.get_build_dir(**list_params_for_getting_artifacts)
+
+    if product_type:
+        manifest.get_component(component_name).build_info.set_product_type(product_type)
+    if build_type:
+        manifest.get_component(component_name).build_info.set_build_type(build_type)
+
+    component_dir = get_build_dir(manifest, component_name)
     if component_dir.exists():
         log.info(f"Directory {component_dir} exists")
-        link_to_artifacts = MediaSdkDirectories.get_build_url(**list_params_for_getting_artifacts)
+        link_to_artifacts = get_build_url(manifest, component_name)
         log.info(f"Artifacts are available by: {link_to_artifacts}")
         # This is stop phrase for buildbot to skip all build stages
         log.info(SKIP_BUILDING_DEPENDENCY_PHRASE)
@@ -64,15 +59,21 @@ def main():
     parser = argparse.ArgumentParser(prog="component_checker.py",
                                      description='Checks existence of component on share',
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-p', '--path-to-manifest', help='Path to manifest file', required=True)
+    parser.add_argument('-m', '--path-to-manifest', help='Path to manifest file', required=True)
     parser.add_argument('-c', '--component-name', help='Component name to check', required=True)
+    parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
+                        choices=[build_type.value for build_type in Build_type],
+                        help='Type of build')
+    parser.add_argument('-p', '--product-type',
+                        choices=[product_type.value for product_type in Product_type],
+                        help='Type of product')
     args = parser.parse_args()
 
     configure_logger()
     log = logging.getLogger('component_checker.main')
 
     try:
-        check_component_existence(args.path_to_manifest, args.component_name)
+        check_component_existence(args.path_to_manifest, args.component_name, args.product_type, args.build_type)
     except Exception:
         log.exception('Exception occurred')
         exit(ErrorCode.CRITICAL.value)

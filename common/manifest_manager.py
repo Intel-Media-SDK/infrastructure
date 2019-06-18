@@ -23,7 +23,17 @@ Manifest file manager
 """
 
 import pathlib
+import platform
+from urllib.parse import urljoin
+
 import yaml
+try:
+    import common.static_closed_data as static_data
+except Exception:
+    try:
+        import common.static_private_data as static_data
+    except Exception:
+        import common.static_public_data as static_data
 
 
 class ManifestException(Exception):
@@ -59,6 +69,8 @@ class Manifest:
 
         self._manifest_file = pathlib.Path(manifest_path if manifest_path else 'manifest.yml')
         self._version = '0'  # gets from manifest
+        self._event_component = None  # gets from manifest
+        self._event_repo = None  # gets from manifest
         self._components = {}  # gets from manifest
 
         if manifest_path is not None:
@@ -80,13 +92,15 @@ class Manifest:
                 manifest_info = yaml.load(manifest, Loader=yaml.FullLoader)
 
             self._version = manifest_info.get('version', '0')
+            self._event_component = manifest_info['event']['component']
+            self._event_repo = manifest_info['event']['repository']
 
             for name, info in manifest_info['components'].items():
                 self._components[name] = Component.from_dict({
                     'name': name,
                     'version': info['version'],
                     'repository': info['repository'],
-                    'product_type': info['product_type']})
+                    'build_info': info['build_info']})
         else:
             raise ManifestDoesNotExist(f'Can not find manifest "{self._manifest_file}"')
 
@@ -101,10 +115,44 @@ class Manifest:
     @property
     def components(self):
         """
-            get components list
+        get components list
         """
 
         return list(self._components.values())
+
+    @property
+    def event_component(self):
+        """
+        get event component
+        """
+
+        return self.get_component(self._event_component)
+
+    @property
+    def event_repo(self):
+        """
+        get event repository
+        """
+
+        return self.event_component.get_repository(self._event_repo)
+
+    def set_event_component(self, component):
+        """
+        setter for event component
+
+        :param component: Component name
+        """
+
+        self._event_component = component
+
+    def set_event_repo(self, repo):
+        """
+        setter for event repo
+
+        :param repo: Repository name
+        """
+
+        self._event_repo = repo
 
     def get_component(self, component_name):
         """
@@ -171,13 +219,17 @@ class Manifest:
         path_to_save.parent.mkdir(parents=True, exist_ok=True)
 
         manifest_data = {'components': {},
+                         'event': {
+                             'component': self._event_component,
+                             'repository': self._event_repo
+                         },
                          'version': self._version}
 
         for comp_name, comp_data in self._components.items():
             comp = dict(comp_data)
             manifest_data['components'][comp_name] = {
                 'repository': comp['repositories'],
-                'product_type': comp['product_type'],
+                'build_info': comp['build_info'],
                 'version': comp['version']
             }
 
@@ -194,7 +246,7 @@ class Component:
     Component wrapper
     """
 
-    def __init__(self, name, version, repositories, product_type):
+    def __init__(self, name, version, repositories, build_info):
         """
         :param name: Name of component
         :type name: String
@@ -204,11 +256,18 @@ class Component:
 
         :param repositories: List of Repository objects
         :type repositories: List
+
+        :param build_info: Dict of build info. It must contain:
+                           trigger (Name of triggered repo for component),
+                           product_type (Type of product, ex. public_linux),
+                           build_type (Type of build, ex. release),
+                           build_event (Event of build, ex. commit)
+        :type build_info: Dict
         """
 
         self._name = name
         self._version = version
-        self._product_type = product_type
+        self._build_info = BuildInfo(**build_info)
         self._repositories = {}
 
         self._prepare_repositories(repositories)
@@ -216,15 +275,15 @@ class Component:
     def __iter__(self):
         yield 'name', self._name
         yield 'version', self._version
-        yield 'product_type', self._product_type
-        yield 'repositories', [dict(repo) for repo in self._repositories.values()]
+        yield 'build_info', dict(self._build_info)
+        yield 'repositories', {repo: dict(data) for repo, data in self._repositories.items()}
 
     def _prepare_repositories(self, repositories):
-        for repo in repositories:
-            if isinstance(repo, dict):
-                self._repositories[repo['name']] = Repository.from_dict(repo)
-            elif isinstance(repo, Repository):
+        for repo in repositories.values():
+            if isinstance(repo, Repository):
                 self._repositories[repo.name] = repo
+            else:
+                self._repositories[repo['name']] = Repository.from_dict(repo)
 
     @staticmethod
     def from_dict(comp_data):
@@ -242,7 +301,7 @@ class Component:
             component = Component(comp_data['name'],
                                   comp_data['version'],
                                   comp_data['repository'],
-                                  comp_data['product_type'])
+                                  comp_data['build_info'])
         except ManifestException:
             raise
         except Exception as ex:
@@ -272,6 +331,17 @@ class Component:
         return self._version
 
     @property
+    def build_info(self):
+        """
+        get build information
+
+        :return: BuildInfo object
+        :rtype: BuildInfo
+        """
+
+        return self._build_info
+
+    @property
     def repositories(self):
         """
         get repositories list
@@ -291,21 +361,7 @@ class Component:
         :rtype: Repository | None
         """
 
-        for repo in self._repositories.values():
-            if repo.is_trigger:
-                return repo
-        return None
-
-    @property
-    def product_type(self):
-        """
-        get product type
-
-        :return: Product type
-        :rtype: String
-        """
-
-        return self._product_type
+        return self._repositories[self._build_info.trigger]
 
     def get_repository(self, repository_name):
         """
@@ -363,14 +419,15 @@ class Repository:
     Container for repository information
     """
 
-    def __init__(self, name, url, branch='master', target_branch=None, revision='HEAD', source_type='git', trigger=False):
+    def __init__(self, name, url, branch='master', target_branch=None,
+                 revision='HEAD', commit_time=None, source_type='git'):
         self._name = name
         self._url = url
         self._branch = branch
         self._target_branch = target_branch
         self._revision = revision
+        self._commit_time = commit_time
         self._type = source_type
-        self._trigger = trigger
 
     def __iter__(self):
         yield 'name', self._name
@@ -379,8 +436,8 @@ class Repository:
         if self._target_branch:
             yield 'target_branch', self._target_branch
         yield 'revision', self._revision
+        yield 'commit_time', self._commit_time
         yield 'type', self._type
-        yield 'trigger', self._trigger
 
     @staticmethod
     def from_dict(repo_data):
@@ -400,8 +457,9 @@ class Repository:
                               repo_data['branch'],
                               repo_data.get('target_branch'),
                               repo_data['revision'],
-                              repo_data['type'],
-                              repo_data['trigger'])
+                              repo_data.get('commit_time'),
+                              repo_data['type']
+                              )
         except Exception as ex:
             raise WrongRepositoryFormatError(ex)
         return repo
@@ -462,6 +520,17 @@ class Repository:
         return self._revision
 
     @property
+    def commit_time(self):
+        """
+        get commit time
+
+        :return: commit time
+        :rtype: String
+        """
+
+        return self._commit_time
+
+    @property
     def type(self):
         """
         get type of repository
@@ -472,13 +541,336 @@ class Repository:
 
         return self._type
 
-    @property
-    def is_trigger(self):
-        """
-        Is triggered repository
 
-        :return: Boolean
-        :rtype: Boolean
+class BuildInfo:
+    """
+    Container for information about build
+    """
+
+    def __init__(self, trigger, product_type, build_type, build_event):
+        self._trigger = trigger
+        self._product_type = product_type
+        self._build_type = build_type
+        self._build_event = build_event
+
+    def __iter__(self):
+        yield 'trigger', self._trigger
+        yield 'product_type', self._product_type
+        yield 'build_type', self._build_type
+        yield 'build_event', self._build_event
+
+    @property
+    def trigger(self):
+        """
+        get triggered repository name
+
+        :return: Repository object | None
+        :rtype: Repository | None
         """
 
         return self._trigger
+
+    @property
+    def product_type(self):
+        """
+        get product type
+
+        :return: Product type
+        :rtype: String
+        """
+
+        return self._product_type
+
+    @property
+    def build_type(self):
+        """
+        get build type
+
+        :return: Build type
+        :rtype: String
+        """
+
+        return self._build_type
+
+    @property
+    def build_event(self):
+        """
+        get build event
+
+        :return: Build event
+        :rtype: String
+        """
+
+        return self._build_event
+
+    def set_trigger(self, trigger):
+        """
+        Trigger setter
+
+        :param trigger: Repository name
+        :type trigger: String
+        """
+
+        self._trigger = trigger
+
+    def set_product_type(self, product_type):
+        """
+        Product type setter
+
+        :param product_type: Product type
+        :type product_type: String
+        """
+
+        self._product_type = product_type
+
+    def set_build_type(self, build_type):
+        """
+        Build type setter
+
+        :param build_type: Build type
+        :type build_type: String
+        """
+
+        self._build_type = build_type
+
+    def set_build_event(self, build_event):
+        """
+        Build event setter
+
+        :param build_event: Build event
+        :type build_event: String
+        """
+
+        self._build_event = build_event
+
+
+def _get_layout_parts(manifest, component, link_type=None):
+    """
+    Get parts of layout
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param default_rev: Flag for preparing revision
+    :type default_rev: Boolean
+
+    :return: Parts of layout
+    :rtype: Dict
+    """
+
+    comp = manifest.get_component(component)
+    repo = comp.trigger_repository
+
+    if link_type == 'manifest':
+        revision = repo.revision
+    else:
+        infra = manifest.get_component('infra')
+        conf = infra.trigger_repository
+        revision = f'{repo.revision}_conf_{conf.revision[0:8]}'
+
+    parts = {
+        'branch': repo.target_branch or repo.branch,
+        'build_event': comp.build_info.build_event,
+        'revision': revision,
+        'product_type': comp.build_info.product_type,
+        'build_type': comp.build_info.build_type
+    }
+    return parts
+
+
+def _get_root_dir(os_type=None, dir_type='build'):
+    """
+    Get root directory
+
+    :param os_type: Type of os (Windows|Linux)
+    :type os_type: String
+
+    :param dir_type: Type of root dir (build|test)
+    :type dir_type: String
+
+    :return: Root directory
+    :rtype: pathlib.Path
+    """
+
+    if os_type is None:
+        if platform.system() == 'Windows':
+            return pathlib.Path(static_data.SHARE_PATHS[f'{dir_type}_windows'])
+        elif platform.system() == 'Linux':
+            return pathlib.Path(static_data.SHARE_PATHS[f'{dir_type}_linux'])
+    elif os_type == 'Windows':
+        return pathlib.PureWindowsPath(static_data.SHARE_PATHS[f'{dir_type}_windows'])
+    elif os_type == 'Linux':
+        return pathlib.PurePosixPath(static_data.SHARE_PATHS[f'{dir_type}_linux'])
+    raise OSError('Unknown os type %s' % os_type)
+
+
+def _get_root_url(product_type, url_type='build'):
+    """
+    Get root url
+
+    :param product_type: Type of product
+    :type product_type: String
+
+    :param url_type: Type of root dir (build|test)
+    :type url_type: String
+
+    :return: Root url
+    :rtype: String
+    """
+
+    if product_type.startswith('public_'):
+        root_url = r'http://mediasdk.intel.com'
+    else:
+        root_url = r'http://bb.msdk.intel.com'
+
+    if product_type.startswith("private_linux_next_gen"):
+        build_root_dir = f'next_gen_{url_type}s'
+    elif product_type.startswith("private_"):
+        build_root_dir = f'private_{url_type}s'
+    elif product_type.startswith("public_"):
+        build_root_dir = f'{url_type}s'
+    else:
+        build_root_dir = f'closed_{url_type}s'
+
+    return urljoin(root_url, build_root_dir)
+
+
+def get_build_dir(manifest, component, os_type=None, link_type='build'):
+    """
+    Get build directory
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param os_type: Type of os (Windows|Linux)
+    :type os_type: String
+
+    :param link_type: Type of link to return (root|commit|build|manifest)
+    :type link_type: String
+
+    :param default_rev: Flag for preparing revision
+    :type default_rev: Boolean
+
+    :return: Build directory
+    :rtype: pathlib.Path
+    """
+
+    parts = _get_layout_parts(manifest, component, link_type)
+    result_path = _get_root_dir(os_type=os_type)
+
+    if link_type in ['commit', 'build']:
+        result_path = result_path / component / parts['branch'] / parts['build_event'] / parts['revision']
+    elif link_type == 'manifest':
+        result_path = result_path / 'manifest' / parts['branch'] / parts['build_event'] / parts['revision']
+    if link_type == 'build':
+        result_path = result_path / f'{parts["product_type"]}_{parts["build_type"]}'
+
+    return result_path
+
+
+def get_test_dir(manifest, component, test_platform=None, os_type=None, link_type='build'):
+    """
+    Get test directory
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param test_platform: Acronym of test platform (w10rs3_skl_64_d3d11|c7.3_skl_64_server)
+    :type test_platform: String
+
+    :param os_type: Type of os (Windows|Linux)
+    :type os_type: String
+
+    :param link_type: Type of link to return (root|commit|build)
+    :type link_type: String
+
+    :return: Test directory
+    :rtype: pathlib.Path
+    """
+
+    parts = _get_layout_parts(manifest, component)
+    result_path = _get_root_dir(os_type=os_type, dir_type='test')
+
+    if link_type in ['commit', 'build']:
+        result_path = result_path / component / parts['branch'] / parts['build_event'] / parts['revision']
+    if link_type == 'build':
+        if test_platform:
+            result_path = result_path / parts['build_type'] / test_platform
+        else:
+            result_path = result_path / f'{parts["product_type"]}_{parts["build_type"]}'
+
+    return result_path
+
+
+def get_build_url(manifest, component, link_type='build'):
+    """
+    Get build url
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param link_type: Type of link to return (root|commit|build)
+    :type link_type: String
+
+    :param default_rev: Flag for preparing revision
+    :type default_rev: Boolean
+
+    :return: Build url
+    :rtype: String
+    """
+
+    parts = _get_layout_parts(manifest, component, link_type)
+    result_link = _get_root_url(parts['product_type'])
+
+    if link_type in ['commit', 'build']:
+        result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
+    elif link_type == 'manifest':
+        result_link = '/'.join((result_link, 'manifest', parts['branch'], parts['build_event'], parts['revision']))
+    if link_type == 'build':
+        result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
+    return result_link
+
+
+def get_test_url(manifest, component, test_platform=None, link_type='build'):
+    """
+    Get test url
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param test_platform: Acronym of test platform (w10rs3_skl_64_d3d11|c7.3_skl_64_server)
+    :type test_platform: String
+
+    :param link_type: Type of link to return (root|commit|build)
+    :type link_type: String
+
+    :return: Test url
+    :rtype: String
+    """
+
+    parts = _get_layout_parts(manifest, component)
+    result_link = _get_root_url(parts['product_type'], url_type='test')
+
+    if link_type in ['commit', 'build']:
+        result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
+    if link_type == 'build':
+        if test_platform:
+            result_link = '/'.join((result_link, parts['build_type'], test_platform))
+        else:
+            result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
+    return result_link
