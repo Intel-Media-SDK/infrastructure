@@ -36,7 +36,7 @@ LOGICAL_DRIVE = 3  # Drive type from MSDN
 THIRD_PARTY = ('libva', 'gmmlib', 'media-driver')  # Third party components for Media SDK
 
 # TODO: Pattern for closed source
-OPEN_SOURCE_RELEASE_BRANCH_PATTERN = ['^intel-mediasdk-\d+\.\w', '^mss2018_r2$']
+OPEN_SOURCE_RELEASE_BRANCH_PATTERN = ['^intel-media(sdk)?-\d+\.\w', '^mss2018_r2$']
 
 def get_logical_drives():
     """

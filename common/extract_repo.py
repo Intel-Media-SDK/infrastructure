@@ -66,7 +66,8 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
 
         elif commit_time:
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
-                                      branch='master', url=repo_url)
+                                      # TODO: switch branch to 'master' after final deploy
+                                      branch='one_ci_dev', url=repo_url)
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
                 if not repo.is_branch_exist(branch):
@@ -82,7 +83,8 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
         else:
             log.info('Commit id and timestamp not specified, clone HEAD of repository')
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
-                                      branch='master', url=repo_url)
+                                      # TODO: switch branch to 'master' after final deploy
+                                      branch='one_ci_dev', url=repo_url)
 
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
