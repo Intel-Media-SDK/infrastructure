@@ -39,7 +39,7 @@ from datetime import datetime
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.logger_conf import configure_logger
-from common.helper import Build_event
+from common.helper import Build_event, ErrorCode
 from common.mediasdk_directories import MediaSdkDirectories
 from common.branch_converter import convert_branch
 from common.manifest_manager import Manifest, Repository
@@ -103,6 +103,7 @@ class ManifestRunner:
         """
         Check release branch
         """
+        self._log.info('Checking release branch')
 
         if self._target_branch:
             branch_to_check = self._target_branch
@@ -122,6 +123,8 @@ class ManifestRunner:
         """
         Extract and slice repositories
         """
+
+        self._log.info('Extracting repositories')
 
         sources_list = {}
         for component in self._manifest.components:
@@ -155,6 +158,8 @@ class ManifestRunner:
         Update manifest from extracted product-configs repo
         """
 
+        self._log.info('Updating manifest')
+
         for component in self._manifest.components:
             for repo in component.repositories:
                 if repo.name == self._repo:
@@ -176,14 +181,18 @@ class ManifestRunner:
         Save updated manifest
         """
 
+        self._log.info('Saving manifest')
+
         path_to_manifest = MediaSdkDirectories.get_commit_dir(
             self._target_branch or self._branch,
             self._build_event,
             self._revision,
             product='manifest'
-        )
+        ) / 'manifest.yml'
 
-        self._manifest.save_manifest(path_to_manifest / 'manifest.yml')
+        self._manifest.save_manifest(path_to_manifest)
+
+        self._log.info(f'Manifest was saved to: %s', path_to_manifest)
 
     def run(self):
         """
@@ -225,8 +234,18 @@ def main():
     args = parser.parse_args()
 
     configure_logger()
-    manifest_runner = ManifestRunner(**vars(args))
-    manifest_runner.run()
+
+    log = logging.getLogger('manifest_runner')
+
+    log.info('Manifest preparing started')
+    try:
+        manifest_runner = ManifestRunner(**vars(args))
+        manifest_runner.run()
+        log.info('Manifest preparing completed')
+    except Exception:
+        log.exception('Exception occurred:')
+        log.info('Manifest preparing failed')
+        exit(ErrorCode.CRITICAL.value)
 
 
 if __name__ == '__main__':
