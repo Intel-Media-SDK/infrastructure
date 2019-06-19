@@ -91,7 +91,7 @@ class ManifestRunner:
         self._commit_time = datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S') \
             if commit_time else None
 
-        self._manifest = Manifest(pathlib.Path(__file__).parents[2] /
+        self._manifest = Manifest(pathlib.Path(__file__).resolve().parents[2] /
                                   'product-configs' / 'manifest.yml')
 
         self._release_branch = {}
