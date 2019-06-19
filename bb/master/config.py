@@ -29,22 +29,27 @@ from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 # TODO: use this variable in notifications and other services
 CI_SERVICE = CIService.MEDIASDK
-CURRENT_MODE = Mode.PRODUCTION_MODE
-# CURRENT_MODE = Mode.TEST_MODE
+#CURRENT_MODE = Mode.PRODUCTION_MODE
+CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     MEDIASDK_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
-    MEDIASDK_REPO = "flow_test"
+    MEDIASDK_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
     sys.exit(f"Mode {CURRENT_MODE} is not defined")
 
+MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 INFRASTRUCTURE_REPO = "infrastructure"
 PRODUCT_CONFIGS_REPO = "product-configs"
-PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO]
+
+DRIVER_ORGANIZATION = 'intel'
+DRIVER_REPO = 'media-driver'
+
+PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO, DRIVER_REPO]
 
 PYTHON_EXECUTABLE = {OsType.linux: r'python3',
                      OsType.windows: r'py'}
@@ -148,6 +153,33 @@ BUILDERS = {
                       'builders': ['build-igc']}]
     },
 
+    "build-ffmpeg": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_ffmpeg.py",
+        "product_type": Product_type.PUBLIC_LINUX_FFMPEG.value,
+        "build_type": Build_type.RELEASE.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'ffmpeg',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
+
+    "build-metrics-calc": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_metrics_calc.py",
+        "product_type": Product_type.PUBLIC_LINUX_METRICS_CALC.value,
+        "build_type": Build_type.RELEASE.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'metrics_calc_lite',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True}]
+    },
 
     "build-driver": {
         "factory": FACTORIES.init_build_factory,
@@ -166,7 +198,35 @@ BUILDERS = {
                       'builders': ['build-libva', 'build-gmmlib']}]
     },
 
-    "build": {
+    "build-driver-debug": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
+        "build_type": Build_type.DEBUG.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        # TODO: create class for triggers
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva', 'build-gmmlib']}]
+    },
+
+    "build-driver-release-internal": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "driver/conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
+        "build_type": Build_type.RELEASE_INTERNAL.value,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        # TODO: create class for triggers
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva', 'build-gmmlib']}]
+    },
+
+    "build-mediasdk": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX.value,
@@ -183,7 +243,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-api-next": {
+    "build-mediasdk-api-next": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
@@ -199,7 +259,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-gcc-8.2.0": {
+    "build-mediasdk-gcc-8.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
@@ -214,7 +274,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-clang-6.0": {
+    "build-mediasdk-clang-6.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
@@ -234,7 +294,7 @@ BUILDERS = {
     # (needed by embedded systems)
     # see method of building it in product-config
 
-    "build-fastboot": {
+    "build-mediasdk-fastboot": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT.value,
@@ -250,7 +310,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-fastboot-gcc-8.2.0": {
+    "build-mediasdk-fastboot-gcc-8.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
@@ -265,7 +325,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-api-next-defconfig": {
+    "build-mediasdk-api-next-defconfig": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
@@ -288,10 +348,10 @@ BUILDERS = {
         # build-opencl builder is enabled only for master branch
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: branch not in ['master', 'intel-mediasdk-19.1'],
-                      'builders': ['build', 'build-driver']},
+                      'builders': ['build-mediasdk', 'build-driver']},
                      {'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1'],
-                      'builders': ['build', 'build-driver', 'build-opencl']}]
+                      'builders': ['build-mediasdk', 'build-driver', 'build-opencl']}]
     },
 
     "test-api-next": {
@@ -301,7 +361,7 @@ BUILDERS = {
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda x: True,
-                      'builders': ['build-api-next', 'build-driver', 'build-opencl']}]
+                      'builders': ['build-mediasdk-api-next', 'build-driver', 'build-opencl']}]
     }
 }
 
@@ -338,10 +398,11 @@ BUILDBOT_TITLE = "Intel® Media SDK"
 POLL_INTERVAL = 20  # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
-DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
-DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
+# TODO: uncomment for production
+# DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
+# DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
+DATABASE_URL = "sqlite:///state.sqlite"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
-MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 
 TRIGGER = 'trigger'
 

@@ -153,13 +153,14 @@ class ChangeChecker:
         """
         Set these pull request properties as default properties.
         """
-        self.default_properties = {'target_branch': pull_request['base']['ref']}
+        self.default_properties = {'target_branch': pull_request['base']['ref'],
+                                   'event_type': 'pre_commit'}
 
     def set_commit_default_properties(self, repository, branch, revision, files, category):
         """
         Set these commit properties as default properties.
         """
-        self.default_properties = {}
+        self.default_properties = {'event_type': 'commit'}
 
     def get_pull_request(self, repository, branch):
         """
@@ -178,7 +179,7 @@ class ChangeChecker:
         :return None if change is not needed or dict with properties otherwise
         """
         is_request_needed = is_comitter_the_org_member(pull_request, self.token)
-        if is_request_needed:
+        if is_request_needed and pull_request['base']['ref'] == 'one_ci_dev':
             return self.default_properties
         return None
 

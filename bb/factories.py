@@ -289,10 +289,22 @@ class Factories:
         @util.renderer
         @defer.inlineCallbacks
         def get_infrastructure_deploying_cmd(props):
+
             infrastructure_deploying_cmd = [
                 self.run_command[props['os']], 'extract_repo.py',
-                '--repo-name', 'OPEN_SOURCE_INFRA',
+                '--infra-type', 'OPEN_SOURCE_INFRA',
                 '--root-dir', props.getProperty("builddir")]
+
+            # TODO: create file with const
+            if props.getProperty('buildername') != 'trigger':
+                manifest_path = MediaSdkDirectories.get_commit_dir(
+                    props.getProperty('target_branch') or props.getProperty('branch'),
+                    props.getProperty('event_type'),
+                    props.getProperty("revision"),
+                    # TODO: import the const from common
+                    product='manifests'
+                )
+                infrastructure_deploying_cmd.extend(['--manifest-path', str(manifest_path)])
 
             # Changes from product-configs\fork of product configs repositories will be deployed as is.
             # Infrastructure for changes from other repos will be extracted from master\release branch of
@@ -333,14 +345,17 @@ class Factories:
         repository_name = bb.utils.get_repository_name_by_url(props['repository'])
         trigger_factory.extend([
             steps.ShellCommand(
-                name='extract repository',
-                command=[self.run_command[worker_os], 'extract_repo.py',
+                name='create manifest',
+                command=[self.run_command[worker_os], 'manifest_runner.py',
                          '--root-dir',
                          util.Interpolate(get_path(r'%(prop:builddir)s/repositories')),
-                         '--repo-name', repository_name,
+                         '--repo', repository_name,
                          '--branch', util.Interpolate('%(prop:branch)s'),
-                         '--commit-id', util.Interpolate('%(prop:revision)s')],
-                workdir=get_path(r'infrastructure/common')),
+                         '--revision', util.Interpolate('%(prop:revision)s'),
+                         '--build-event', props['event_type'],
+                         '--commit-time', buildbot_utils.get_event_creation_time] +
+                        ['--target-branch', props['target_branch'] if props.getProperty('target_branch') else []],
+                workdir=get_path(r'infrastructure/build_scripts')),
 
             steps.ShellCommand(
                 name='check author name and email',

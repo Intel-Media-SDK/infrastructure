@@ -75,16 +75,11 @@ for builder_name, properties in config.FLOW.get_prepared_builders().items():
 # Push status of build to the Github
 c["services"] = [
     reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
-                               context=util.Interpolate("buildbot/%(prop:buildername)s"),
+                               context=util.Interpolate("One CI buildbot/%(prop:buildername)s"),
                                startDescription="Started",
                                endDescription="Done",
                                verbose=True)]
-# Will be useful for implementing build notifications in the future
-#    reporters.GitHubCommentPush(token=config.GITHUB_TOKEN,
-#                                 startDescription="Started (comment)",
-#                                 endDescription="Done (comment)",
-#                                 verbose=True,
-#                                 debug=True)]
+
 
 # Get changes
 c["change_source"] = []
@@ -93,18 +88,30 @@ c["change_source"] = []
 class MediasdkChangeChecker(bb.utils.ChangeChecker):
     # No filtration
     def pull_request_filter(self, pull_request, files):
-        return self.default_properties
+        # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
+        # so disable event this branch in all production Buildbots services.
+        if pull_request['base']['ref'] == 'one_ci_dev':
+            return self.default_properties
+        return None
+
 
 
 REPOSITORIES = [
-    {'name': config.MEDIASDK_REPO,
-     # All changes
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+    # TODO: uncomment for production
+    # {'name': config.MEDIASDK_REPO,
+    #  'organization': config.MEDIASDK_ORGANIZATION,
+    #  # All changes
+    #  'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+    # {'name': config.DRIVER_REPO,
+    #  'organization': config.DRIVER_ORGANIZATION,
+    #  'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.PRODUCT_CONFIGS_REPO,
+     'organization': config.MEDIASDK_ORGANIZATION,
      # Pull requests only for members of Intel-Media-SDK organization
      # This filter is needed for security, because via product configs can do everything
      'change_filter': bb.utils.ChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.INFRASTRUCTURE_REPO,
+     'organization': config.MEDIASDK_ORGANIZATION,
      # All changes
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
 ]
@@ -122,8 +129,8 @@ for repo in REPOSITORIES:
         # pull_request (add branches of open pull request)
         # *fetch branches*
         # change_filter (checking changes)
-        branches=bb.utils.is_release_branch,
-        pull_request_branches=bb.utils.get_open_pull_request_branches(config.MEDIASDK_ORGANIZATION,
+        branches='refs/heads/one_ci_dev',
+        pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),
         change_filter=repo['change_filter'],
