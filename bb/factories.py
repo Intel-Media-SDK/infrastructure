@@ -345,7 +345,7 @@ class Factories:
                          '--repo-name', repository_name,
                          '--branch', util.Interpolate('%(prop:branch)s'),
                          '--commit-id', util.Interpolate('%(prop:revision)s'),
-                         '--build-event', props['build_event'],
+                         '--build-event', props['event_type'],
                          '--commit-time', buildbot_utils.get_event_creation_time(props)] +
                         ['--target-branch', props['target_branch'] if props.getProperty('target_branch') else []],
                 workdir=get_path(r'infrastructure/build_scripts')),
