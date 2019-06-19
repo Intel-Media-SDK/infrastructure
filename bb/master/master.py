@@ -129,7 +129,7 @@ for repo in REPOSITORIES:
         # pull_request (add branches of open pull request)
         # *fetch branches*
         # change_filter (checking changes)
-        branches='one_ci_dev',
+        branches='refs/heads/one_ci_dev',
         pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),

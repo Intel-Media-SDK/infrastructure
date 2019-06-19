@@ -315,15 +315,8 @@ class Factories:
                                                  '--branch', props.getProperty("branch")]
 
             else:
-                build_id = props.build.buildid
-                sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(
-                    build_id)
-                sourcestamps_created_time = sourcestamps[0]['created_at'].timestamp()
-                formatted_sourcestamp_created_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                                                   time.localtime(
-                                                                       sourcestamps_created_time))
                 infrastructure_deploying_cmd += ['--commit-time',
-                                                 formatted_sourcestamp_created_time,
+                                                 buildbot_utils.get_event_creation_time(props),
                                                  # Set 'branch' value if 'target_branch' property not set.
                                                  '--branch',
                                                  util.Interpolate(
@@ -345,14 +338,17 @@ class Factories:
         repository_name = bb.utils.get_repository_name_by_url(props['repository'])
         trigger_factory.extend([
             steps.ShellCommand(
-                name='extract repository',
-                command=[self.run_command[worker_os], 'extract_repo.py',
+                name='create manifest',
+                command=[self.run_command[worker_os], 'manifest_runner.py',
                          '--root-dir',
                          util.Interpolate(get_path(r'%(prop:builddir)s/repositories')),
                          '--repo-name', repository_name,
                          '--branch', util.Interpolate('%(prop:branch)s'),
-                         '--commit-id', util.Interpolate('%(prop:revision)s')],
-                workdir=get_path(r'infrastructure/common')),
+                         '--commit-id', util.Interpolate('%(prop:revision)s'),
+                         '--build-event', props['build_event'],
+                         '--commit-time', buildbot_utils.get_event_creation_time(props)] +
+                        ['--target-branch', props['target_branch'] if props.getProperty('target_branch') else []],
+                workdir=get_path(r'infrastructure/build_scripts')),
 
             steps.ShellCommand(
                 name='check author name and email',

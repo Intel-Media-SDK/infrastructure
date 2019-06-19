@@ -29,15 +29,15 @@ from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 # TODO: use this variable in notifications and other services
 CI_SERVICE = CIService.MEDIASDK
-CURRENT_MODE = Mode.PRODUCTION_MODE
-# CURRENT_MODE = Mode.TEST_MODE
+#CURRENT_MODE = Mode.PRODUCTION_MODE
+CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
     MEDIASDK_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/buildbot/"
 
 elif CURRENT_MODE == Mode.TEST_MODE:
-    MEDIASDK_REPO = "flow_test"
+    MEDIASDK_REPO = "MediaSDK"
     BUILDBOT_URL = "http://mediasdk.intel.com/auxbb/"
 else:
     sys.exit(f"Mode {CURRENT_MODE} is not defined")

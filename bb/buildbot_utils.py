@@ -22,6 +22,7 @@
 Module contains buildbot specific functions
 """
 
+import time
 from enum import Enum
 from collections import defaultdict
 
@@ -121,3 +122,12 @@ def get_changed_repo(props):
     branch = props.getProperty('branch')
     revision = props.getProperty('revision')
     return f"{get_repository_name_by_url(repo_url)}:{branch}:{revision}"
+
+
+@util.renderer
+@defer.inlineCallbacks
+def get_event_creation_time(props):
+    build_id = props.build.buildid
+    sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(build_id)
+    sourcestamp_created_time = sourcestamps[0]['created_at'].timestamp()
+    defer.returnValue(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sourcestamp_created_time)))
