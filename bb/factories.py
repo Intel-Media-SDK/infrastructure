@@ -315,8 +315,15 @@ class Factories:
                                                  '--branch', props.getProperty("branch")]
 
             else:
+                build_id = props.build.buildid
+                sourcestamps = yield props.build.master.db.sourcestamps.getSourceStampsForBuild(
+                    build_id)
+                sourcestamps_created_time = sourcestamps[0]['created_at'].timestamp()
+                formatted_sourcestamp_created_time = time.strftime('%Y-%m-%d %H:%M:%S',
+                                                                   time.localtime(
+                                                                       sourcestamps_created_time))
                 infrastructure_deploying_cmd += ['--commit-time',
-                                                 buildbot_utils.get_event_creation_time(props),
+                                                 formatted_sourcestamp_created_time,
                                                  # Set 'branch' value if 'target_branch' property not set.
                                                  '--branch',
                                                  util.Interpolate(
@@ -346,7 +353,7 @@ class Factories:
                          '--branch', util.Interpolate('%(prop:branch)s'),
                          '--commit-id', util.Interpolate('%(prop:revision)s'),
                          '--build-event', props['event_type'],
-                         '--commit-time', buildbot_utils.get_event_creation_time(props)] +
+                         '--commit-time', buildbot_utils.get_event_creation_time] +
                         ['--target-branch', props['target_branch'] if props.getProperty('target_branch') else []],
                 workdir=get_path(r'infrastructure/build_scripts')),
 
