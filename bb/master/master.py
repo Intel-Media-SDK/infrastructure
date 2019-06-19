@@ -97,6 +97,7 @@ class MediasdkChangeChecker(bb.utils.ChangeChecker):
 
 
 REPOSITORIES = [
+    # TODO: uncomment for production
     # {'name': config.MEDIASDK_REPO,
     #  'organization': config.MEDIASDK_ORGANIZATION,
     #  # All changes

@@ -398,6 +398,7 @@ BUILDBOT_TITLE = "Intel® Media SDK"
 POLL_INTERVAL = 20  # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
+# TODO: uncomment for production
 # DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
 # DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
 DATABASE_URL = "sqlite:///state.sqlite"
