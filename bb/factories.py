@@ -289,18 +289,22 @@ class Factories:
         @util.renderer
         @defer.inlineCallbacks
         def get_infrastructure_deploying_cmd(props):
-            manifest_path = MediaSdkDirectories.get_commit_dir(
-                props.getProperty('target_branch') or props.getProperty('branch'),
-                props.getProperty('event_type'),
-                props.getProperty("revision"),
-                # TODO: import the const from common
-                product='manifests'
-            )
+
             infrastructure_deploying_cmd = [
                 self.run_command[props['os']], 'extract_repo.py',
                 '--infra-type', 'OPEN_SOURCE_INFRA',
-                '--manifest-path', manifest_path,
                 '--root-dir', props.getProperty("builddir")]
+
+            # TODO: create file with const
+            if props.getProperty('buildername') != 'trigger':
+                manifest_path = MediaSdkDirectories.get_commit_dir(
+                    props.getProperty('target_branch') or props.getProperty('branch'),
+                    props.getProperty('event_type'),
+                    props.getProperty("revision"),
+                    # TODO: import the const from common
+                    product='manifests'
+                )
+                infrastructure_deploying_cmd.extend(['--manifest-path', str(manifest_path)])
 
             # Changes from product-configs\fork of product configs repositories will be deployed as is.
             # Infrastructure for changes from other repos will be extracted from master\release branch of
