@@ -177,7 +177,7 @@ class ManifestRunner:
         """
 
         path_to_manifest = MediaSdkDirectories.get_commit_dir(
-            self._branch,
+            self._target_branch or self._branch,
             self._build_event,
             self._revision,
             product='manifest'
