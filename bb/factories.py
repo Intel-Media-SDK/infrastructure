@@ -348,7 +348,7 @@ class Factories:
                 name='create manifest',
                 command=[self.run_command[worker_os], 'manifest_runner.py',
                          '--root-dir',
-                         util.Interpolate(get_path(r'%(prop:builddir)s')),
+                         util.Interpolate(get_path(r'%(prop:builddir)s/repositories')),
                          '--repo', repository_name,
                          '--branch', util.Interpolate('%(prop:branch)s'),
                          '--revision', util.Interpolate('%(prop:revision)s'),
