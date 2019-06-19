@@ -349,9 +349,9 @@ class Factories:
                 command=[self.run_command[worker_os], 'manifest_runner.py',
                          '--root-dir',
                          util.Interpolate(get_path(r'%(prop:builddir)s/repositories')),
-                         '--repo-name', repository_name,
+                         '--repo', repository_name,
                          '--branch', util.Interpolate('%(prop:branch)s'),
-                         '--commit-id', util.Interpolate('%(prop:revision)s'),
+                         '--revision', util.Interpolate('%(prop:revision)s'),
                          '--build-event', props['event_type'],
                          '--commit-time', buildbot_utils.get_event_creation_time] +
                         ['--target-branch', props['target_branch'] if props.getProperty('target_branch') else []],
