@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -91,8 +91,12 @@ c["change_source"] = []
 
 
 class MediasdkChangeChecker(bb.utils.ChangeChecker):
-    # No filtration
     def pull_request_filter(self, pull_request, files):
+        # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
+        # so disable event this branch in all production Buildbots services.
+        # WARNING: this branch also disabled for MediaSDK
+        if pull_request['base']['ref'] == 'one_ci_dev':
+            return None
         return self.default_properties
 
 

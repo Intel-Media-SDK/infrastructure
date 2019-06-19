@@ -177,6 +177,13 @@ class ChangeChecker:
         By default checks membership of committer in organization.
         :return None if change is not needed or dict with properties otherwise
         """
+
+        # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
+        # so disable event this branch in all production Buildbots services.
+
+        if pull_request['base']['ref'] == 'one_ci_dev':
+            return None
+
         is_request_needed = is_comitter_the_org_member(pull_request, self.token)
         if is_request_needed:
             return self.default_properties

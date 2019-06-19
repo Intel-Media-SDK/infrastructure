@@ -100,6 +100,10 @@ class ProductConfigsChecker(ChangeChecker):
         return None
 
     def pull_request_filter(self, pull_request, files):
+        # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
+        # so disable event this branch in all production Buildbots services.
+        if pull_request['base']['ref'] == 'one_ci_dev':
+            return None
         if any([file for file in files if file.startswith('driver/') or file == 'infrastructure_version.py']):
             return self.default_properties
         return None
