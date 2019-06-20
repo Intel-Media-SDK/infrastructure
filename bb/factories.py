@@ -302,9 +302,9 @@ class Factories:
                     props.getProperty('event_type'),
                     props.getProperty("revision"),
                     # TODO: import the const from common
-                    product='manifests'
+                    product='manifest'
                 )
-                infrastructure_deploying_cmd.extend(['--manifest-path', str(manifest_path)])
+                infrastructure_deploying_cmd.extend(['--manifest-path', str(manifest_path / 'manifest.yml')])
 
             # Changes from product-configs\fork of product configs repositories will be deployed as is.
             # Infrastructure for changes from other repos will be extracted from master\release branch of
@@ -354,7 +354,7 @@ class Factories:
                          '--revision', util.Interpolate('%(prop:revision)s'),
                          '--build-event', props['event_type'],
                          '--commit-time', buildbot_utils.get_event_creation_time] +
-                        ['--target-branch', props['target_branch'] if props.getProperty('target_branch') else []],
+                        (['--target-branch', props['target_branch']] if props.hasProperty('target_branch') else []),
                 workdir=get_path(r'infrastructure/build_scripts')),
 
             steps.ShellCommand(
@@ -403,6 +403,13 @@ class Factories:
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
 
+        path_to_main_manifest = MediaSdkDirectories.get_commit_dir(
+            props.getProperty('target_branch') or props.getProperty('branch'),
+            props.getProperty('event_type'),
+            props.getProperty("revision"),
+            # TODO: import the const from common
+            product='manifest')
+
         dependency_name = build_specification.get('dependency_name')
         if dependency_name:
             path_to_manifest = r"%(prop:builddir)s/product-configs/"
@@ -426,24 +433,12 @@ class Factories:
                           util.Interpolate(
                               get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                           "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
+                          "--manifest", str(path_to_main_manifest / 'manifest.yml'),
+                          "--component", dependency_name,
                           "--build-type", build_type,
                           "--product-type", product_type,
                           f"compiler={compiler}",
-                          f"compiler_version={compiler_version}",
-                          ]
-        if dependency_name:
-            shell_commands += ['--manifest',
-                               util.Interpolate(
-                                   get_path(path_to_manifest)),
-                               '--component', dependency_name,
-                               "--build-event", "commit"]
-        else:
-            shell_commands += ["--changed-repo", buildbot_utils.get_changed_repo]
-            if props.hasProperty('target_branch'):
-                shell_commands += ["--build-event", "pre_commit",
-                                   '--target-branch', props['target_branch']]
-            else:
-                shell_commands += ["--build-event", "commit"]
+                          f"compiler_version={compiler_version}"]
 
         if api_latest:
             shell_commands.append("api_latest=True")

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -129,7 +129,7 @@ for repo in REPOSITORIES:
         # pull_request (add branches of open pull request)
         # *fetch branches*
         # change_filter (checking changes)
-        branches='refs/heads/one_ci_dev',
+        branches=lambda branch: branch == 'refs/heads/one_ci_dev',
         pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),
