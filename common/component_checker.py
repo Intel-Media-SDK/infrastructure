@@ -40,7 +40,7 @@ def check_component_existence(path_to_manifest, component_name):
     log.info(f"Getting data for {component_name} from {path_to_manifest}")
     manifest = Manifest(pathlib.Path(path_to_manifest))
     component = manifest.get_component(component_name)
-    repository = component.get_repository(component_name)
+    repository = component.trigger_repository
     list_params_for_getting_artifacts = [
         repository.target_branch or repository.branch,
         Build_event.COMMIT.value,
