@@ -268,7 +268,7 @@ class ProductState:
 
     repo_states = []
 
-    def __init__(self, sources_list, root_repo_dir, commit_time):
+    def __init__(self, sources_list, root_repo_dir, commit_time=None):
         """
         :param sources_list: dictionary of repositories
         :param root_repo_dir: path to repositories directory
