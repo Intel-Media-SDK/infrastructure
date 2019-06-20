@@ -18,8 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SHARE_PATHS = {'build_linux': r'/media/builds',
-               'test_linux': r'/media/tests', }
+# TODO: remove one_ci dir before releasing new infrastructure
+SHARE_PATHS = {'build_linux': r'/media/builds/one_ci',
+               'test_linux': r'/media/tests/one_ci', }
 
 REPOSITORIES = {
     # linux_open_source
