@@ -42,10 +42,10 @@ def check_component_existence(path_to_manifest, component_name):
     component = manifest.get_component(component_name)
     repository = component.get_repository(component_name)
     list_params_for_getting_artifacts = [
-        repository.target_branch if repository.target_branch else repository.branch,
+        repository.target_branch or repository.branch,
         Build_event.COMMIT.value,
         repository.revision,
-        component.product_type,
+        component.build_info.product_type,
         Build_type.RELEASE.value,
         component_name]
     component_dir = MediaSdkDirectories.get_build_dir(*list_params_for_getting_artifacts)
