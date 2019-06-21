@@ -296,6 +296,7 @@ class Factories:
                 '--root-dir', props.getProperty("builddir")]
 
             # TODO: create file with const
+            # TODO: Calculate manifest path in one place (now it implemented in deploy and build)
             if props.getProperty('buildername') != 'trigger':
                 manifest_path = MediaSdkDirectories.get_commit_dir(
                     props.getProperty('target_branch') or props.getProperty('branch'),
@@ -403,29 +404,23 @@ class Factories:
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
 
-        path_to_main_manifest = MediaSdkDirectories.get_commit_dir(
+        path_to_manifest = MediaSdkDirectories.get_commit_dir(
             props.getProperty('target_branch') or props.getProperty('branch'),
             props.getProperty('event_type'),
             props.getProperty("revision"),
             # TODO: import the const from common
-            product='manifest')
+            product='manifest') / 'manifest.yml'
 
+        # TODO: rename to component
         dependency_name = build_specification.get('dependency_name')
-        if dependency_name:
-            path_to_manifest = r"%(prop:builddir)s/product-configs/"
-            if self.ci_service == bb.utils.CIService.DRIVER:
-                path_to_manifest += 'driver/'
-            path_to_manifest += 'manifest.yml'
 
-            build_factory.append(
-                DependencyChecker(
-                    name=f"check {dependency_name} on share",
-                    command=[self.run_command[worker_os], 'component_checker.py',
-                             '--path-to-manifest',
-                             util.Interpolate(
-                                 get_path(path_to_manifest)),
-                             '--component-name', dependency_name],
-                    workdir=get_path(r'infrastructure/common')))
+        build_factory.append(
+            DependencyChecker(
+                name=f"check {dependency_name} on share",
+                command=[self.run_command[worker_os], 'component_checker.py',
+                         '--path-to-manifest', util.Interpolate(get_path(path_to_manifest)),
+                         '--component-name', dependency_name],
+                workdir=get_path(r'infrastructure/common')))
 
         shell_commands = [self.run_command[worker_os],
                           "build_runner.py",
@@ -433,7 +428,7 @@ class Factories:
                           util.Interpolate(
                               get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                           "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
-                          "--manifest", str(path_to_main_manifest / 'manifest.yml'),
+                          "--manifest", util.Interpolate(get_path(path_to_manifest)),
                           "--component", dependency_name,
                           "--build-type", build_type,
                           "--product-type", product_type,
