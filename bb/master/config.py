@@ -98,6 +98,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        # TODO: rename to component_name
         "dependency_name": 'libva',
         # Builder is enabled for all branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
@@ -155,7 +156,7 @@ BUILDERS = {
 
     "build-ffmpeg": {
         "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "driver/conf_ffmpeg.py",
+        "product_conf_file": "conf_ffmpeg.py",
         "product_type": Product_type.PUBLIC_LINUX_FFMPEG.value,
         "build_type": Build_type.RELEASE.value,
         "compiler": "gcc",
@@ -169,7 +170,7 @@ BUILDERS = {
 
     "build-metrics-calc": {
         "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "driver/conf_metrics_calc.py",
+        "product_conf_file": "conf_metrics_calc.py",
         "product_type": Product_type.PUBLIC_LINUX_METRICS_CALC.value,
         "build_type": Build_type.RELEASE.value,
         "compiler": "gcc",
@@ -183,7 +184,7 @@ BUILDERS = {
 
     "build-driver": {
         "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "driver/conf_media_driver.py",
+        "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.RELEASE.value,
         "api_latest": False,
@@ -200,12 +201,13 @@ BUILDERS = {
 
     "build-driver-debug": {
         "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "driver/conf_media_driver.py",
+        "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.DEBUG.value,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        "dependency_name": 'media-driver',
         # TODO: create class for triggers
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: True,
@@ -214,12 +216,13 @@ BUILDERS = {
 
     "build-driver-release-internal": {
         "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "driver/conf_media_driver.py",
+        "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
         "build_type": Build_type.RELEASE_INTERNAL.value,
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        "dependency_name": 'media-driver',
         # TODO: create class for triggers
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: True,
@@ -236,6 +239,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        "dependency_name": 'mediasdk',
         # Builder is enabled for all branches
         # TODO: create class for triggers
         'triggers': [{'repositories': PRODUCTION_REPOS,
@@ -253,6 +257,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        "dependency_name": 'mediasdk',
         # Builder is enabled for not release branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
@@ -269,6 +274,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
+        "dependency_name": 'mediasdk',
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
                       'builders': ['build-libva']}]
@@ -284,6 +290,7 @@ BUILDERS = {
         "compiler": "clang",
         "compiler_version": "6.0",
         "worker": "ubuntu",
+        "dependency_name": 'mediasdk',
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
                       'builders': ['build-libva']}]
@@ -304,6 +311,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
+        "dependency_name": 'mediasdk',
         # mss2018_r2 branch not supported building fastboot configuration
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: branch != 'mss2018_r2',
@@ -320,6 +328,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "8.2.0",
         "worker": "ubuntu",
+        "dependency_name": 'mediasdk',
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
                       'builders': ['build-libva']}]
@@ -335,6 +344,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos_defconfig",
+        "dependency_name": 'mediasdk',
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
                       'builders': ['build-libva']}]
