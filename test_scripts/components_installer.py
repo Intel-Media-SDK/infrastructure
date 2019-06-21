@@ -25,7 +25,6 @@ Module for installation packages of components from manifest file
 import logging
 from common.manifest_manager import Manifest
 from common.mediasdk_directories import MediaSdkDirectories
-from common.helper import Build_event
 from common import package_manager
 from common.system_info import get_pkg_type
 
@@ -56,11 +55,11 @@ def install_components(manifest, components):
 
         repo = comp.trigger_repository
         artifacts = MediaSdkDirectories.get_build_dir(
-            branch=repo.target_branch if repo.target_branch else repo.branch,
-            build_event=Build_event.PRE_COMMIT.value if repo.target_branch else Build_event.COMMIT.value,
+            branch=repo.target_branch or repo.branch,
+            build_event=comp.build_info.build_event,
             commit_id=repo.revision,
-            product_type=comp.product_type,
-            build_type='release',
+            product_type=comp.build_info.product_type,
+            build_type=comp.build_info.build_type,
             product=component)
 
         packages = [pkg_path for pkg_path in artifacts.glob(f'*.{pkg_type}')
