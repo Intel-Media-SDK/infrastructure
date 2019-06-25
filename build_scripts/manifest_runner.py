@@ -183,30 +183,29 @@ class ManifestRunner:
 
         self._log.info('Saving manifest')
 
-        path_to_manifest = MediaSdkDirectories.get_commit_dir(
-            branch=self._target_branch or self._branch,
-            build_event=self._build_event,
-            commit_id=self._revision,
-            product='manifest'
-        ) / 'manifest.yml'
+        args = {
+            'branch': self._target_branch or self._branch,
+            'build_event': self._build_event,
+            'commit_id': self._revision,
+            'product': 'manifest'
+        }
 
-        self._manifest.save_manifest(path_to_manifest)
-        self._log.info(f'Manifest was saved to: %s', path_to_manifest)
+        manifest_path = MediaSdkDirectories.get_commit_dir(**args) / 'manifest.yml'
+
+        self._manifest.save_manifest(manifest_path)
+        self._log.info(f'Manifest was saved to: %s', manifest_path)
 
         for component in self._manifest.components:
             for repo in component.repositories:
                 if repo.name == self._repo:
                     product_type = component.build_info.product_type
 
-                    url_to_manifest = MediaSdkDirectories.get_commit_url(
-                        branch=self._target_branch or self._branch,
-                        build_event=self._build_event,
-                        commit_id=self._revision,
+                    manifest_url = MediaSdkDirectories.get_commit_url(
+                        **args,
                         product_type=product_type,
-                        product='manifest'
                     ) / 'manifest.yml'
 
-                    self._log.info(f'Manifest is available by link: %s', url_to_manifest)
+                    self._log.info(f'Manifest is available by link: %s', manifest_url)
                     break
             else:
                 continue

@@ -129,30 +129,18 @@ class TestRunner(ConfigGenerator):
         self._log.info("COPYING")
 
         repo = self._component.trigger_repository
-        branch = repo.target_branch or repo.branch
-        build_event = self._component.build_info.build_event
-        commit_id = repo.revision
-        build_type = self._component.build_info.build_type
-        product_type = self._product_type or self._component.build_info.product_type
-        product = self._component.name
 
-        artifacts_dir = MediaSdkDirectories.get_test_dir(
-            branch=branch,
-            build_event=build_event,
-            commit_id=commit_id,
-            build_type=build_type,
-            product_type=product_type,
-            product=product
-        )
+        args = {
+            'branch': repo.target_branch or repo.branch,
+            'build_event': self._component.build_info.build_event,
+            'commit_id': repo.revision,
+            'build_type': self._component.build_info.build_type,
+            'product_type': self._product_type or self._component.build_info.product_type,
+            'product': self._component.name
+        }
 
-        artifacts_url = MediaSdkDirectories.get_test_url(
-            branch=branch,
-            build_event=build_event,
-            commit_id=commit_id,
-            build_type=build_type,
-            product_type=product_type,
-            product=product
-        )
+        artifacts_dir = MediaSdkDirectories.get_test_dir(**args)
+        artifacts_url = MediaSdkDirectories.get_test_url(**args)
 
         if self._artifacts_layout:
             _orig_copystat = shutil.copystat
