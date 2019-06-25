@@ -30,12 +30,12 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.mediasdk_directories import MediaSdkDirectories
 from common.manifest_manager import Manifest
-from common.helper import ErrorCode
+from common.helper import ErrorCode, Product_type
 from common.logger_conf import configure_logger
 from bb.utils import SKIP_BUILDING_DEPENDENCY_PHRASE
 
 
-def check_component_existence(path_to_manifest, component_name):
+def check_component_existence(path_to_manifest, component_name, product_type):
     log = logging.getLogger('component_checker')
     log.info(f"Getting data for {component_name} from {path_to_manifest}")
     manifest = Manifest(pathlib.Path(path_to_manifest))
@@ -45,7 +45,7 @@ def check_component_existence(path_to_manifest, component_name):
         'branch': repository.target_branch or repository.branch,
         'build_event': component.build_info.build_event,
         'commit_id': repository.revision,
-        'product_type': component.build_info.product_type,
+        'product_type': product_type or component.build_info.product_type,
         'build_type': component.build_info.build_type,
         'product': component_name}
     component_dir = MediaSdkDirectories.get_build_dir(**list_params_for_getting_artifacts)
@@ -65,13 +65,16 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-p', '--path-to-manifest', help='Path to manifest file', required=True)
     parser.add_argument('-c', '--component-name', help='Component name to check', required=True)
+    parser.add_argument('-p', "--product-type",
+                        choices=[product_type.value for product_type in Product_type],
+                        help='Type of product')
     args = parser.parse_args()
 
     configure_logger()
     log = logging.getLogger('component_checker.main')
 
     try:
-        check_component_existence(args.path_to_manifest, args.component_name)
+        check_component_existence(args.path_to_manifest, args.component_name, args.product_type)
     except Exception:
         log.exception('Exception occurred')
         exit(ErrorCode.CRITICAL.value)
