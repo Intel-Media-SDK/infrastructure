@@ -33,10 +33,9 @@ import argparse
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
 from test_scripts.components_installer import install_components
-from common.mediasdk_directories import MediaSdkDirectories
 from common.helper import TestStage, ErrorCode, Product_type
 from common.logger_conf import configure_logger
-from common.manifest_manager import Manifest
+from common.manifest_manager import Manifest, get_test_dir, get_test_url
 
 
 class ArtifactsNotFoundException(RunnerException):
@@ -128,19 +127,10 @@ class TestRunner(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("COPYING")
 
-        repo = self._component.trigger_repository
-
-        args = {
-            'branch': repo.target_branch or repo.branch,
-            'build_event': self._component.build_info.build_event,
-            'commit_id': repo.revision,
-            'build_type': self._component.build_info.build_type,
-            'product_type': self._product_type or self._component.build_info.product_type,
-            'product': self._component.name
-        }
-
-        artifacts_dir = MediaSdkDirectories.get_test_dir(**args)
-        artifacts_url = MediaSdkDirectories.get_test_url(**args)
+        if self._product_type:
+            self._component.build_info.set_product_type(self._product_type)
+        artifacts_dir = get_test_dir(self._manifest, self._component.name)
+        artifacts_url = get_test_url(self._manifest, self._component.name)
 
         if self._artifacts_layout:
             _orig_copystat = shutil.copystat
