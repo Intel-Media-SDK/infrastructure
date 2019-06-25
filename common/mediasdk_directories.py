@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -198,6 +198,41 @@ class MediaSdkDirectories(object):
             branch = branch.split('/', 2)[-1]
 
         return cls.get_root_builds_dir(os_type) / product / branch / build_event / commit_id
+
+    @classmethod
+    def get_commit_url(cls, branch, build_event, commit_id, product_type, product='mediasdk'):
+        """
+        Get path to artifacts of builds on all OSes
+
+        :param branch: Branch of repo
+        :type branch: String
+
+        :param build_event: Event of build (pre_commit|commit|nightly|weekly)
+        :type build_event: String
+
+        :param commit_id: SHA sum of commit
+        :type commit_id: String
+
+        :param product_type: Type of product (linux|windows|embedded|pre_si)
+        :type product_type: String
+
+        :param product: Product (ex: mediasdk, libva, driver)
+        :type product: String
+
+        :return: Path to artifacts of build
+        :rtype: String
+        """
+
+        # for Gerrit and Github
+        # ex: refs/changes/25/52345/1 -> 52345/1
+        # ex: refs/pull/1234/merge -> 1234/merge
+        if branch.startswith('refs/changes/'):
+            branch = branch.split('/', 3)[-1]
+        if branch.startswith('refs/pull/'):
+            branch = branch.split('/', 2)[-1]
+
+        return '/'.join((cls.get_build_root_url(product_type), product, branch,
+                         build_event, commit_id))
 
     @classmethod
     def get_build_dir(cls, branch, build_event, commit_id, product_type, build_type, os_type=None, product='mediasdk'):
