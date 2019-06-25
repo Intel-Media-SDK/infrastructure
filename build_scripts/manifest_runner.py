@@ -203,7 +203,7 @@ class ManifestRunner:
                     manifest_url = MediaSdkDirectories.get_commit_url(
                         **args,
                         product_type=product_type,
-                    ) / 'manifest.yml'
+                    ) + '/manifest.yml'
 
                     self._log.info(f'Manifest is available by link: %s', manifest_url)
                     break
