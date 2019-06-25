@@ -63,9 +63,9 @@ def main():
     parser = argparse.ArgumentParser(prog="component_checker.py",
                                      description='Checks existence of component on share',
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-p', '--path-to-manifest', help='Path to manifest file', required=True)
+    parser.add_argument('-m', '--path-to-manifest', help='Path to manifest file', required=True)
     parser.add_argument('-c', '--component-name', help='Component name to check', required=True)
-    parser.add_argument('-p', "--product-type",
+    parser.add_argument('-p', '--product-type',
                         choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
     args = parser.parse_args()
