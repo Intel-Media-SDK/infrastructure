@@ -23,7 +23,17 @@ Manifest file manager
 """
 
 import pathlib
+import platform
+from urllib.parse import urljoin
+
 import yaml
+try:
+    import common.static_closed_data as static_data
+except Exception:
+    try:
+        import common.static_private_data as static_data
+    except Exception:
+        import common.static_public_data as static_data
 
 
 class ManifestException(Exception):
@@ -575,3 +585,230 @@ class BuildInfo:
         """
 
         self._build_event = build_event
+
+
+# TODO: temporary functions for testing ability to use Manifest for preparing layout for storing artifacts
+def _get_layout_parts(manifest, component, link_type=None):
+    """
+    Get parts of layout
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param default_rev: Flag for preparing revision
+    :type default_rev: Boolean
+
+    :return: Parts of layout
+    :rtype: Dict
+    """
+
+    comp = manifest.get_component(component)
+    repo = comp.trigger_repository
+
+    if link_type == 'manifest':
+        revision = repo.revision
+    else:
+        infra = manifest.get_component('infra')
+        conf = infra.trigger_repository
+        revision = f'{repo.revision[0:8]}_conf{conf.revision[0:8]}'
+
+    parts = {
+        'branch': repo.target_branch or repo.branch,
+        'build_event': comp.build_info.build_event,
+        'revision': revision,
+        'product_type': comp.build_info.product_type,
+        'build_type': comp.build_info.build_type
+    }
+    return parts
+
+
+def _get_root_dir(os_type=None, dir_type='build'):
+    """
+    Get root directory
+
+    :param os_type: Type of os (Windows|Linux)
+    :type os_type: String
+
+    :param dir_type: Type of root dir (build|test)
+    :type dir_type: String
+
+    :return: Root directory
+    :rtype: pathlib.Path
+    """
+
+    if os_type is None:
+        if platform.system() == 'Windows':
+            return pathlib.Path(static_data.SHARE_PATHS[f'{dir_type}_windows'])
+        elif platform.system() == 'Linux':
+            return pathlib.Path(static_data.SHARE_PATHS[f'{dir_type}_linux'])
+    elif os_type == 'Windows':
+        return pathlib.PureWindowsPath(static_data.SHARE_PATHS[f'{dir_type}_windows'])
+    elif os_type == 'Linux':
+        return pathlib.PurePosixPath(static_data.SHARE_PATHS[f'{dir_type}_linux'])
+    raise OSError('Unknown os type %s' % os_type)
+
+
+def _get_root_url(product_type, url_type='build'):
+    """
+    Get root url
+
+    :param product_type: Type of product
+    :type product_type: String
+
+    :param url_type: Type of root dir (build|test)
+    :type url_type: String
+
+    :return: Root url
+    :rtype: String
+    """
+
+    if product_type.startswith('public_'):
+        root_url = r'http://mediasdk.intel.com'
+    else:
+        root_url = r'http://bb.msdk.intel.com'
+
+    if product_type.startswith("private_linux_next_gen"):
+        build_root_dir = f'next_gen_{url_type}s'
+    elif product_type.startswith("private_"):
+        build_root_dir = f'private_{url_type}s'
+    elif product_type.startswith("public_"):
+        build_root_dir = f'{url_type}s'
+    else:
+        build_root_dir = f'closed_{url_type}s'
+
+    return urljoin(root_url, build_root_dir)
+
+
+def get_build_dir(manifest, component, os_type=None, link_type='build'):
+    """
+    Get build directory
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param os_type: Type of os (Windows|Linux)
+    :type os_type: String
+
+    :param link_type: Type of link to return (root|commit|build|manifest)
+    :type link_type: String
+
+    :param default_rev: Flag for preparing revision
+    :type default_rev: Boolean
+
+    :return: Build directory
+    :rtype: pathlib.Path
+    """
+
+    parts = _get_layout_parts(manifest, component, link_type)
+    result_path = _get_root_dir(os_type=os_type)
+
+    if link_type in ['commit', 'build']:
+        result_path = result_path / component / parts['branch'] / parts['build_event'] / parts['revision']
+    elif link_type == 'manifest':
+        result_path = result_path / 'manifest' / parts['branch'] / parts['build_event'] / parts['revision']
+    if link_type == 'build':
+        result_path = result_path / f'{parts["product_type"]}_{parts["build_type"]}'
+
+    return result_path
+
+
+def get_test_dir(manifest, component, test_platform=None, os_type=None, link_type='build'):
+    """
+    Get test directory
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param test_platform: Acronym of test platform (w10rs3_skl_64_d3d11|c7.3_skl_64_server)
+    :type test_platform: String
+
+    :param os_type: Type of os (Windows|Linux)
+    :type os_type: String
+
+    :param link_type: Type of link to return (root|commit|build)
+    :type link_type: String
+
+    :return: Test directory
+    :rtype: pathlib.Path
+    """
+
+    parts = _get_layout_parts(manifest, component)
+    result_path = _get_root_dir(os_type=os_type, dir_type='test')
+
+    if link_type in ['commit', 'build']:
+        result_path = result_path / component / parts['branch'] / parts['build_event'] / parts['revision']
+    elif link_type == 'build':
+        if test_platform:
+            result_path = result_path / parts['build_type'] / test_platform
+        else:
+            result_path = result_path / f'{parts["product_type"]}_{parts["build_type"]}'
+
+    return result_path
+
+
+def get_build_url(manifest, component, link_type='build'):
+    """
+    Get build url
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param link_type: Type of link to return (root|commit|build)
+    :type link_type: String
+
+    :param default_rev: Flag for preparing revision
+    :type default_rev: Boolean
+
+    :return: Build url
+    :rtype: String
+    """
+
+    parts = _get_layout_parts(manifest, component, link_type)
+    result_link = _get_root_url(parts['product_type'])
+
+    if link_type in ['commit', 'build']:
+        result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
+    elif link_type == 'manifest':
+        result_link = result_link / 'manifest' / parts['branch'] / parts['build_event'] / parts['revision']
+    if link_type == 'build':
+        result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
+    return result_link
+
+
+def get_test_url(manifest, component, link_type='build'):
+    """
+    Get test url
+
+    :param manifest: Manifest object
+    :type manifest: Manifest
+
+    :param component: Component name
+    :type component: String
+
+    :param link_type: Type of link to return (root|commit|build)
+    :type link_type: String
+
+    :return: Test url
+    :rtype: String
+    """
+
+    parts = _get_layout_parts(manifest, component)
+    result_link = _get_root_url(parts['product_type'], url_type='test')
+
+    if link_type in ['commit', 'build']:
+        result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
+    elif link_type == 'build':
+        result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
+    return result_link

@@ -28,8 +28,7 @@ import argparse
 import pathlib
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from common.mediasdk_directories import MediaSdkDirectories
-from common.manifest_manager import Manifest
+from common.manifest_manager import Manifest, get_build_dir, get_build_url
 from common.helper import ErrorCode, Product_type
 from common.logger_conf import configure_logger
 from bb.utils import SKIP_BUILDING_DEPENDENCY_PHRASE
@@ -39,19 +38,14 @@ def check_component_existence(path_to_manifest, component_name, product_type):
     log = logging.getLogger('component_checker')
     log.info(f"Getting data for {component_name} from {path_to_manifest}")
     manifest = Manifest(pathlib.Path(path_to_manifest))
-    component = manifest.get_component(component_name)
-    repository = component.trigger_repository
-    list_params_for_getting_artifacts = {
-        'branch': repository.target_branch or repository.branch,
-        'build_event': component.build_info.build_event,
-        'commit_id': repository.revision,
-        'product_type': product_type or component.build_info.product_type,
-        'build_type': component.build_info.build_type,
-        'product': component_name}
-    component_dir = MediaSdkDirectories.get_build_dir(**list_params_for_getting_artifacts)
+
+    if product_type:
+        manifest.get_component(component_name).build_info.set_product_type(product_type)
+
+    component_dir = get_build_dir(manifest, component_name)
     if component_dir.exists():
         log.info(f"Directory {component_dir} exists")
-        link_to_artifacts = MediaSdkDirectories.get_build_url(**list_params_for_getting_artifacts)
+        link_to_artifacts = get_build_url(manifest, component_name)
         log.info(f"Artifacts are available by: {link_to_artifacts}")
         # This is stop phrase for buildbot to skip all build stages
         log.info(SKIP_BUILDING_DEPENDENCY_PHRASE)

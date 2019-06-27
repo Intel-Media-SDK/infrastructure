@@ -33,10 +33,9 @@ import argparse
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
 from test_scripts.components_installer import install_components
-from common.mediasdk_directories import MediaSdkDirectories
 from common.helper import TestStage, ErrorCode, Product_type
 from common.logger_conf import configure_logger
-from common.manifest_manager import Manifest
+from common.manifest_manager import Manifest, get_test_dir, get_test_url
 
 
 class ArtifactsNotFoundException(RunnerException):
@@ -61,7 +60,7 @@ class TestRunner(ConfigGenerator):
     Contains commands for testing product.
     """
 
-    def __init__(self, root_dir, test_config, manifest, component, current_stage, product_type=None):
+    def __init__(self, root_dir, test_config, manifest, component, current_stage, product_type=None, custom_types=None):
         self._manifest = None
         self._infrastructure_path = pathlib.Path(__file__).resolve().parents[1]
 
@@ -70,6 +69,11 @@ class TestRunner(ConfigGenerator):
         self._default_stage = TestStage.TEST.value
         self._artifacts_layout = None
         self._product_type = product_type
+
+        if custom_types:
+            for comp, prod_type in custom_types.items():
+                self._manifest.get_component(comp).build_info.set_product_type(prod_type)
+
         super().__init__(root_dir, test_config, current_stage)
 
     def _update_global_vars(self):
@@ -128,19 +132,10 @@ class TestRunner(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("COPYING")
 
-        repo = self._component.trigger_repository
-
-        args = {
-            'branch': repo.target_branch or repo.branch,
-            'build_event': self._component.build_info.build_event,
-            'commit_id': repo.revision,
-            'build_type': self._component.build_info.build_type,
-            'product_type': self._product_type or self._component.build_info.product_type,
-            'product': self._component.name
-        }
-
-        artifacts_dir = MediaSdkDirectories.get_test_dir(**args)
-        artifacts_url = MediaSdkDirectories.get_test_url(**args)
+        if self._product_type:
+            self._component.build_info.set_product_type(self._product_type)
+        artifacts_dir = get_test_dir(self._manifest, self._component.name)
+        artifacts_url = get_test_url(self._manifest, self._component.name)
 
         if self._artifacts_layout:
             _orig_copystat = shutil.copystat
@@ -183,6 +178,9 @@ def main():
     parser.add_argument('-p', "--product-type",
                         choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
+    parser.add_argument("--custom-types", nargs='*',
+                        help="Set custom product types for components\n"
+                             "(ex. component_name:product_type)")
     parser.add_argument("--stage", default=TestStage.TEST.value,
                         choices=[stage.value for stage in TestStage],
                         help="Current executable stage")
@@ -193,13 +191,18 @@ def main():
         configure_logger(logs_path=pathlib.Path(args.root_dir) / 'logs' / f'{args.stage}.log')
     log = logging.getLogger('tests_runner.main')
 
+    custom_types = None
+    if args.custom_types:
+        custom_types = dict(custom.split(':') for custom in args.custom_types)
+
     try:
         tests_runner = TestRunner(root_dir=pathlib.Path(args.root_dir),
                                   test_config=pathlib.Path(args.test_config),
                                   manifest=pathlib.Path(args.manifest),
                                   component=args.component,
                                   current_stage=args.stage,
-                                  product_type=args.product_type)
+                                  product_type=args.product_type,
+                                  custom_types=custom_types)
 
         if tests_runner.generate_config():
             no_errors = tests_runner.run_stage(args.stage)

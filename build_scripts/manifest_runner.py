@@ -42,7 +42,7 @@ from common.logger_conf import configure_logger
 from common.helper import Build_event, ErrorCode
 from common.mediasdk_directories import MediaSdkDirectories
 from common.branch_converter import convert_branch
-from common.manifest_manager import Manifest, Repository
+from common.manifest_manager import Manifest, Repository, get_build_dir, get_build_url
 from common.git_worker import ProductState
 
 
@@ -183,33 +183,18 @@ class ManifestRunner:
 
         self._log.info('Saving manifest')
 
-        args = {
-            'branch': self._target_branch or self._branch,
-            'build_event': self._build_event,
-            'commit_id': self._revision,
-            'product': 'manifest'
-        }
-
-        manifest_path = MediaSdkDirectories.get_commit_dir(**args) / 'manifest.yml'
-
-        self._manifest.save_manifest(manifest_path)
-        self._log.info(f'Manifest was saved to: %s', manifest_path)
-
+        component_name = None
         for component in self._manifest.components:
             for repo in component.repositories:
                 if repo.name == self._repo:
-                    product_type = component.build_info.product_type
+                    component_name = component.name
 
-                    manifest_url = MediaSdkDirectories.get_commit_url(
-                        **args,
-                        product_type=product_type,
-                    ) + '/manifest.yml'
+        manifest_path = get_build_dir(self._manifest, component_name, link_type='manifest') / 'manifest.yml'
+        manifest_url = get_build_url(self._manifest, component_name, link_type='manifest') + '/manifest.yml'
 
-                    self._log.info(f'Manifest is available by link: %s', manifest_url)
-                    break
-            else:
-                continue
-            break
+        self._manifest.save_manifest(manifest_path)
+        self._log.info(f'Manifest was saved to: %s', manifest_path)
+        self._log.info(f'Manifest is available by link: %s', manifest_url)
 
     def run(self):
         """

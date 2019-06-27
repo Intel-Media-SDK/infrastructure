@@ -49,14 +49,12 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, Action, RunnerException
-from common.helper import Stage, Product_type, Build_event, Build_type, make_archive, \
+from common.helper import Stage, Product_type, Build_type, make_archive, \
     copy_win_files, rotate_dir, cmd_exec, copytree, get_packing_cmd, ErrorCode, TargetArch, extract_archive, create_file
-
 from common.logger_conf import configure_logger
 from common.git_worker import ProductState
-from common.mediasdk_directories import MediaSdkDirectories
 from common.build_number import get_build_number
-from common.manifest_manager import Manifest
+from common.manifest_manager import Manifest, get_build_dir, get_build_url
 
 
 class UnsupportedVSError(RunnerException):
@@ -569,23 +567,9 @@ class BuildGenerator(ConfigGenerator):
         print('-' * 50)
         self._log.info("COPYING")
 
-        repo = self._component.trigger_repository
-        branch = repo.target_branch or repo.branch
-        build_event = self._component.build_info.build_event
-        commit_id = repo.revision
-        product_type = self._component.build_info.product_type
-        build_type = self._component.build_info.build_type
-        component_name = self._component.name
-
-        build_dir = MediaSdkDirectories.get_build_dir(
-            branch, build_event, commit_id, product_type, build_type, product=component_name
-        )
-
-        build_url = MediaSdkDirectories.get_build_url(
-            branch, build_event, commit_id, product_type, build_type, product=component_name
-        )
-
-        build_root_dir = MediaSdkDirectories.get_root_builds_dir()
+        build_dir = get_build_dir(self._manifest, self._component.name)
+        build_url = get_build_url(self._manifest, self._component.name)
+        build_root_dir = get_build_dir(self._manifest, self._component.name, link_type='root')
         rotate_dir(build_dir)
 
         self._log.info('Copy to %s', build_dir)
@@ -792,26 +776,13 @@ class BuildGenerator(ConfigGenerator):
                 self._log.info(f'Getting component {dependency}')
                 comp = self._manifest.get_component(dependency)
                 if comp:
-                    trigger_repo = comp.trigger_repository
-                    if trigger_repo:
-                        dep_dir = MediaSdkDirectories.get_build_dir(
-                            trigger_repo.target_branch or trigger_repo.branch,
-                            Build_event.COMMIT.value,
-                            trigger_repo.revision,
-                            comp.build_info.product_type,
-                            Build_type.RELEASE.value,
-                            product=dependency
-                        )
-
-                        try:
-                            self._log.info(f'Extracting {dependency} {comp.build_info.product_type} artifacts')
-                            # TODO: Extension hardcoded for open source. Need to use only .zip in future.
-                            extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
-                        except Exception:
-                            self._log.exception('Can not extract archive')
-                            return False
-                    else:
-                        self._log.error('There is no repository as a trigger')
+                    try:
+                        dep_dir = get_build_dir(self._manifest, dependency)
+                        self._log.info(f'Extracting {dependency} {comp.build_info.product_type} artifacts')
+                        # TODO: Extension hardcoded for open source. Need to use only .zip in future.
+                        extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
+                    except Exception:
+                        self._log.exception('Can not extract archive')
                         return False
                 else:
                     self._log.error(f'Component {dependency} does not exist in manifest')
