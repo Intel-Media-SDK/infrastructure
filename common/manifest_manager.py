@@ -613,7 +613,7 @@ def _get_layout_parts(manifest, component, link_type=None):
     else:
         infra = manifest.get_component('infra')
         conf = infra.trigger_repository
-        revision = f'{repo.revision[0:8]}_conf{conf.revision[0:8]}'
+        revision = f'{repo.revision}_conf_{conf.revision[0:8]}'
 
     parts = {
         'branch': repo.target_branch or repo.branch,
@@ -781,7 +781,7 @@ def get_build_url(manifest, component, link_type='build'):
     if link_type in ['commit', 'build']:
         result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
     elif link_type == 'manifest':
-        result_link = result_link / 'manifest' / parts['branch'] / parts['build_event'] / parts['revision']
+        result_link = '/'.join((result_link, 'manifest', parts['branch'], parts['build_event'], parts['revision']))
     if link_type == 'build':
         result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
     return result_link
