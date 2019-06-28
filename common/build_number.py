@@ -110,15 +110,12 @@ def increase_build_number(local_repo_path, os_type, branch):
         remove_directory(str(temp_dir))
 
     temp_dir.mkdir(exist_ok=True)
-    try:
-        extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
-                     branch=branch, commit_id='HEAD')
-    except Exception:
-        log.warning(f'It looks like {branch} branch does not exist\n'
-                    f'Redefine {branch} to "master"')
-        branch = 'master'
-        extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
-                     branch=branch, commit_id='HEAD')
+
+    log.warning(f'Redefine {branch} to "master"')
+    # TODO: use extract_repo from git_worker in one_ci_dev branch
+    branch = 'master'
+    extract_repo(root_repo_dir=temp_dir, repo_name=repo_name,
+                 branch=branch, commit_id='HEAD')
 
     log.info(
         f'Getting build number from HEAD of {branch} branch for repo in {latest_version_repo_path}')
