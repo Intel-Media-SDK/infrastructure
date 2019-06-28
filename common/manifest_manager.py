@@ -746,7 +746,7 @@ def get_test_dir(manifest, component, test_platform=None, os_type=None, link_typ
 
     if link_type in ['commit', 'build']:
         result_path = result_path / component / parts['branch'] / parts['build_event'] / parts['revision']
-    elif link_type == 'build':
+    if link_type == 'build':
         if test_platform:
             result_path = result_path / parts['build_type'] / test_platform
         else:
@@ -809,6 +809,6 @@ def get_test_url(manifest, component, link_type='build'):
 
     if link_type in ['commit', 'build']:
         result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
-    elif link_type == 'build':
+    if link_type == 'build':
         result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
     return result_link

@@ -33,7 +33,7 @@ import argparse
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
 from test_scripts.components_installer import install_components
-from common.helper import TestStage, ErrorCode, Product_type
+from common.helper import TestStage, ErrorCode, Product_type, Build_type
 from common.logger_conf import configure_logger
 from common.manifest_manager import Manifest, get_test_dir, get_test_url
 
@@ -60,7 +60,8 @@ class TestRunner(ConfigGenerator):
     Contains commands for testing product.
     """
 
-    def __init__(self, root_dir, test_config, manifest, component, current_stage, product_type=None, custom_types=None):
+    def __init__(self, root_dir, test_config, manifest, component, current_stage,
+                 product_type=None, build_type=None, custom_types=None):
         self._manifest = None
         self._infrastructure_path = pathlib.Path(__file__).resolve().parents[1]
 
@@ -70,6 +71,9 @@ class TestRunner(ConfigGenerator):
         self._artifacts_layout = None
         self._product_type = product_type
 
+        # TODO: create mapper for all tests combinations of components in product-configs
+        if build_type:
+            self._component.build_info.set_build_type(build_type)
         if custom_types:
             for comp, prod_type in custom_types.items():
                 self._manifest.get_component(comp).build_info.set_product_type(prod_type)
@@ -178,6 +182,9 @@ def main():
     parser.add_argument('-p', "--product-type",
                         choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
+    parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
+                        choices=[build_type.value for build_type in Build_type],
+                        help='Type of build')
     parser.add_argument("--custom-types", nargs='*',
                         help="Set custom product types for components\n"
                              "(ex. component_name:product_type)")
@@ -202,6 +209,7 @@ def main():
                                   component=args.component,
                                   current_stage=args.stage,
                                   product_type=args.product_type,
+                                  build_type=args.build_type,
                                   custom_types=custom_types)
 
         if tests_runner.generate_config():

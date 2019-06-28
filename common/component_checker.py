@@ -29,18 +29,20 @@ import pathlib
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.manifest_manager import Manifest, get_build_dir, get_build_url
-from common.helper import ErrorCode, Product_type
+from common.helper import ErrorCode, Product_type, Build_type
 from common.logger_conf import configure_logger
 from bb.utils import SKIP_BUILDING_DEPENDENCY_PHRASE
 
 
-def check_component_existence(path_to_manifest, component_name, product_type):
+def check_component_existence(path_to_manifest, component_name, product_type, build_type):
     log = logging.getLogger('component_checker')
     log.info(f"Getting data for {component_name} from {path_to_manifest}")
     manifest = Manifest(pathlib.Path(path_to_manifest))
 
     if product_type:
         manifest.get_component(component_name).build_info.set_product_type(product_type)
+    if build_type:
+        manifest.get_component(component_name).build_info.set_build_type(build_type)
 
     component_dir = get_build_dir(manifest, component_name)
     if component_dir.exists():
@@ -59,6 +61,9 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--path-to-manifest', help='Path to manifest file', required=True)
     parser.add_argument('-c', '--component-name', help='Component name to check', required=True)
+    parser.add_argument('-b', "--build-type", default=Build_type.RELEASE.value,
+                        choices=[build_type.value for build_type in Build_type],
+                        help='Type of build')
     parser.add_argument('-p', '--product-type',
                         choices=[product_type.value for product_type in Product_type],
                         help='Type of product')
@@ -68,7 +73,7 @@ def main():
     log = logging.getLogger('component_checker.main')
 
     try:
-        check_component_existence(args.path_to_manifest, args.component_name, args.product_type)
+        check_component_existence(args.path_to_manifest, args.component_name, args.product_type, args.build_type)
     except Exception:
         log.exception('Exception occurred')
         exit(ErrorCode.CRITICAL.value)
