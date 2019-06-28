@@ -132,9 +132,10 @@ BUILDERS = {
         "compiler_version": "6.3.1",
         "worker": "centos",
         "dependency_name": 'intel-graphics-compiler',
-        # Builder is enabled for all branches
+        # Builder is enabled for master and intel-mediasdk-19.1
+        # TODO: remove one_ci_dev branch from triggers before merging with master
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1']}]
+                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1', 'one_ci_dev']}]
     },
 
     "build-opencl": {
@@ -148,10 +149,10 @@ BUILDERS = {
         "compiler_version": "6.3.1",
         "worker": "centos",
         "dependency_name": 'opencl_runtime',
-        # Builder is enabled for all branches
+        # Builder is enabled for master and intel-mediasdk-19.1, see build-igc
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: True,
-                      'builders': ['build-igc']}]
+                      'builders': ['build-igc', 'build-gmmlib']}]
     },
 
     "build-ffmpeg": {
@@ -165,7 +166,8 @@ BUILDERS = {
         "dependency_name": 'ffmpeg',
         # Builder is enabled for all branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: True}]
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva']}]
     },
 
     "build-metrics-calc": {
@@ -351,23 +353,29 @@ BUILDERS = {
     },
 
     "test": {
-        "factory": FACTORIES.init_mediasdk_test_factory,
+        "factory": FACTORIES.init_test_factory,
         "product_type": Product_type.PUBLIC_LINUX.value,
         "build_type": Build_type.RELEASE.value,
+        "product_conf_file": "conf_media_test.py",
+        "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX.value}",
         "worker": "centos_test",
-        # build-opencl builder is enabled only for master branch
+        # build-opencl is dependecy only for master and intel-mediasdk-19.1 branches,
+        # because for other branches that build doesn't run
+        # TODO: remove one_ci_dev branch from triggers before merging with master
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch not in ['master', 'intel-mediasdk-19.1'],
+                      'branches': lambda branch: branch not in ['master', 'intel-mediasdk-19.1', 'one_ci_dev'],
                       'builders': ['build-mediasdk', 'build-driver']},
                      {'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1'],
+                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1', 'one_ci_dev'],
                       'builders': ['build-mediasdk', 'build-driver', 'build-opencl']}]
     },
 
     "test-api-next": {
-        "factory": FACTORIES.init_mediasdk_test_factory,
+        "factory": FACTORIES.init_test_factory,
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
         "build_type": Build_type.RELEASE.value,
+        "product_conf_file": "conf_media_test.py",
+        "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX_API_NEXT.value}",
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda x: True,

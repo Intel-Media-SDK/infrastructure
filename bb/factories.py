@@ -419,7 +419,9 @@ class Factories:
                 name=f"check {dependency_name} on share",
                 command=[self.run_command[worker_os], 'component_checker.py',
                          '--path-to-manifest', util.Interpolate(get_path(path_to_manifest)),
-                         '--component-name', dependency_name],
+                         '--component-name', dependency_name,
+                         '--product-type', product_type,
+                         '--build-type', build_type],
                 workdir=get_path(r'infrastructure/common')))
 
         shell_commands = [self.run_command[worker_os],
@@ -446,53 +448,35 @@ class Factories:
                 steps.ShellCommand(command=shell_commands + ["--stage", stage.value],
                                    workdir=get_path(r"infrastructure/build_scripts"),
                                    name=stage.value,
-                                   doStepIf=is_build_dependency_needed))
+                                   doStepIf=is_build_dependency_needed,
+                                   timeout=60 * 60)) # 1 hour for igc
         return build_factory
 
-    def init_mediasdk_test_factory(self, test_specification, props):
-        product_type = test_specification["product_type"]
-        build_type = test_specification["build_type"]
+    def init_test_factory(self, test_specification, props):
+        product_type = test_specification['product_type']
+        build_type = test_specification['build_type']
+        conf_file = test_specification["product_conf_file"]
+        custom_types = test_specification["custom_types"]
 
         test_factory = self.factory_with_deploying_infrastructure_step(props)
 
         worker_os = props['os']
         get_path = bb.utils.get_path_on_os(worker_os)
 
-        branch = props.getProperty('target_branch') or props.getProperty('branch')
-
-        test_factory.append(
-            steps.ShellCommand(command=[self.run_command[worker_os],
-                                        "test_adapter.py",
-                                        "--branch", branch,
-                                        "--build-event",
-                                        "pre_commit" if props.hasProperty(
-                                            'target_branch') else 'commit',
-                                        "--product-type", product_type,
-                                        "--commit-id", util.Interpolate(r"%(prop:revision)s"),
-                                        "--build-type", build_type,
-                                        "--root-dir",
-                                        util.Interpolate(get_path(r"%(prop:builddir)s/build_dir"))],
-                               workdir=get_path(r"infrastructure/ted_adapter")))
-        return test_factory
-
-    def init_driver_test_factory(self, test_specification, props):
-        test_factory = self.factory_with_deploying_infrastructure_step(props)
-
-        worker_os = props['os']
-        get_path = bb.utils.get_path_on_os(worker_os)
-
-        branch = props.getProperty('target_branch') or props.getProperty('branch')
-
-        driver_manifest_path = MediaSdkDirectories.get_build_dir(
-            branch,
-            "pre_commit" if props.hasProperty('target_branch') else 'commit',
-            props['revision'],
-            test_specification['product_type'],
-            test_specification['build_type'],
-            product='media-driver')
+        driver_manifest_path = MediaSdkDirectories.get_commit_dir(
+            props.getProperty('target_branch') or props.getProperty('branch'),
+            props.getProperty('event_type'),
+            props.getProperty("revision"),
+            product='manifest') / 'manifest.yml'
         command = [self.run_command[worker_os], "tests_runner.py",
-                   '--artifacts', str(driver_manifest_path),
+                   '--manifest', str(driver_manifest_path),
+                   '--component', 'mediasdk',
+                   '--test-config', util.Interpolate(
+                              get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                    '--root-dir', util.Interpolate('%(prop:builddir)s/test_dir'),
+                   '--product-type', product_type,
+                   '--build-type', build_type,
+                   '--custom-types', custom_types,
                    '--stage']
 
         for test_stage in TestStage:
