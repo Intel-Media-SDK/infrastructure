@@ -128,7 +128,7 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
         conf_manifest = manifest
         manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
         product_conf = manifest_data['components']['infra']['repository'][closed_source_product_configs_repo]
-        extract_repo(root_repo_dir=root_dir, repo_name=product_conf['name'],
+        extract_repo(root_repo_dir=original_repos_dir, repo_name=product_conf['name'],
                      branch=product_conf['branch'],
                      commit_id=product_conf['revision'], commit_time=commit_time)
 
