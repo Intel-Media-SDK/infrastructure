@@ -45,6 +45,14 @@ from common.branch_converter import convert_branch
 from common.manifest_manager import Manifest, Repository, get_build_dir, get_build_url
 from common.git_worker import ProductState
 
+try:
+    import common.static_closed_data as static_data
+except Exception:
+    try:
+        import common.static_private_data as static_data
+    except Exception:
+        import common.static_public_data as static_data
+
 
 class ManifestRunner:
     """
@@ -76,11 +84,7 @@ class ManifestRunner:
         :type commit_time: Time to slice revisions
         """
 
-        self._repo_to_extract = [
-            'product-configs',
-            'MediaSDK',
-            'media-driver'
-        ]
+        self._repo_to_extract = static_data.NON_STATIC_REPOSITORIES
 
         self._root_dir = pathlib.Path(root_dir)
         self._repo = repo
