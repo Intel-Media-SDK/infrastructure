@@ -107,6 +107,7 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
     log = logging.getLogger('extract_repo.extract_closed_source_infrastructure')
 
     infrastructure_root_dir = root_dir / 'infrastructure'
+    configs_root_dir = root_dir / 'product-configs'
 
     # We save and update repos in temporary folder and create infrastructure package from it
     # So, not needed extracting repo to the beginning each time
@@ -121,11 +122,11 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
     if not manifest:
         extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_product_configs_repo,
                      branch=branch, commit_id=commit_id, commit_time=commit_time)
-        conf_manifest = root_dir / closed_source_product_configs_repo / 'manifest.yml'
-        manifest_data = yaml.load(conf_manifest, Loader=yaml.FullLoader)
+        conf_manifest = original_repos_dir / closed_source_product_configs_repo / 'manifest.yml'
+        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
     else:
         conf_manifest = manifest
-        manifest_data = yaml.load(conf_manifest, Loader=yaml.FullLoader)
+        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
         product_conf = manifest_data['components']['infra']['repository'][closed_source_product_configs_repo]
         extract_repo(root_repo_dir=root_dir, repo_name=product_conf['name'],
                      branch=product_conf['branch'],
@@ -151,6 +152,8 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
         log.info(f"- Delete existing infrastructure")
         if infrastructure_root_dir.exists():
             remove_directory(str(infrastructure_root_dir))
+        if configs_root_dir.exists():
+            remove_directory(str(configs_root_dir))
 
         log.info(f"- Copy open source infrastructure")
         copy_tree(str(original_repos_dir / open_source_infra_repo),
@@ -162,7 +165,7 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
 
         log.info(f"- Copy product configs")
         copy_tree(str(original_repos_dir / closed_source_product_configs_repo),
-                  str(infrastructure_root_dir / closed_source_product_configs_repo))
+                  str(configs_root_dir))
 
         # log.info(f"Copy secrets")
         shutil.copyfile(str(pathlib.Path('msdk_secrets.py').absolute()),
@@ -182,10 +185,10 @@ def extract_open_source_infrastructure(root_dir, branch, commit_id, commit_time,
         extract_repo(root_repo_dir=root_dir, repo_name=open_source_product_configs_repo, branch=branch,
                      commit_id=commit_id, commit_time=commit_time)
         conf_manifest = root_dir / open_source_product_configs_repo / 'manifest.yml'
-        manifest_data = yaml.load(conf_manifest.open('r'), Loader=yaml.FullLoader)
+        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
     else:
         conf_manifest = manifest
-        manifest_data = yaml.load(conf_manifest.open('r'), Loader=yaml.FullLoader)
+        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
         product_conf = manifest_data['components']['infra']['repository'][open_source_product_configs_repo]
         extract_repo(root_repo_dir=root_dir, repo_name=product_conf['name'],
                      branch=product_conf['branch'],
@@ -203,6 +206,7 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, man
     log = logging.getLogger('extract_repo.extract_private_infrastructure')
 
     infrastructure_root_dir = root_dir / 'infrastructure'
+    configs_root_dir = root_dir / 'product-configs'
 
     # We save and update repos in temporary folder and create infrastructure package from it
     # So, not needed extracting repo to the beginning each time
@@ -220,8 +224,8 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, man
     # Extract closed source product configs
     extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_product_configs_repo,
                  branch='master', commit_time=commit_time)
-    conf_manifest = root_dir / closed_source_product_configs_repo / 'manifest.yml'
-    manifest_data = yaml.load(conf_manifest, Loader=yaml.FullLoader)
+    conf_manifest = original_repos_dir / closed_source_product_configs_repo / 'manifest.yml'
+    manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
 
     closed_source_infra = manifest_data['components']['infra']['repository'][closed_source_infra_repo]
     # Extract closed source infrastructure
@@ -235,6 +239,8 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, man
         log.info(f"- Delete existing infrastructure")
         if infrastructure_root_dir.exists():
             remove_directory(str(infrastructure_root_dir))
+        if configs_root_dir.exists():
+            remove_directory(str(configs_root_dir))
 
         log.info(f"- Copy open source infrastructure")
         copy_tree(str(original_repos_dir / open_source_infra_repo),
@@ -249,11 +255,11 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, man
 
         log.info(f"- Copy open source product configs")
         copy_tree(str(original_repos_dir / open_source_product_configs_repo),
-                  str(infrastructure_root_dir / open_source_product_configs_repo))
+                  str(configs_root_dir))
 
         log.info(f"- Copy closed source product configs")
         copy_tree(str(original_repos_dir / closed_source_product_configs_repo),
-                  str(infrastructure_root_dir / open_source_product_configs_repo))
+                  str(configs_root_dir))
 
         # log.info(f"Copy secrets")
         shutil.copyfile(str(pathlib.Path('msdk_secrets.py').absolute()),
