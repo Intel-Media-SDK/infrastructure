@@ -69,6 +69,8 @@ class Manifest:
 
         self._manifest_file = pathlib.Path(manifest_path if manifest_path else 'manifest.yml')
         self._version = '0'  # gets from manifest
+        self._event_component = None  # gets from manifest
+        self._event_repo = None  # gets from manifest
         self._components = {}  # gets from manifest
 
         if manifest_path is not None:
@@ -90,6 +92,8 @@ class Manifest:
                 manifest_info = yaml.load(manifest, Loader=yaml.FullLoader)
 
             self._version = manifest_info.get('version', '0')
+            self._event_component = manifest_info['event']['component']
+            self._event_repo = manifest_info['event']['repository']
 
             for name, info in manifest_info['components'].items():
                 self._components[name] = Component.from_dict({
@@ -111,10 +115,44 @@ class Manifest:
     @property
     def components(self):
         """
-            get components list
+        get components list
         """
 
         return list(self._components.values())
+
+    @property
+    def event_component(self):
+        """
+        get event component
+        """
+
+        return self.get_component(self._event_component)
+
+    @property
+    def event_repo(self):
+        """
+        get event repository
+        """
+
+        return self.event_component.get_repository(self._event_repo)
+
+    def set_event_component(self, component):
+        """
+        setter for event component
+
+        :param component: Component name
+        """
+
+        self._event_component = component
+
+    def set_event_repo(self, repo):
+        """
+        setter for event repo
+
+        :param repo: Repository name
+        """
+
+        self._event_repo = repo
 
     def get_component(self, component_name):
         """
@@ -181,6 +219,10 @@ class Manifest:
         path_to_save.parent.mkdir(parents=True, exist_ok=True)
 
         manifest_data = {'components': {},
+                         'event': {
+                             'component': self._event_component,
+                             'repository': self._event_repo
+                         },
                          'version': self._version}
 
         for comp_name, comp_data in self._components.items():

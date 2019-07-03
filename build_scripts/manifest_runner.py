@@ -169,6 +169,8 @@ class ManifestRunner:
                 if repo.name == self._repo:
                     component.build_info.set_build_event(self._build_event)
                     component.build_info.set_trigger(repo.name)
+                    self._manifest.set_event_component(component.name)
+                    self._manifest.set_event_repo(repo.name)
 
                 if repo.name in self._updated_repos:
                     upd_repo = Repository(
@@ -187,12 +189,7 @@ class ManifestRunner:
 
         self._log.info('Saving manifest')
 
-        component_name = None
-        for component in self._manifest.components:
-            for repo in component.repositories:
-                if repo.name == self._repo:
-                    component_name = component.name
-
+        component_name = self._manifest.event_component.name
         manifest_path = get_build_dir(self._manifest, component_name, link_type='manifest') / 'manifest.yml'
         manifest_url = get_build_url(self._manifest, component_name, link_type='manifest') + '/manifest.yml'
 
