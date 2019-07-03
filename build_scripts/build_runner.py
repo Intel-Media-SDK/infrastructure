@@ -260,6 +260,7 @@ class BuildGenerator(ConfigGenerator):
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
         })
+        self._product_repos = []
         self._dev_pkg_data_to_archive = []
         self._install_pkg_data_to_archive = []
         self._custom_cli_args = custom_cli_args
@@ -293,6 +294,11 @@ class BuildGenerator(ConfigGenerator):
             'manifest': self._manifest,
             'create_file': create_file
         })
+
+    def _get_config_vars(self):
+        if 'PRODUCT_REPOS' in self._config_variables:
+            for repo in self._config_variables['PRODUCT_REPOS']:
+                self._product_repos.append(repo['name'])
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
@@ -418,11 +424,12 @@ class BuildGenerator(ConfigGenerator):
 
         repo_states = collections.defaultdict(dict)
         for repo in self._component.repositories:
-            repo_states[repo.name]['target_branch'] = repo.target_branch
-            repo_states[repo.name]['branch'] = repo.branch
-            repo_states[repo.name]['commit_id'] = repo.revision
-            repo_states[repo.name]['url'] = repo.url
-            repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
+            if not self._product_repos or repo.name in self._product_repos:
+                repo_states[repo.name]['target_branch'] = repo.target_branch
+                repo_states[repo.name]['branch'] = repo.branch
+                repo_states[repo.name]['commit_id'] = repo.revision
+                repo_states[repo.name]['url'] = repo.url
+                repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
 
         product_state = ProductState(repo_states, self._options["REPOS_DIR"])
 
