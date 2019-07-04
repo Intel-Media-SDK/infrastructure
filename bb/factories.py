@@ -381,8 +381,8 @@ class Factories:
         build_type = build_specification["build_type"]
         api_latest = build_specification.get("api_latest")
         fastboot = build_specification.get("fastboot")
-        compiler = build_specification["compiler"]
-        compiler_version = build_specification["compiler_version"]
+        compiler = build_specification.get("compiler")
+        compiler_version = build_specification.get("compiler_version")
         build_factory = self.factory_with_deploying_infrastructure_step(props)
 
         worker_os = props['os']
@@ -412,10 +412,7 @@ class Factories:
                               get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                           "--root-dir", util.Interpolate(get_path(r"%(prop:builddir)s/build_dir")),
                           "--build-type", build_type,
-                          "--product-type", product_type,
-                          f"compiler={compiler}",
-                          f"compiler_version={compiler_version}",
-                          ]
+                          "--product-type", product_type]
         if dependency_name:
             shell_commands += ['--manifest',
                                util.Interpolate(
@@ -434,6 +431,8 @@ class Factories:
             shell_commands.append("api_latest=True")
         if fastboot:
             shell_commands.append("fastboot=True")
+        if compiler and compiler_version:
+            shell_commands.extend([f"compiler={compiler}", f"compiler_version={compiler_version}"])
 
         # Build by stages: clean, extract, build, install, pack, copy
         for stage in Stage:

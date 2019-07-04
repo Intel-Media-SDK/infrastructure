@@ -87,6 +87,10 @@ class VsComponent(Action):
         'vs2017': {
             'ms_build': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\MSBuild\15.0\Bin;',
             'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\Auxiliary\Build;'
+        },
+        'vs2019': {
+            'ms_build': r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin;',
+            'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build;'
         }
     }
 
