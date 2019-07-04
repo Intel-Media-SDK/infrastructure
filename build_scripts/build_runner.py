@@ -785,9 +785,11 @@ class BuildGenerator(ConfigGenerator):
                 if comp:
                     try:
                         dep_dir = get_build_dir(self._manifest, dependency)
-                        self._log.info(f'Extracting {dependency} {comp.build_info.product_type} artifacts')
                         # TODO: Extension hardcoded for open source. Need to use only .zip in future.
-                        extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
+                        dep_pkg = dep_dir / f'install_pkg.tar.gz'
+
+                        self._log.info(f'Extracting {dep_pkg}')
+                        extract_archive(dep_pkg, deps_dir / dependency)
                     except Exception:
                         self._log.exception('Can not extract archive')
                         return False
