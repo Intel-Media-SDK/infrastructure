@@ -285,7 +285,7 @@ class BuildGenerator(ConfigGenerator):
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self._component.trigger_repository.branch,
-            'changed_repo_name': self._component.trigger_repository.name,
+            'changed_repo_name': self._manifest.event_repo.name,
             'update_config': self._update_config,
             'target_arch': self._target_arch,
             'get_packing_cmd': get_packing_cmd,
