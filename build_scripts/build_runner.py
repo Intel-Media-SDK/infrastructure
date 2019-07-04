@@ -260,6 +260,7 @@ class BuildGenerator(ConfigGenerator):
             "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
         })
+        self._product_repos = []
         self._dev_pkg_data_to_archive = []
         self._install_pkg_data_to_archive = []
         self._custom_cli_args = custom_cli_args
@@ -284,7 +285,7 @@ class BuildGenerator(ConfigGenerator):
             'get_build_number': get_build_number,
             'get_api_version': self._get_api_version,
             'branch_name': self._component.trigger_repository.branch,
-            'changed_repo_name': self._component.trigger_repository.name,
+            'changed_repo_name': self._manifest.event_repo.name,
             'update_config': self._update_config,
             'target_arch': self._target_arch,
             'get_packing_cmd': get_packing_cmd,
@@ -293,6 +294,11 @@ class BuildGenerator(ConfigGenerator):
             'manifest': self._manifest,
             'create_file': create_file
         })
+
+    def _get_config_vars(self):
+        if 'PRODUCT_REPOS' in self._config_variables:
+            for repo in self._config_variables['PRODUCT_REPOS']:
+                self._product_repos.append(repo['name'])
 
     def _action(self, name, stage=None, cmd=None, work_dir=None, env=None, callfunc=None, verbose=False):
         """
@@ -418,11 +424,12 @@ class BuildGenerator(ConfigGenerator):
 
         repo_states = collections.defaultdict(dict)
         for repo in self._component.repositories:
-            repo_states[repo.name]['target_branch'] = repo.target_branch
-            repo_states[repo.name]['branch'] = repo.branch
-            repo_states[repo.name]['commit_id'] = repo.revision
-            repo_states[repo.name]['url'] = repo.url
-            repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
+            if not self._product_repos or repo.name in self._product_repos:
+                repo_states[repo.name]['target_branch'] = repo.target_branch
+                repo_states[repo.name]['branch'] = repo.branch
+                repo_states[repo.name]['commit_id'] = repo.revision
+                repo_states[repo.name]['url'] = repo.url
+                repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
 
         product_state = ProductState(repo_states, self._options["REPOS_DIR"])
 
@@ -778,9 +785,11 @@ class BuildGenerator(ConfigGenerator):
                 if comp:
                     try:
                         dep_dir = get_build_dir(self._manifest, dependency)
-                        self._log.info(f'Extracting {dependency} {comp.build_info.product_type} artifacts')
                         # TODO: Extension hardcoded for open source. Need to use only .zip in future.
-                        extract_archive(dep_dir / f'install_pkg.tar.gz', deps_dir / dependency)
+                        dep_pkg = dep_dir / f'install_pkg.tar.gz'
+
+                        self._log.info(f'Extracting {dep_pkg}')
+                        extract_archive(dep_pkg, deps_dir / dependency)
                     except Exception:
                         self._log.exception('Can not extract archive')
                         return False
