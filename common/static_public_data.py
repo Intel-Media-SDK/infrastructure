@@ -19,7 +19,9 @@
 # SOFTWARE.
 
 SHARE_PATHS = {'build_linux': r'/media/builds',
-               'test_linux': r'/media/tests', }
+               'test_linux': r'/media/tests',
+               'build_windows': r'\\nnt-ci-fs\export_dir\ci\builds',
+               'test_windows': r'\\nnt-ci-fs\export_dir\ci\tests'}
 
 REPOSITORIES = {
     # linux_open_source

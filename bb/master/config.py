@@ -166,6 +166,16 @@ BUILDERS = {
                       'builders': ['build-libva', 'build-gmmlib']}]
     },
 
+    "build-windows": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_windows_public.py",
+        "product_type": Product_type.PUBLIC_WINDOWS.value,
+        "build_type": Build_type.RELEASE.value,
+        "worker": "windows",
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: branch == 'master'}]},
+
     "build": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
@@ -308,6 +318,11 @@ BUILDERS = {
 FLOW = factories.Flow(BUILDERS, FACTORIES)
 
 WORKERS = {
+    "windows": {
+        'b-1-26': {"os": OsType.windows},
+        'b-1-27': {"os": OsType.windows},
+    },
+
     "centos": {
         "b-1-10": {"os": OsType.linux},
         "b-1-22": {"os": OsType.linux}
