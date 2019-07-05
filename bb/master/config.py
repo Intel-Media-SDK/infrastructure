@@ -174,7 +174,7 @@ BUILDERS = {
         "worker": "windows",
         # Builder is enabled for all branches
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: True}]},
+                      'branches': lambda branch: branch == 'master'}]},
 
     "build": {
         "factory": FACTORIES.init_build_factory,
