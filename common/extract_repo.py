@@ -23,7 +23,6 @@ This module deploys infrastructure code on build and test machines
 """
 
 import sys
-import yaml
 import argparse
 import pathlib
 import logging
@@ -36,6 +35,7 @@ from common import git_worker
 from common.mediasdk_directories import MediaSdkDirectories, Proxy
 from common.helper import ErrorCode, remove_directory
 from common.logger_conf import configure_logger
+from common.manifest_manager import Manifest
 
 OPEN_SOURCE_KEY = 'OPEN_SOURCE_INFRA'
 CLOSED_SOURCE_KEY = 'CLOSED_SOURCE_INFRA'
@@ -74,7 +74,6 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
                     raise git_worker.BranchDoesNotExistException(
                         f'Release branch {branch} does not exist in the repo {repo.repo_name}')
 
-                # repo.branch = branch
                 repo.change_repo_state(branch_name=branch,
                                        commit_time=commit_time)
             else:
@@ -122,29 +121,27 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
     if not manifest:
         extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_product_configs_repo,
                      branch=branch, commit_id=commit_id, commit_time=commit_time)
-        conf_manifest = original_repos_dir / closed_source_product_configs_repo / 'manifest.yml'
-        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
+        manifest_data = Manifest(original_repos_dir / closed_source_product_configs_repo / 'manifest.yml')
     else:
-        conf_manifest = manifest
-        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
-        product_conf = manifest_data['components']['infra']['repository'][closed_source_product_configs_repo]
-        extract_repo(root_repo_dir=original_repos_dir, repo_name=product_conf['name'],
-                     branch=product_conf['branch'],
-                     commit_id=product_conf['revision'], commit_time=commit_time)
+        manifest_data = Manifest(manifest)
+        product_conf = manifest_data.get_component('infra').get_repository(closed_source_product_configs_repo)
+        extract_repo(root_repo_dir=original_repos_dir, repo_name=product_conf.name,
+                     branch=product_conf.branch,
+                     commit_id=product_conf.revision, commit_time=commit_time)
 
-    open_source_infra = manifest_data['components']['infra']['repository'][open_source_infra_repo]
-    closed_source_infra = manifest_data['components']['infra']['repository'][closed_source_infra_repo]
+    open_source_infra = manifest_data.get_component('infra').get_repository(open_source_infra_repo)
+    closed_source_infra = manifest_data.get_component('infra').get_repository(closed_source_infra_repo)
 
     # Extract open source infrastructure
     # Set proxy for access to GitHub
-    extract_repo(root_repo_dir=original_repos_dir, repo_name=open_source_infra['name'],
-                 branch=open_source_infra['branch'],
-                 commit_id=open_source_infra['revision'], proxy=True)
+    extract_repo(root_repo_dir=original_repos_dir, repo_name=open_source_infra.name,
+                 branch=open_source_infra.branch,
+                 commit_id=open_source_infra.revision, proxy=True)
 
     # Extract closed source part of infrastructure
-    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_infra['name'],
-                 branch=closed_source_infra['branch'],
-                 commit_id=closed_source_infra['revision'])
+    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_infra.name,
+                 branch=closed_source_infra.branch,
+                 commit_id=closed_source_infra.revision)
 
     log.info('-' * 50)
     log.info(f"Create infrastructure package")
@@ -184,22 +181,20 @@ def extract_open_source_infrastructure(root_dir, branch, commit_id, commit_time,
     if not manifest:
         extract_repo(root_repo_dir=root_dir, repo_name=open_source_product_configs_repo, branch=branch,
                      commit_id=commit_id, commit_time=commit_time)
-        conf_manifest = root_dir / open_source_product_configs_repo / 'manifest.yml'
-        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
+        manifest_data = Manifest(root_dir / open_source_product_configs_repo / 'manifest.yml')
     else:
-        conf_manifest = manifest
-        manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
-        product_conf = manifest_data['components']['infra']['repository'][open_source_product_configs_repo]
-        extract_repo(root_repo_dir=root_dir, repo_name=product_conf['name'],
-                     branch=product_conf['branch'],
-                     commit_id=product_conf['revision'], commit_time=commit_time)
+        manifest_data = Manifest(manifest)
+        product_conf = manifest_data.get_component('infra').get_repository(open_source_product_configs_repo)
+        extract_repo(root_repo_dir=root_dir, repo_name=product_conf.name,
+                     branch=product_conf.branch,
+                     commit_id=product_conf.revision, commit_time=commit_time)
 
-    open_source_infra = manifest_data['components']['infra']['repository'][open_source_infra_repo]
+    open_source_infra = manifest_data.get_component('infra').get_repository(open_source_infra_repo)
 
     # Extract open source infrastructure
-    extract_repo(root_repo_dir=root_dir, repo_name=open_source_infra['name'],
-                 branch=open_source_infra['branch'],
-                 commit_id=open_source_infra['revision'])
+    extract_repo(root_repo_dir=root_dir, repo_name=open_source_infra.name,
+                 branch=open_source_infra.branch,
+                 commit_id=open_source_infra.revision)
 
 
 def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, manifest):
@@ -224,14 +219,17 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, man
     # Extract closed source product configs
     extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_product_configs_repo,
                  branch='master', commit_time=commit_time)
-    conf_manifest = original_repos_dir / closed_source_product_configs_repo / 'manifest.yml'
-    manifest_data = yaml.load(conf_manifest.open(), Loader=yaml.FullLoader)
+    manifest_path = original_repos_dir / closed_source_product_configs_repo / 'manifest.yml'
+    manifest_data = Manifest(manifest_path)
 
-    closed_source_infra = manifest_data['components']['infra']['repository'][closed_source_infra_repo]
+    closed_source_infra = manifest_data.get_component('infra').get_repository(closed_source_infra_repo)
     # Extract closed source infrastructure
-    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_infra['name'],
-                 branch=closed_source_infra['branch'],
-                 commit_id=closed_source_infra['revision'])
+    extract_repo(root_repo_dir=original_repos_dir, repo_name=closed_source_infra.name,
+                 branch=closed_source_infra.branch,
+                 commit_id=closed_source_infra.revision)
+
+    manifest_data.get_component('infra').build_info.set_trigger(open_source_infra_repo)
+    manifest_data.save_manifest(manifest_path)
 
     log.info('-' * 50)
     log.info(f"Create infrastructure package")
