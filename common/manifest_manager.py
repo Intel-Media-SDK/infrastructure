@@ -829,7 +829,7 @@ def get_build_url(manifest, component, link_type='build'):
     return result_link
 
 
-def get_test_url(manifest, component, link_type='build'):
+def get_test_url(manifest, component, test_platform=None, link_type='build'):
     """
     Get test url
 
@@ -838,6 +838,9 @@ def get_test_url(manifest, component, link_type='build'):
 
     :param component: Component name
     :type component: String
+
+    :param test_platform: Acronym of test platform (w10rs3_skl_64_d3d11|c7.3_skl_64_server)
+    :type test_platform: String
 
     :param link_type: Type of link to return (root|commit|build)
     :type link_type: String
@@ -852,5 +855,8 @@ def get_test_url(manifest, component, link_type='build'):
     if link_type in ['commit', 'build']:
         result_link = '/'.join((result_link, component, parts['branch'], parts['build_event'], parts['revision']))
     if link_type == 'build':
-        result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
+        if test_platform:
+            result_link = '/'.join((result_link, parts['build_type'], test_platform))
+        else:
+            result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
     return result_link
