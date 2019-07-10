@@ -133,6 +133,7 @@ class Product_type(Enum):
 
     # Components
     PUBLIC_LINUX_LIBVA = 'public_linux_libva'
+    PUBLIC_LINUX_LIBVA_UTILS = 'public_linux_libva_utils'
     PUBLIC_LINUX_GMMLIB = 'public_linux_gmmlib'
     PUBLIC_LINUX_DRIVER = 'public_linux_driver'
     PUBLIC_LINUX_IGC = 'public_linux_igc'
