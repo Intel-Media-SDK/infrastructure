@@ -21,6 +21,7 @@
 """
 Module for working with Git
 """
+import sys
 import argparse
 import collections
 import json
@@ -34,6 +35,7 @@ import git
 from tenacity import retry, stop_after_attempt, wait_exponential, \
     retry_if_exception_type, retry_if_result
 
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common.helper import remove_directory, ErrorCode
 from common.logger_conf import configure_logger
 from common.mediasdk_directories import MediaSdkDirectories, Proxy
