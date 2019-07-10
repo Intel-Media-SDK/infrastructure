@@ -230,7 +230,7 @@ def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, man
 
     # Event repository in infra component for private builds is product-configs,
     # so need to change default trigger value
-    manifest_data.get_component('infra').build_info.set_trigger(open_source_infra_repo)
+    manifest_data.get_component('infra').build_info.set_trigger(open_source_product_configs_repo)
     manifest_data.save_manifest(manifest_path)
 
     log.info('-' * 50)
