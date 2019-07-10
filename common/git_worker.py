@@ -232,8 +232,12 @@ class GitRepo(object):
         :return: None
         """
 
-        self.commit_id = str(next(self.repo.iter_commits(
-            until=commit_time, max_count=1)))
+        try:
+            self.commit_id = str(next(self.repo.iter_commits(until=commit_time, max_count=1)))
+        except StopIteration:
+            # It is for the case when no commits before the commit_time
+            self.log.info("Trying to set the first commit in repo")
+            self.commit_id = str(list(self.repo.iter_commits('--all'))[-1])
         self.log.info(f"Revert commit by time to: {datetime.fromtimestamp(commit_time)}")
 
     def get_time(self, commit_id=None):
