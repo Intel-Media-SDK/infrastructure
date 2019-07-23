@@ -29,7 +29,7 @@ from common.mediasdk_directories import MediaSdkDirectories, OsType
 
 # TODO: use this variable in notifications and other services
 CI_SERVICE = CIService.MEDIASDK
-#CURRENT_MODE = Mode.PRODUCTION_MODE
+# CURRENT_MODE = Mode.PRODUCTION_MODE
 CURRENT_MODE = Mode.TEST_MODE
 
 if CURRENT_MODE == Mode.PRODUCTION_MODE:
@@ -105,6 +105,24 @@ BUILDERS = {
                       'branches': lambda branch: True}]
     },
 
+    "build-libva-utils": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_libva_utils.py",
+        "product_type": Product_type.PUBLIC_LINUX_LIBVA_UTILS.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        # TODO: rename to component_name
+        "dependency_name": 'libva-utils',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ["build-libva"]}]
+    },
+
     "build-gmmlib": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_gmmlib.py",
@@ -135,7 +153,8 @@ BUILDERS = {
         # Builder is enabled for master and intel-mediasdk-19.1
         # TODO: remove one_ci_dev branch from triggers before merging with master
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1', 'one_ci_dev']}]
+                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1',
+                                                            'one_ci_dev']}]
     },
 
     "build-opencl": {
@@ -363,11 +382,14 @@ BUILDERS = {
         # because for other branches that build doesn't run
         # TODO: remove one_ci_dev branch from triggers before merging with master
         'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch not in ['master', 'intel-mediasdk-19.1', 'one_ci_dev'],
+                      'branches': lambda branch: branch not in ['master', 'intel-mediasdk-19.1',
+                                                                'one_ci_dev'],
                       'builders': ['build-mediasdk', 'build-driver']},
                      {'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1', 'one_ci_dev'],
-                      'builders': ['build-mediasdk', 'build-driver', 'build-opencl']}]
+                      'branches': lambda branch: branch in ['master', 'intel-mediasdk-19.1',
+                                                            'one_ci_dev'],
+                      'builders': ['build-mediasdk', 'build-driver', 'build-opencl',
+                                   'build-libva-utils']}]
     },
 
     "test-api-next": {
@@ -379,7 +401,8 @@ BUILDERS = {
         "worker": "centos_test",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda x: True,
-                      'builders': ['build-mediasdk-api-next', 'build-driver', 'build-opencl']}]
+                      'builders': ['build-mediasdk-api-next', 'build-driver', 'build-opencl',
+                                   'build-libva-utils']}]
     }
 }
 
@@ -413,7 +436,7 @@ BUILDBOT_TITLE = "Intel® Media SDK"
 
 # Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
 # and new api requests will not be performed
-POLL_INTERVAL = 20  # Poll Github for new changes (in seconds)
+POLL_INTERVAL = 40  # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 # TODO: uncomment for production

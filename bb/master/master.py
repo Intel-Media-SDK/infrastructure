@@ -72,13 +72,14 @@ for builder_name, properties in config.FLOW.get_prepared_builders().items():
                                             workernames=get_workers(properties.get("worker")),
                                             factory=properties['factory']))
 
+# TODO: uncomment for production
 # Push status of build to the Github
-c["services"] = [
-    reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
-                               context=util.Interpolate("One CI buildbot/%(prop:buildername)s"),
-                               startDescription="Started",
-                               endDescription="Done",
-                               verbose=True)]
+# c["services"] = [
+#     reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
+#                                context=util.Interpolate("One CI buildbot/%(prop:buildername)s"),
+#                                startDescription="Started",
+#                                endDescription="Done",
+#                                verbose=True)]
 
 
 # Get changes
@@ -90,21 +91,17 @@ class MediasdkChangeChecker(bb.utils.ChangeChecker):
     def pull_request_filter(self, pull_request, files):
         # For commits in one_ci_dev branch will be enabled prototype of One CI buildbot configuration,
         # so disable event this branch in all production Buildbots services.
-        if pull_request['base']['ref'] == 'one_ci_dev':
-            return self.default_properties
-        return None
-
+        return self.default_properties
 
 
 REPOSITORIES = [
-    # TODO: uncomment for production
-    # {'name': config.MEDIASDK_REPO,
-    #  'organization': config.MEDIASDK_ORGANIZATION,
-    #  # All changes
-    #  'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
-    # {'name': config.DRIVER_REPO,
-    #  'organization': config.DRIVER_ORGANIZATION,
-    #  'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+    {'name': config.MEDIASDK_REPO,
+     'organization': config.MEDIASDK_ORGANIZATION,
+     # All changes
+     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+    {'name': config.DRIVER_REPO,
+     'organization': config.DRIVER_ORGANIZATION,
+     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.PRODUCT_CONFIGS_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
      # Pull requests only for members of Intel-Media-SDK organization
@@ -117,7 +114,7 @@ REPOSITORIES = [
 ]
 
 for repo in REPOSITORIES:
-    repo_url = f"https://github.com/{config.MEDIASDK_ORGANIZATION}/{repo['name']}.git"
+    repo_url = f"https://github.com/{repo['organization']}/{repo['name']}.git"
 
     c["change_source"].append(GitPoller(
         repourl=repo_url,
@@ -129,7 +126,7 @@ for repo in REPOSITORIES:
         # pull_request (add branches of open pull request)
         # *fetch branches*
         # change_filter (checking changes)
-        branches=lambda branch: branch == 'refs/heads/one_ci_dev',
+        branches=lambda branch: bb.utils.is_release_branch(branch) or branch == 'refs/heasds/one_ci_dev',
         pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),

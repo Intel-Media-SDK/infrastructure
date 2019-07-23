@@ -179,7 +179,7 @@ class ChangeChecker:
         :return None if change is not needed or dict with properties otherwise
         """
         is_request_needed = is_comitter_the_org_member(pull_request, self.token)
-        if is_request_needed and pull_request['base']['ref'] == 'one_ci_dev':
+        if is_request_needed:
             return self.default_properties
         return None
 
