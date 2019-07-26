@@ -457,10 +457,13 @@ class MediaSdkDirectories(object):
         :type name: String
 
         :return: Url of repository if found
-        :rtype: String|None
+        :rtype: String|MediaSDKException
         """
 
-        return static_data.REPOSITORIES.get(name, None)
+        url = static_data.REPOSITORIES.get(name, None)
+        if not url:
+            raise MediaSDKException(f'The "{name}" repo was not defined in common.static_*_date.py')
+        return url
 
     @classmethod
     def get_mgen(cls):

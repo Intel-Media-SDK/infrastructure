@@ -310,7 +310,7 @@ class BuildGenerator(ConfigGenerator):
                             self._target_branch = repo_state.get('target_branch')
                             break
             else:
-                raise Exception(f'{repo_states_file} does not exist')
+                raise RunnerException(f'{repo_states_file} does not exist')
         elif manifest_file:
             component = self._manifest.get_component(component_name)
             repo = component.trigger_repository
