@@ -80,7 +80,6 @@ class Action(object):
 
         self.log = logging.getLogger(name)
 
-    @Proxy.with_proxies(True)
     def run(self, options=None):
         """
         Script runner
