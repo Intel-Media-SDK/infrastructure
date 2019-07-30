@@ -73,12 +73,16 @@ class TestRunner(ConfigGenerator):
                 self._artifacts_dir = artifacts
                 self._manifest = Manifest(artifacts / 'manifest.yml')
 
-            try:
-                config_path = list(self._artifacts_dir.glob('conf_*_test.py'))[0]
-            except Exception:
-                raise TestScenarioNotFoundException('Test scenario does not exist')
+            config_files = list(self._artifacts_dir.glob('conf_*_test.py'))
+            if not config_files:
+                raise TestScenarioNotFoundException(f'Test scenario "conf_*_test.py" was not ' \
+                                                    f'found in "{artifacts}"')
+            elif len(config_files) > 1:
+                raise TestScenarioNotFoundException(f'Several test scenarios {config_files} ' \
+                                                    f'were found in "{artifacts}"')
+            config_path = config_files[0]
         else:
-            raise ArtifactsNotFoundException(f'{artifacts} does not exist')
+            raise ArtifactsNotFoundException(f'"{artifacts}" does not exist')
 
         self._default_stage = TestStage.TEST.value
         super().__init__(root_dir, config_path, current_stage)
@@ -86,7 +90,8 @@ class TestRunner(ConfigGenerator):
     def _update_global_vars(self):
         self._global_vars.update({
             'stage': TestStage,
-            'infra_path': self._infrastructure_path
+            'infra_path': self._infrastructure_path,
+            'artifacts_dir': self._artifacts_dir,
         })
 
     def _clean(self):
@@ -109,6 +114,9 @@ class TestRunner(ConfigGenerator):
 
         self._options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
+        if not self._run_build_config_actions(TestStage.CLEAN.value):
+            return False
+
         return True
 
     def _install(self):
@@ -116,12 +124,12 @@ class TestRunner(ConfigGenerator):
         self._log.info("INSTALLING")
 
         components = self._config_variables.get('INSTALL', [])
-
-        if not components:
-            self._log.error('Nothing to install')
+        if components and not install_components(self._manifest, components):
             return False
 
-        return install_components(self._manifest, components)
+        if not self._run_build_config_actions(TestStage.INSTALL.value):
+            return False
+        return True
 
     def _test(self):
         self._log.info('-' * 50)
@@ -136,6 +144,9 @@ class TestRunner(ConfigGenerator):
         self._log.info("COPYING")
 
         # TODO: Save results on share
+
+        if not self._run_build_config_actions(TestStage.COPY.value):
+            return False
         return True
 
 
@@ -163,15 +174,15 @@ def main():
     log = logging.getLogger('tests_runner.main')
 
     try:
-        tests_runner = TestRunner(artifacts=pathlib.Path(args.artifacts),
-                                  root_dir=pathlib.Path(args.root_dir),
+        tests_runner = TestRunner(artifacts=pathlib.Path(args.artifacts).absolute(),
+                                  root_dir=pathlib.Path(args.root_dir).absolute(),
                                   current_stage=args.stage)
 
         if tests_runner.generate_config():
             no_errors = tests_runner.run_stage(args.stage)
         else:
-            log.critical('Failed to process the product configuration')
             no_errors = False
+
     except Exception:
         no_errors = False
         log.exception('Exception occurred:')

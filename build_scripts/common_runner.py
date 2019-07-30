@@ -26,8 +26,11 @@ import logging
 import os
 import pathlib
 import platform
+import multiprocessing
 from collections import defaultdict
-from common.helper import cmd_exec, Stage, ErrorCode
+
+from common.helper import cmd_exec, ErrorCode
+from common.mediasdk_directories import Proxy
 
 
 class RunnerException(Exception):
@@ -67,11 +70,11 @@ class Action(object):
         :type verbose: Boolean
         """
 
-        self.repo_name = name
+        self.name = name
         self.stage = stage
         self.cmd = cmd
         self.work_dir = work_dir
-        self.env = env
+        self.env = env if env else {}
         self.callfunc = callfunc
         self.verbose = verbose
 
@@ -87,20 +90,29 @@ class Action(object):
         self.log.info('-' * 50)
 
         if self.callfunc:
+            #TODO: Modify and restore ENV for callfunc too
+
             func, args, kwargs = self.callfunc
 
             self.log.info('function: %s', func)
-            self.log.info('args: %s', args)
-            self.log.info('kwargs: %s', kwargs)
+            if args:
+                self.log.info('args: %s', args)
+            if kwargs:
+                self.log.info('kwargs: %s', kwargs)
 
             try:
-                func(*args, **kwargs)
-            except Exception as e:
+                return_value = func(*args, **kwargs)
+                return_msg = f'The function returned: {return_value}'
+                if isinstance(return_value, bool) and return_value == False:
+                    self.log.error(return_msg)
+                    error_code = ErrorCode.CRITICAL.value
+                else:
+                    self.log.info(return_msg)
+                    error_code = ErrorCode.SUCCESS.value
+            except Exception:
                 error_code = ErrorCode.CRITICAL.value
-                self.log.error(e)
-                return error_code
-
-        if self.cmd:
+                self.log.exception('Failed to call the function:')
+        elif self.cmd:
             if isinstance(self.cmd, list):
                 self.cmd = ' && '.join(self.cmd)
 
@@ -128,8 +140,11 @@ class Action(object):
                 else:
                     self.log.debug(out)
                     self.log.debug('completed')
+        else:
+            error_code = ErrorCode.CRITICAL.value
+            self.log.critical(f'The action "{self.name}" has not cmd or callfunc parameters')
 
-            return error_code
+        return error_code
 
     def _parse_logs(self, stdout):
         self.log.error(stdout)
@@ -167,8 +182,11 @@ class ConfigGenerator:
         self._current_stage = current_stage
         self._actions = defaultdict(list)
         self._options = {
-            "ROOT_DIR": root_dir,
-            "LOGS_DIR": root_dir / 'logs'
+            "ROOT_DIR": pathlib.Path(root_dir).absolute(),
+            "LOGS_DIR": root_dir / 'logs',
+            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
+            "VARS": {},  # Dictionary of dynamical variables for action() steps
+            "ENV": {},  # Dictionary of dynamical environment variables
         }
 
         self._log = logging.getLogger(self.__class__.__name__)
@@ -214,9 +232,13 @@ class ConfigGenerator:
         :return: Boolean
         """
 
-        self._update_global_vars()
-        exec(open(self._config_path).read(), self._global_vars, self._config_variables)
-        self._get_config_vars()
+        try:
+            self._update_global_vars()
+            exec(open(self._config_path).read(), self._global_vars, self._config_variables)
+            self._get_config_vars()
+        except Exception:
+            self._log.exception(f'Failed to process the product configuration: {self._config_path}')
+            return False
 
         return True
 
@@ -233,7 +255,7 @@ class ConfigGenerator:
         if hasattr(self, stage_value):
             return self.__getattribute__(stage_value)()
 
-        self._log.error(f'Stage {stage} does not support')
+        self._log.error(f'Stage {stage} is not supported')
         return False
 
     def _run_build_config_actions(self, stage):

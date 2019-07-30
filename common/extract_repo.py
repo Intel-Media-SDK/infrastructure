@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ def exit_script(error_code=None):
         log.info("EXTRACTING COMPLETED")
 
 
-@Proxy.with_proxies
+@Proxy.with_proxies()
 def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=None, proxy=False):
     log = logging.getLogger('extract_repo.extract_repo')
 
@@ -267,7 +267,7 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("--repo-name", metavar="String", required=True,
-                        help=f"""Repository name or "{OPEN_SOURCE_KEY}"/"{CLOSED_SOURCE_KEY}"/"{PRIVATE_KEY}" 
+                        help=f"""Repository name or "{OPEN_SOURCE_KEY}"/"{CLOSED_SOURCE_KEY}"/"{PRIVATE_KEY}"
 {OPEN_SOURCE_KEY} key uses for extracting open source infrastructure package
 {CLOSED_SOURCE_KEY} key uses for extracting closed source infrastructure package
 {PRIVATE_KEY} key uses for extracting private infrastructure package""")

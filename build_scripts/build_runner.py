@@ -34,7 +34,6 @@ During manual running, only the "build" step is performed if stage is not specif
 
 import argparse
 import json
-import multiprocessing
 import os
 import pathlib
 import platform
@@ -85,8 +84,10 @@ class VsComponent(Action):
             'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC;'
         },
         'vs2017': {
-            'ms_build': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\MSBuild\15.0\Bin;',
-            'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\Auxiliary\Build;'
+            'ms_build': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\MSBuild\15.0\Bin;' \
+                        r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin;',
+            'vcvars': r'C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\Auxiliary\Build;' \
+                      r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build;'
         },
         'vs2019': {
             'ms_build': r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin;',
@@ -276,9 +277,6 @@ class BuildGenerator(ConfigGenerator):
             "PACK_DIR": root_dir / "pack",
             "DEPENDENCIES_DIR": root_dir / "dependencies",
             "BUILD_TYPE": build_type,  # sets from command line argument ('release' by default)
-            "CPU_CORES": multiprocessing.cpu_count(),  # count of logical CPU cores
-            "VARS": {},  # Dictionary of dynamical variables for action() steps
-            "ENV": {},  # Dictionary of dynamical environment variables
             "STRIP_BINARIES": False,  # Flag for stripping binaries of build
         })
         self._dev_pkg_data_to_archive = []
@@ -312,7 +310,7 @@ class BuildGenerator(ConfigGenerator):
                             self._target_branch = repo_state.get('target_branch')
                             break
             else:
-                raise Exception(f'{repo_states_file} does not exist')
+                raise RunnerException(f'{repo_states_file} does not exist')
         elif manifest_file:
             component = self._manifest.get_component(component_name)
             repo = component.trigger_repository
@@ -444,24 +442,22 @@ class BuildGenerator(ConfigGenerator):
         :return: None | Exception
         """
 
+        self._log.info('-' * 50)
+        self._log.info('CLEANING')
+
         remove_dirs = {'BUILD_DIR', 'INSTALL_DIR', 'LOGS_DIR', 'PACK_DIR', 'DEPENDENCIES_DIR'}
 
         for directory in remove_dirs:
             dir_path = self._options.get(directory)
             if dir_path.exists():
+                self._log.info(f'remove directory {dir_path}')
                 shutil.rmtree(dir_path)
 
         self._options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
-        self._log.info('-' * 50)
-        self._log.info('CLEANING')
-
         if self._build_state_file.exists():
             self._log.info('remove build state file %s', self._build_state_file)
             self._build_state_file.unlink()
-
-        for dir_path in remove_dirs:
-            self._log.info('remove directory %s', self._options.get(dir_path))
 
         if not self._run_build_config_actions(Stage.CLEAN.value):
             return False
@@ -476,7 +472,7 @@ class BuildGenerator(ConfigGenerator):
         :return: None | Exception
         """
 
-        print('-' * 50)
+        self._log.info('-' * 50)
         self._log.info("EXTRACTING")
 
         self._options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
@@ -564,7 +560,7 @@ class BuildGenerator(ConfigGenerator):
         :return: None | Exception
         """
 
-        print('-' * 50)
+        self._log.info('-' * 50)
         self._log.info("BUILDING")
 
         self._options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
@@ -578,6 +574,23 @@ class BuildGenerator(ConfigGenerator):
 
         return True
 
+    def _test(self):
+        """
+        Execute 'test' stage
+
+        :return: None | Exception
+        """
+
+        self._log.info('-' * 50)
+        self._log.info("TESTING")
+
+        self._options['BUILD_DIR'].mkdir(parents=True, exist_ok=True)
+
+        if not self._run_build_config_actions(Stage.TEST.value):
+            return False
+
+        return True
+
     def _install(self):
         """
         Execute 'install' stage
@@ -585,7 +598,7 @@ class BuildGenerator(ConfigGenerator):
         :return: None | Exception
         """
 
-        print('-' * 50)
+        self._log.info('-' * 50)
         self._log.info("INSTALLING")
 
         self._options['INSTALL_DIR'].mkdir(parents=True, exist_ok=True)
@@ -610,7 +623,7 @@ class BuildGenerator(ConfigGenerator):
         :return: None | Exception
         """
 
-        print('-' * 50)
+        self._log.info('-' * 50)
         self._log.info("PACKING")
 
         self._options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
@@ -672,7 +685,7 @@ class BuildGenerator(ConfigGenerator):
         :return: None | Exception
         """
 
-        print('-' * 50)
+        self._log.info('-' * 50)
         self._log.info("COPYING")
 
         branch = 'unknown'
@@ -1062,10 +1075,8 @@ in format: <repo_name>:<branch>:<commit_id>
 
         # prepare build configuration
         if build_config.generate_config():
-            # run stage of build
             no_errors = build_config.run_stage(parsed_args.stage)
         else:
-            log.critical('Failed to process the product configuration')
             no_errors = False
 
     except Exception:

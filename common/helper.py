@@ -71,6 +71,7 @@ class Stage(Enum):
     CLEAN = "clean"
     EXTRACT = "extract"
     BUILD = "build"
+    TEST = "test"
     INSTALL = "install"
     PACK = "pack"
     COPY = "copy"
@@ -637,7 +638,7 @@ def cmd_exec(cmd, env=None, cwd=None, shell=True, log=None, verbose=True, hide=N
 
         if not cwd:
             cwd = str(pathlib.Path.cwd())
-            log_out(f'working directory: {cwd}')
+        log_out(f'workdir: {cwd}')
 
         if env:
             log_out(f'environment: {env}')

@@ -24,6 +24,7 @@ Module for working with Git
 import collections
 import json
 import logging
+import pathlib
 import concurrent.futures
 import multiprocessing
 from datetime import datetime
@@ -68,7 +69,7 @@ class GitRepo(object):
         self.branch_name = branch
         self.url = url
         self.commit_id = commit_id
-        self.local_repo_dir = root_repo_dir / repo_name
+        self.local_repo_dir = pathlib.Path(root_repo_dir) / repo_name
         self.repo = None
         self.is_trigger = is_trigger
         self.target_branch = target_branch
@@ -83,7 +84,7 @@ class GitRepo(object):
         :return: None
         """
         self.log.info('-' * 50)
-        self.log.info("Getting repo " + self.repo_name)
+        self.log.info("Getting repo: %s", self.repo_name)
 
         self.clone()
         self.repo = git.Repo(str(self.local_repo_dir))
@@ -493,3 +494,17 @@ class ProductState(object):
 
         git_repo = git.Git(str(repo_path))
         return str(git_repo.rev_list('--count', 'HEAD'))
+
+
+def extract_repo(root_repo_dir, repo_name, url, branch='master', commit_id='HEAD'):
+    """
+    Clone or update a repository to the specified state
+
+    :return: None
+    """
+    repo = GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name, branch=branch, url=url,
+                   commit_id=commit_id)
+    repo.prepare_repo()
+    repo.change_repo_state()
+
+
