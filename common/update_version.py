@@ -94,7 +94,7 @@ class ComponentUpdater(object):
 
             self._log.info('Manifest file was changed')
         except Exception as e:
-            self._log.exception('Changing manifest file failed %s', e)
+            self._log.exception('Changing manifest file failed: %s', e)
             return False
 
         return True
@@ -163,8 +163,8 @@ class ComponentUpdater(object):
         if self._check_commit():
             self._git_pull_request()
         else:
-            self._log.exception(f'Pull request was failed because commit with branch '
-                                f'{self._branch} and revision {self._revision} already exists')
+            self._log.warning(f'Pull request was failed because commit with branch '
+                              f'{self._branch} and revision {self._revision} already exists')
 
         return True
 
