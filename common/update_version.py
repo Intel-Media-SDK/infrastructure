@@ -134,8 +134,7 @@ class ComponentUpdater(object):
             log_info = g.log('--pretty=format:%s')
             if self._commit_message not in log_info:
                 return True
-            else:
-                return False
+            return False
         except:
             self._log.exception("Check was failed")
             return False
@@ -208,7 +207,7 @@ def main():
     )
 
     if not component_updater.update():
-        log.error('Update failed failed')
+        log.error('Update failed')
         exit(ErrorCode.CRITICAL.value)
 
     log.info(f'Version updated')
