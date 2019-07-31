@@ -39,6 +39,15 @@ from common.msdk_secrets import GITHUB_TOKEN
 class ComponentUpdater(object):
 
     def __init__(self, tmp_dir, repo_name, component_name, manifest_file, branch, revision, log):
+        """
+        :param tmp_dir: Temporary directory for repository extracting
+        :param repo_name: Repository name
+        :param component_name: Name of the component to be updated
+        :param manifest_file: Name of the manifest file
+        :param branch: Branch name
+        :param revision: Commit ID
+        :param log: Log file
+        """
         self._tmp_dir = tmp_dir
         self._repo_name = repo_name
         self._work_branch = f'auto_update_{component_name}_to_{revision[:7]}'
@@ -120,7 +129,7 @@ class ComponentUpdater(object):
 
     def _check_commit(self):
         try:
-            self._log.info('Started creating for commit existence')
+            self._log.info('Started checking for commit existence')
             g = git.Git(self._tmp_dir / self._repo_name)
             log_info = g.log('--pretty=format:%s')
             if self._commit_message not in log_info:
