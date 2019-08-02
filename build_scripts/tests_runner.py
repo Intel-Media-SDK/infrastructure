@@ -30,6 +30,8 @@ import logging
 import pathlib
 import argparse
 
+import dateutil.parser
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
 from test_scripts.components_installer import install_components
@@ -60,10 +62,11 @@ class TestRunner(ConfigGenerator):
     Contains commands for testing product.
     """
 
-    def __init__(self, artifacts, root_dir, current_stage):
+    def __init__(self, artifacts, root_dir, current_stage, commit_time=None, custom_cli_args=None):
         self._artifacts_dir = None
         self._manifest = None
         self._infrastructure_path = pathlib.Path(__file__).resolve().parents[1]
+        self._commit_time = dateutil.parser.parse(commit_time) if commit_time else None
 
         if artifacts.exists():
             if artifacts.is_file():
@@ -85,13 +88,15 @@ class TestRunner(ConfigGenerator):
             raise ArtifactsNotFoundException(f'"{artifacts}" does not exist')
 
         self._default_stage = TestStage.TEST.value
-        super().__init__(root_dir, config_path, current_stage)
+        super().__init__(root_dir, config_path, current_stage, custom_cli_args)
 
     def _update_global_vars(self):
         self._global_vars.update({
             'stage': TestStage,
+            # TODO: remove infra_path
             'infra_path': self._infrastructure_path,
             'artifacts_dir': self._artifacts_dir,
+            'commit_time': self._commit_time,
         })
 
     def _clean(self):
@@ -166,17 +171,31 @@ def main():
     parser.add_argument("--stage", default=TestStage.TEST.value,
                         choices=[stage.value for stage in TestStage],
                         help="Current executable stage")
-    args = parser.parse_args()
+    parser.add_argument('-t', "--commit-time", metavar='datetime',
+                        help="Time of commits (e.g. 2017-11-02 07:36:40)")
+    args, unknown_args = parser.parse_known_args()
 
     configure_logger()
     if args.stage != TestStage.CLEAN.value:
         configure_logger(logs_path=pathlib.Path(args.root_dir) / 'logs' / f'{args.stage}.log')
     log = logging.getLogger('tests_runner.main')
 
+    custom_cli_args = {}
+    if unknown_args:
+        for arg in unknown_args:
+            try:
+                arg = arg.split('=')
+                custom_cli_args[arg[0]] = arg[1]
+            except Exception:
+                log.exception(f'Wrong argument layout: {arg}')
+                exit(ErrorCode.CRITICAL)
+
     try:
         tests_runner = TestRunner(artifacts=pathlib.Path(args.artifacts).absolute(),
                                   root_dir=pathlib.Path(args.root_dir).absolute(),
-                                  current_stage=args.stage)
+                                  current_stage=args.stage,
+                                  commit_time=args.commit_time,
+                                  custom_cli_args=custom_cli_args)
 
         if tests_runner.generate_config():
             no_errors = tests_runner.run_stage(args.stage)

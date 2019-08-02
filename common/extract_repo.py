@@ -29,7 +29,6 @@ import logging
 import shutil
 from distutils.dir_util import copy_tree
 from importlib import reload
-from datetime import datetime
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common import git_worker
@@ -74,12 +73,9 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
                         f'Release branch {branch} does not exist in the repo {repo.repo_name}')
 
                 # repo.branch = branch
-                repo.change_repo_state(branch_name=branch,
-                                       commit_time=datetime.strptime(commit_time,
-                                                                     '%Y-%m-%d %H:%M:%S').timestamp())
+                repo.change_repo_state(branch_name=branch, commit_time=commit_time)
             else:
-                repo.change_repo_state(
-                    commit_time=datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp())
+                repo.change_repo_state(commit_time=commit_time)
         else:
             log.info('Commit id and timestamp not specified, clone HEAD of repository')
             repo = git_worker.GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name,
@@ -278,8 +274,8 @@ def main():
                         help='Branch name, by default "master" branch')
     parser.add_argument("--commit-id", metavar="String",
                         help='SHA of commit')
-    parser.add_argument("--commit-time", metavar="String",
-                        help='Will switch to the commit before specified time')
+    parser.add_argument("--commit-time", metavar="datetime",
+                        help='Switch to a commit before the time (e.g. 2017-11-02 07:36:40)')
     args = parser.parse_args()
 
     configure_logger()

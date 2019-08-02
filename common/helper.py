@@ -27,12 +27,12 @@ import pathlib
 import shutil
 import stat
 import tarfile
-from enum import Enum
-from shutil import copystat, Error, copy2
-from zipfile import ZipFile, ZIP_DEFLATED
-from common.system_info import get_os_version
 import json
 import subprocess
+from enum import Enum
+from zipfile import ZipFile, ZIP_DEFLATED
+
+from common.system_info import get_os_version
 
 
 class UnsupportedArchiveError(Exception):
@@ -244,7 +244,7 @@ def make_archive(path, data_to_archive):
                     pkg.add(path_to_archive, arcname=pack_as)
                 elif path.suffix == '.zip':
                     _zip_data(path_to_archive, pack_as, pkg)
-            except:
+            except Exception:
                 log.exception("Can not pack results")
                 no_errors = False
 
@@ -334,7 +334,7 @@ def extract_archive(archive_path, extract_to, exclude=None):
 
 # shutil.copytree function with extension
 # TODO merge with copytree from test scripts
-def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
+def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False):
     """Recursively copy a directory tree.
 
@@ -392,7 +392,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                     # code with a custom `copy_function` may rely on copytree
                     # doing the right thing.
                     os.symlink(linkto, dstname)
-                    copystat(srcname, dstname, follow_symlinks=not symlinks)
+                    shutil.copystat(srcname, dstname, follow_symlinks=not symlinks)
                 else:
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:
@@ -410,18 +410,18 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                 copy_function(srcname, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
-        except Error as err:
+        except shutil.Error as err:
             errors.extend(err.args[0])
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
-        copystat(src, dst)
+        shutil.copystat(src, dst)
     except OSError as why:
         # Copying file access times may fail on Windows
         if getattr(why, 'winerror', None) is None:
             errors.append((src, dst, str(why)))
     if errors:
-        raise Error(errors)
+        raise shutil.Error(errors)
     return dst
 
 
@@ -500,7 +500,7 @@ def copy_win_files(repos_dir, build_dir):
                  ignore=ignore_files)
 
 
-def _remove_directory(path):
+def remove_directory(path):
     """
     Removes directory: different from shutil.rmtree() in following aspects:
     * if file or directory does not have write permission - tries to set this permission
@@ -511,61 +511,62 @@ def _remove_directory(path):
     @type path: C{string}
 
     """
-    caught_exception = None
-    try:
-        this_dir, child_dirs, files = next(os.walk(path))
-    except StopIteration:
-        raise OSError(2, 'Path does not exist', path)
-    for childDir in child_dirs:
+    def rm_dir(path):
+        caught_exception = None
         try:
-            path_to_remove = os.path.join(this_dir, childDir)
-            if os.path.islink(path_to_remove):
-                os.unlink(path_to_remove)
-            else:
-                remove_directory(path_to_remove)
-        except Exception as e:
-            if not caught_exception:
-                caught_exception = e
-    for f in files:
-        file_path = os.path.join(this_dir, f)
+            this_dir, child_dirs, files = next(os.walk(path))
+        except StopIteration:
+            return
+
+        for childDir in child_dirs:
+            try:
+                path_to_remove = os.path.join(this_dir, childDir)
+                if os.path.islink(path_to_remove):
+                    os.unlink(path_to_remove)
+                else:
+                    remove_directory(path_to_remove)
+            except Exception as exc:
+                if not caught_exception:
+                    caught_exception = exc
+        for file_name in files:
+            file_path = os.path.join(this_dir, file_name)
+            try:
+                os.unlink(file_path)
+            except:
+                try:
+                    if not os.access(file_path, os.W_OK) and not os.path.islink(file_path):
+                        os.chmod(file_path, stat.S_IWRITE)
+                    os.unlink(file_path)
+                except Exception as exc:
+                    if not caught_exception:
+                        caught_exception = exc
         try:
-            os.unlink(file_path)
+            os.rmdir(this_dir)
         except:
             try:
-                if not os.access(file_path, os.W_OK) and not os.path.islink(file_path):
-                    os.chmod(file_path, stat.S_IWRITE)
-                os.unlink(file_path)
-            except Exception as e:
+                if not os.access(this_dir, os.W_OK):
+                    os.chmod(this_dir, stat.S_IWRITE)
+                os.rmdir(this_dir)
+            except Exception as exc:
                 if not caught_exception:
-                    caught_exception = e
-    try:
-        os.rmdir(this_dir)
-    except:
+                    caught_exception = exc
+
+        if caught_exception:
+            # TODO: real exception should be re-raised
+            raise OSError(caught_exception)
+
+    if os.name == 'nt':
         try:
-            if not os.access(this_dir, os.W_OK):
-                os.chmod(this_dir, stat.S_IWRITE)
-            os.rmdir(this_dir)
-        except Exception as e:
-            if not caught_exception:
-                caught_exception = e
-
-    if caught_exception:
-        raise caught_exception
-
-
-if os.name == 'nt':
-    def remove_directory(path):
-        try:
-            return _remove_directory(path)
+            return rm_dir(path)
         except WindowsError as err:
             # err == 206 - Path too long. Try unicode version of the function
-            # err == 123 - The filename, directory name, or volume label syntax is incorrect. Try unicode version of the function
+            # err == 123 - The filename, directory name, or volume label syntax is incorrect.
+            #              Try unicode version of the function
             # err == 3   - The system cannot find the path specified
             if err in [3, 206, 123] and (not isinstance(path, str) or not path.startswith(u'\\\\?\\')):
-                return _remove_directory(u'\\\\?\\' + os.path.abspath(str(path, errors='ignore')))
+                return rm_dir(u'\\\\?\\' + os.path.abspath(str(path, errors='ignore')))
             raise
-else:
-    remove_directory = _remove_directory
+    return rm_dir(path)
 
 
 def rotate_dir(directory: pathlib.Path) -> bool:
@@ -606,17 +607,18 @@ def update_json(check_type, success, output, json_path):
 
     if path.exists():
         try:
-            with open(path) as f:
-                data = json.load(f)
+            with open(path) as json_file_obj:
+                data = json.load(json_file_obj)
             data.update(new_data)
 
-            with open(path, "w") as f:
-                json.dump(data, f, indent=4, sort_keys=True)
+            with open(path, "w") as json_file_obj:
+                json.dump(data, json_file_obj, indent=4, sort_keys=True)
         except Exception:
+            # TODO: Add error handling
             return False
     else:
-        with open(path, "w") as f:
-            json.dump(new_data, f, indent=4, sort_keys=True)
+        with open(path, "w") as json_file_obj:
+            json.dump(new_data, json_file_obj, indent=4, sort_keys=True)
     return True
 
 

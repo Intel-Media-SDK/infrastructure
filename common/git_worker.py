@@ -19,7 +19,11 @@
 # SOFTWARE.
 
 """
-Module for working with Git
+Module for working with Git using GitPython
+Using environment variables, you can further adjust the behaviour of the git command.
+GIT_PYTHON_TRACE
+    If set to non-0, all executed git commands will be shown as they happen
+    If set to full, the executed git command _and_ its entire output on stdout and stderr
 """
 import collections
 import json
@@ -30,10 +34,11 @@ import multiprocessing
 from datetime import datetime
 
 import git
+import dateutil.parser
 from tenacity import retry, stop_after_attempt, wait_exponential, \
     retry_if_exception_type, retry_if_result
 
-from common.helper import remove_directory
+from common import helper
 from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
 
 
@@ -84,10 +89,9 @@ class GitRepo(object):
         :return: None
         """
         self.log.info('-' * 50)
-        self.log.info("Getting repo: %s", self.repo_name)
+        self.log.info("Prepare repo: %s", self.repo_name)
 
         self.clone()
-        self.repo = git.Repo(str(self.local_repo_dir))
         self.hard_reset()
         self.clean()
         self.checkout(branch_name="master", silent=True)
@@ -106,14 +110,15 @@ class GitRepo(object):
         # if dir is not repository, it will be removed
         if self.local_repo_dir.exists():
             try:
-                git.Repo(str(self.local_repo_dir))
+                self.repo = git.Repo(str(self.local_repo_dir))
             except git.InvalidGitRepositoryError:
-                self.log.info('Remove broken repo %s', self.local_repo_dir)
-                remove_directory(self.local_repo_dir)
+                self.log.info('Remove broken repo: %s', self.local_repo_dir)
+                helper.remove_directory(self.local_repo_dir)
 
         if not self.local_repo_dir.exists():
-            self.log.info("Clone repo " + self.repo_name)
+            self.log.info("Clone repo: %s", self.repo_name)
             git.Git().clone(self.url, str(self.local_repo_dir))
+            self.repo = git.Repo(str(self.local_repo_dir))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
     def fetch(self, branch_name=None):
@@ -124,7 +129,7 @@ class GitRepo(object):
         """
 
         refname = branch_name or self.branch_name
-        self.log.info("Fetch repo %s to %s", self.repo_name, refname)
+        self.log.info("Fetch repo '%s' to '%s'", self.repo_name, refname)
         self.repo.remotes.origin.fetch(refname)
         self.hard_reset('FETCH_HEAD')
 
@@ -137,7 +142,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info(f"Hard reset repo {self.repo_name} to {reset_to}")
+        self.log.info(f"Hard reset repo '{self.repo_name}' to '{reset_to}'")
         if reset_to:
             self.repo.git.reset('--hard', reset_to)
         else:
@@ -160,7 +165,7 @@ class GitRepo(object):
         """
 
         checkout_dest = branch_name or self.commit_id
-        self.log.info("Checkout repo %s to %s", self.repo_name, checkout_dest)
+        self.log.info("Checkout repo '%s' to '%s'", self.repo_name, checkout_dest)
         try:
             self.repo.git.checkout(checkout_dest, force=True)
         except git.exc.GitCommandError as err:
@@ -185,7 +190,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Clean repo " + self.repo_name)
+        self.log.info("Clean repo: %s", self.repo_name)
         self.repo.git.clean('-xdf')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -195,8 +200,12 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Pull repo " + self.repo_name)
+        self.log.info("Pull repo: %s", self.repo_name)
         self.repo.git.pull()
+
+        for submodule in self.repo.submodules:
+            self.log.info(f"Update submodule: {submodule}")
+            submodule.update(init=True)
 
     def change_repo_state(self, branch_name=None, commit_time=None):
         """
@@ -229,17 +238,24 @@ class GitRepo(object):
         If commit date <= certain time,
         commit sets to class variable commit_id.
 
-        :param commit_time: timestamp
+        :param commit_time: Union[str, datetime, timestamp]
         :return: None
         """
 
+        if isinstance(commit_time, str):
+            time_stamp = dateutil.parser.parse(commit_time).timestamp()
+        elif isinstance(commit_time, datetime):
+            time_stamp = commit_time.timestamp()
+        else:
+            time_stamp = commit_time
+
         try:
-            self.commit_id = str(next(self.repo.iter_commits(until=commit_time, max_count=1)))
+            self.commit_id = str(next(self.repo.iter_commits(until=time_stamp, max_count=1)))
         except StopIteration:
             # It is for the case when no commits before the commit_time
             self.log.info("Trying to set the first commit in repo")
             self.commit_id = str(list(self.repo.iter_commits('--all'))[-1])
-        self.log.info(f"Revert commit by time to: {datetime.fromtimestamp(commit_time)}")
+        self.log.info(f"Revert commit by time to: {datetime.fromtimestamp(time_stamp)}")
 
     def get_time(self, commit_id=None):
         """
@@ -311,9 +327,7 @@ class ProductState(object):
                 if repo.is_trigger:
                     git_commit_date = repo.get_time()
 
-        commit_timestamp = self.commit_time.timestamp() \
-            if self.commit_time \
-            else git_commit_date
+        commit_time = self.commit_time or git_commit_date
 
         for repo in self.repo_states:
             if repo.commit_id == 'HEAD':
@@ -322,11 +336,11 @@ class ProductState(object):
                     if not repo.is_branch_exist(repo.branch_name):
                         raise BranchDoesNotExistException(
                             f'Release branch {repo.branch_name} does not exist in the repo {repo.repo_name}')
-                    repo.change_repo_state(branch_name=repo.branch_name, commit_time=commit_timestamp)
+                    repo.change_repo_state(branch_name=repo.branch_name, commit_time=commit_time)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
                 elif repo.repo_name not in THIRD_PARTY:
-                    repo.change_repo_state(commit_time=commit_timestamp)
+                    repo.change_repo_state(commit_time=commit_time)
 
     def save_repo_states(self, sources_file, trigger):
         """
@@ -430,13 +444,13 @@ class ProductState(object):
             :type repo: pathlib.Path
 
             :param file_path: path to a file from repo
-            :return file_path: pathlib.Path
+            :type file_path: pathlib.Path
 
             :param line: Line number
-            :return line: String
+            :type line: String
 
-            :return email of last committer
-            :rtype None
+            :return: email of last committer
+            :rtype: Union[str, NoneType]
         """
 
         if file_path.exists() and not file_path.is_dir():
@@ -468,14 +482,14 @@ class ProductState(object):
             :rtype: git.Commit | List
         """
 
-        r = git.Repo(str(repo_path))
+        repo = git.Repo(str(repo_path))
 
         if commit_to:
-            commits = list(r.iter_commits(f'{commit_from}..{commit_to}'))
-            commits.append(r.commit(commit_from))
+            commits = list(repo.iter_commits(f'{commit_from}..{commit_to}'))
+            commits.append(repo.commit(commit_from))
             return commits
 
-        return r.commit(commit_from)
+        return repo.commit(commit_from)
 
     @staticmethod
     def get_commit_number(repo_path):
@@ -496,15 +510,29 @@ class ProductState(object):
         return str(git_repo.rev_list('--count', 'HEAD'))
 
 
-def extract_repo(root_repo_dir, repo_name, url, branch='master', commit_id='HEAD'):
+def extract_repo(root_repo_dir, repo_name, url, branch='master', commit_id=None, commit_time=None):
     """
     Clone or update a repository to the specified state
 
+    :param root_repo_dir: Directory where repositories will be cloned
+
+    :param repo_name: Name of repository
+
+    :param branch: Branch of repository
+
+    :param commit_id: Commit ID
+
+    :param commit_time: Time for changing repo state. Can be used instead of commit_id
+    :type commit_time: Union[str, datetime, timestamp]
+
     :return: None
     """
+    if commit_id is None and commit_time is None:
+        commit_id = 'HEAD'
+    elif commit_id and commit_time:
+        commit_time = None # commit_id and commit_time can be incompatible
+
     repo = GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name, branch=branch, url=url,
                    commit_id=commit_id)
     repo.prepare_repo()
-    repo.change_repo_state()
-
-
+    repo.change_repo_state(commit_time=commit_time)

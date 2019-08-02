@@ -177,9 +177,11 @@ class Action(object):
 class ConfigGenerator:
     _default_stage = None
 
-    def __init__(self, root_dir, config_path, current_stage):
+   def __init__(self, root_dir, config_path, current_stage, custom_cli_args=None):
         self._config_path = config_path
         self._current_stage = current_stage
+        self._custom_cli_args = custom_cli_args or {}
+
         self._actions = defaultdict(list)
         self._options = {
             "ROOT_DIR": pathlib.Path(root_dir).absolute(),
@@ -193,9 +195,12 @@ class ConfigGenerator:
 
         self._config_variables = {}
         self._global_vars = {
-            'action': self._action,
             'options': self._options,
-            'log': self._log
+            'args': self._custom_cli_args,
+            'log': self._log,
+            'configs_dir': self._config_path.parent,
+            'infra_dir': pathlib.Path(__file__).resolve().parents[1],
+            'action': self._action,
         }
 
         if not self._default_stage:
