@@ -209,7 +209,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-gcc-8.2.0": {
+    "build-gcc-9.1.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
@@ -217,7 +217,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
-        "compiler_version": "8.2.0",
+        "compiler_version": "9.1.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
@@ -260,7 +260,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-fastboot-gcc-8.2.0": {
+    "build-fastboot-gcc-9.1.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
@@ -268,7 +268,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
-        "compiler_version": "8.2.0",
+        "compiler_version": "9.1.0",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),

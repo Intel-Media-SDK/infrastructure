@@ -123,7 +123,7 @@ class Product_type(Enum):
     PUBLIC_WINDOWS = 'public_windows'
     PUBLIC_LINUX = 'public_linux'
     PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
-    PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_8.2'
+    PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_9.1'
     PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
 
     # DEFCONFIG means that "enabled all" is not set and
@@ -131,7 +131,7 @@ class Product_type(Enum):
     PUBLIC_LINUX_API_NEXT_DEFCONFIG = 'public_linux_api_next_defconfig'
 
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
-    PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_8.2'
+    PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_9.1'
 
     # Components
     PUBLIC_LINUX_LIBVA = 'public_linux_libva'
