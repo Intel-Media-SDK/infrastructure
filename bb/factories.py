@@ -440,7 +440,8 @@ class Factories:
                 steps.ShellCommand(command=shell_commands + ["--stage", stage.value],
                                    workdir=get_path(r"infrastructure/build_scripts"),
                                    name=stage.value,
-                                   doStepIf=is_build_dependency_needed))
+                                   doStepIf=is_build_dependency_needed,
+                                   timeout=60*60))  # 1 hour for IGC build
         return build_factory
 
     def init_mediasdk_test_factory(self, test_specification, props):
