@@ -122,7 +122,7 @@ class Product_type(Enum):
     # public
     PUBLIC_WINDOWS = 'public_windows'
     PUBLIC_LINUX = 'public_linux'
-    PUBLIC_LINUX_CLANG = 'public_linux_clang_6.0'
+    PUBLIC_LINUX_CLANG = 'public_linux_clang_8.0'
     PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_9.1'
     PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
 

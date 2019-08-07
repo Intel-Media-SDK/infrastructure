@@ -224,7 +224,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-clang-6.0": {
+    "build-clang-8.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
@@ -232,7 +232,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "clang",
-        "compiler_version": "6.0",
+        "compiler_version": "8",
         "worker": "ubuntu",
         'triggers': [{'repositories': PRODUCTION_REPOS,
                       'branches': lambda branch: not MediaSdkDirectories.is_release_branch(branch),
