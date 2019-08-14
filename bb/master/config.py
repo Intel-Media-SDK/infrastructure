@@ -46,8 +46,14 @@ MEDIASDK_ORGANIZATION = "Intel-Media-SDK"
 INFRASTRUCTURE_REPO = "infrastructure"
 PRODUCT_CONFIGS_REPO = "product-configs"
 
-DRIVER_ORGANIZATION = 'intel'
+INTEL_ORGANIZATION = 'intel'
 DRIVER_REPO = 'media-driver'
+LIBVA_REPO = 'libva'
+GMMLIB_REPO = 'gmmlib'
+
+# We haven't CI for these repositories, but we update its revisions in manifest automatically.
+# This feature should work for master branch only.
+AUTO_UPDATED_REPOSITORIES = [LIBVA_REPO, GMMLIB_REPO]
 
 PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO, DRIVER_REPO]
 
@@ -59,7 +65,7 @@ TRIGGER = 'trigger'
 DEPLOYING_INFRASTRUCTURE = True
 
 FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE,
-                                PYTHON_EXECUTABLE, CI_SERVICE)
+                                PYTHON_EXECUTABLE, CI_SERVICE, AUTO_UPDATED_REPOSITORIES)
 
 """
 Specification of BUILDERS:

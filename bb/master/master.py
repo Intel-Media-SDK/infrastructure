@@ -25,7 +25,7 @@ from buildbot.changes.gitpoller import GitPoller
 from buildbot.plugins import schedulers, util, worker, reporters
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
-import config
+import bb.master.config as config
 
 import bb.utils
 
@@ -39,8 +39,8 @@ for worker_ in config.WORKERS.values():
         ALL_WORKERS_NAMES.append(w_name)
         c["workers"].append(worker.Worker(w_name, config.WORKER_PASS,
                                           properties=prop,
-                                          max_builds=prop.get(
-                                              'max_builds') or 1))  # To disable parallel builds on one worker
+                                          # To disable parallel builds on one worker
+                                          max_builds=prop.get('max_builds') or 1))
 
 # Basic config
 c["protocols"] = {"pb": {"port": config.WORKER_PORT}}
@@ -60,7 +60,7 @@ def get_workers(worker_pool):
 c["builders"] = []
 c["schedulers"] = [
     schedulers.SingleBranchScheduler(name=config.TRIGGER,
-                                     change_filter=util.ChangeFilter(category="mediasdk"),
+                                     change_filter=util.ChangeFilter(),
                                      treeStableTimer=config.BUILDBOT_TREE_STABLE_TIMER,
                                      builderNames=[config.TRIGGER])]
 
@@ -72,13 +72,30 @@ for builder_name, properties in config.FLOW.get_prepared_builders().items():
                                             workernames=get_workers(properties.get("worker")),
                                             factory=properties['factory']))
 
+
+class GitHubStatusPushFilter(reporters.GitHubStatusPush):
+    """
+    This class extend filtering options for reporters.GitHubStatusPush
+    """
+    def filterBuilds(self, build):
+        # All builds have basic 'repository' property
+        repository = bb.utils.get_repository_name_by_url(build['properties']['repository'][0])
+        # Status for AUTO_UPDATED_REPOSITORIES will not sent to not affect review requests
+        # in these repositories
+        if repository not in config.AUTO_UPDATED_REPOSITORIES:
+            if self.builders is not None:
+                return build['builder']['name'] in self.builders
+            return True
+        return False
+
+
 # Push status of build to the Github
 c["services"] = [
-    reporters.GitHubStatusPush(token=config.GITHUB_TOKEN,
-                               context=util.Interpolate("buildbot/%(prop:buildername)s"),
-                               startDescription="Started",
-                               endDescription="Done",
-                               verbose=True)]
+    GitHubStatusPushFilter(token=config.GITHUB_TOKEN,
+                           context=util.Interpolate("buildbot/%(prop:buildername)s"),
+                           startDescription="Started",
+                           endDescription="Done",
+                           verbose=True)]
 
 # Get changes
 c["change_source"] = []
@@ -86,17 +103,16 @@ c["change_source"] = []
 
 class MediasdkChangeChecker(bb.utils.ChangeChecker):
     def pull_request_filter(self, pull_request, files):
-
         return self.default_properties
 
 
-REPOSITORIES = [
+CI_REPOSITORIES = [
     {'name': config.MEDIASDK_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
      # All changes
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.DRIVER_REPO,
-     'organization': config.DRIVER_ORGANIZATION,
+     'organization': config.INTEL_ORGANIZATION,
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.PRODUCT_CONFIGS_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
@@ -109,7 +125,7 @@ REPOSITORIES = [
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
 ]
 
-for repo in REPOSITORIES:
+for repo in CI_REPOSITORIES:
     repo_url = f"https://github.com/{repo['organization']}/{repo['name']}.git"
 
     c["change_source"].append(GitPoller(
@@ -127,7 +143,18 @@ for repo in REPOSITORIES:
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),
         change_filter=repo['change_filter'],
-        category="mediasdk",
+        category="media",
+        pollInterval=config.POLL_INTERVAL,
+        pollAtLaunch=True))
+
+for repo in config.AUTO_UPDATED_REPOSITORIES:
+    repo_url = f"https://github.com/{config.INTEL_ORGANIZATION}/{repo}.git"
+
+    c["change_source"].append(GitPoller(
+        repourl=repo_url,
+        workdir=f"gitpoller-{repo}",
+        branches='refs/heasds/master',
+        category="auto_update",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
 
