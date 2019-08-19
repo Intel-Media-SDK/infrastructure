@@ -43,7 +43,8 @@ import sys
 import logging
 from collections import OrderedDict
 from copy import deepcopy
-from datetime import datetime
+
+import dateutil.parser
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -243,7 +244,7 @@ class BuildGenerator(ConfigGenerator):
         :type stage: String
 
         :param commit_time: Time for getting slice of commits of repositories
-        :type commit_time: datetime
+        :type commit_time: String
 
         :param changed_repo: Information about changed source repository
         :type changed_repo: String
@@ -260,13 +261,13 @@ class BuildGenerator(ConfigGenerator):
         """
 
         self._default_stage = Stage.BUILD.value
-        super().__init__(root_dir, build_config_path, stage)
+        super().__init__(root_dir, build_config_path, stage, custom_cli_args)
 
         self._product_repos = {}
         self._product = None
         self._product_type = product_type
         self._build_event = build_event
-        self._commit_time = commit_time
+        self._commit_time = dateutil.parser.parse(commit_time) if commit_time else None
         self._changed_repo = changed_repo
         self._repo_states = None
         self._build_state_file = root_dir / "build_state"
@@ -281,7 +282,6 @@ class BuildGenerator(ConfigGenerator):
         })
         self._dev_pkg_data_to_archive = []
         self._install_pkg_data_to_archive = []
-        self._custom_cli_args = custom_cli_args
         self._target_arch = target_arch
         self._target_branch = target_branch
         self._manifest_file = manifest_file
@@ -326,7 +326,6 @@ class BuildGenerator(ConfigGenerator):
             'vs_component': self._vs_component,
             'stage': Stage,
             'copy_win_files': copy_win_files,
-            'args': self._custom_cli_args,
             'product_type': self._product_type,
             'build_event': self._build_event,
             # TODO should be in lower case
@@ -1013,7 +1012,7 @@ in format: <repo_name>:<branch>:<commit_id>
                         choices=[stage.value for stage in Stage],
                         help="Current executable stage")
     parser.add_argument('-t', "--commit-time", metavar='datetime',
-                        help="Time of commits (ex. 2017-11-02 07:36:40)")
+                        help="Time of commits (e.g. 2017-11-02 07:36:40)")
     parser.add_argument('-ta', "--target-arch",
                         nargs='*',
                         default=[target_arch.value for target_arch in TargetArch],
@@ -1022,15 +1021,15 @@ in format: <repo_name>:<branch>:<commit_id>
     parser.add_argument('-tb', "--target-branch",
                         help=f'All not triggered repos will be checkout to this branch.')
 
-    parsed_args, unknown_args = parser.parse_known_args()
+    args, unknown_args = parser.parse_known_args()
 
     configure_logger()
-    if parsed_args.stage != Stage.CLEAN.value:
-        configure_logger(logs_path=pathlib.Path(parsed_args.root_dir) / 'logs' / f'{parsed_args.stage}.log')
+    if args.stage != Stage.CLEAN.value:
+        configure_logger(logs_path=pathlib.Path(args.root_dir) / 'logs' / f'{args.stage}.log')
     log = logging.getLogger('build_runner.main')
 
     # remove duplicated values
-    target_arch = list(set(parsed_args.target_arch))
+    target_arch = list(set(args.target_arch))
 
     custom_cli_args = {}
     if unknown_args:
@@ -1042,40 +1041,35 @@ in format: <repo_name>:<branch>:<commit_id>
                 log.exception(f'Wrong argument layout: {arg}')
                 exit(ErrorCode.CRITICAL)
 
-    if parsed_args.commit_time:
-        commit_time = datetime.strptime(parsed_args.commit_time, '%Y-%m-%d %H:%M:%S')
-    else:
-        commit_time = None
-
     try:
         build_config = BuildGenerator(
-            build_config_path=pathlib.Path(parsed_args.build_config).absolute(),
-            root_dir=pathlib.Path(parsed_args.root_dir).absolute(),
-            build_type=parsed_args.build_type,
-            product_type=parsed_args.product_type,
-            build_event=parsed_args.build_event,
-            commit_time=commit_time,
-            changed_repo=parsed_args.changed_repo,
-            repo_states_file_path=parsed_args.repo_states,
+            build_config_path=pathlib.Path(args.build_config).absolute(),
+            root_dir=pathlib.Path(args.root_dir).absolute(),
+            build_type=args.build_type,
+            product_type=args.product_type,
+            build_event=args.build_event,
+            commit_time=args.commit_time,
+            changed_repo=args.changed_repo,
+            repo_states_file_path=args.repo_states,
             custom_cli_args=custom_cli_args,
-            stage=parsed_args.stage,
+            stage=args.stage,
             target_arch=target_arch,
-            target_branch=parsed_args.target_branch,
-            manifest_file=parsed_args.manifest,
-            component_name=parsed_args.component
+            target_branch=args.target_branch,
+            manifest_file=args.manifest,
+            component_name=args.component
         )
 
-        if not parsed_args.changed_repo \
-                and not parsed_args.repo_states \
-                and (not parsed_args.manifest or not parsed_args.component):
+        if not args.changed_repo \
+                and not args.repo_states \
+                and (not args.manifest or not args.component):
             log.warning('"--changed-repo" or "--repo-states" or "--manifest" and "--component" '
                         'arguments are not set, "HEAD" revision and "master" branch will be used')
-        elif parsed_args.changed_repo and parsed_args.repo_states:
+        elif args.changed_repo and args.repo_states:
             log.warning('The --repo-states argument is ignored because the --changed-repo is set')
 
         # prepare build configuration
         if build_config.generate_config():
-            no_errors = build_config.run_stage(parsed_args.stage)
+            no_errors = build_config.run_stage(args.stage)
         else:
             no_errors = False
 
@@ -1083,16 +1077,16 @@ in format: <repo_name>:<branch>:<commit_id>
         no_errors = False
         log.exception('Exception occurred')
 
-    build_state_file = pathlib.Path(parsed_args.root_dir) / 'build_state'
+    build_state_file = pathlib.Path(args.root_dir) / 'build_state'
     if no_errors:
         if not build_state_file.exists():
             build_state_file.write_text(json.dumps({'status': "PASS"}))
         log.info('-' * 50)
-        log.info("%s STAGE COMPLETED", parsed_args.stage.upper())
+        log.info("%s STAGE COMPLETED", args.stage.upper())
     else:
         build_state_file.write_text(json.dumps({'status': "FAIL"}))
         log.error('-' * 50)
-        log.error("%s STAGE FAILED", parsed_args.stage.upper())
+        log.error("%s STAGE FAILED", args.stage.upper())
         exit(ErrorCode.CRITICAL.value)
 
 
