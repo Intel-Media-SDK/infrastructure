@@ -21,20 +21,24 @@
 """
 Module for working with Git
 """
+import sys
+import argparse
 import collections
 import json
 import logging
-import pathlib
 import concurrent.futures
 import multiprocessing
+import pathlib
 from datetime import datetime
 
 import git
 from tenacity import retry, stop_after_attempt, wait_exponential, \
     retry_if_exception_type, retry_if_result
 
-from common.helper import remove_directory
-from common.mediasdk_directories import MediaSdkDirectories, THIRD_PARTY
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from common.helper import remove_directory, ErrorCode
+from common.logger_conf import configure_logger
+from common.mediasdk_directories import MediaSdkDirectories, Proxy
 
 
 def check_exception(value):
@@ -49,10 +53,8 @@ class BranchDoesNotExistException(Exception):
     Exception for branch does not exist
     """
 
-    pass
 
-
-class GitRepo(object):
+class GitRepo:
     """
         Class for work with repositories
     """
@@ -112,7 +114,7 @@ class GitRepo(object):
                 remove_directory(self.local_repo_dir)
 
         if not self.local_repo_dir.exists():
-            self.log.info("Clone repo " + self.repo_name)
+            self.log.info("Clone repo %s", self.repo_name)
             git.Git().clone(self.url, str(self.local_repo_dir))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -137,7 +139,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info(f"Hard reset repo {self.repo_name} to {reset_to}")
+        self.log.info(f"Hard reset repo %s to %s", self.repo_name, reset_to)
         if reset_to:
             self.repo.git.reset('--hard', reset_to)
         else:
@@ -185,7 +187,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Clean repo " + self.repo_name)
+        self.log.info("Clean repo %s", self.repo_name)
         self.repo.git.clean('-xdf')
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=60))
@@ -195,7 +197,7 @@ class GitRepo(object):
         :return: None
         """
 
-        self.log.info("Pull repo " + self.repo_name)
+        self.log.info("Pull repo %s", self.repo_name)
         self.repo.git.pull()
 
     def change_repo_state(self, branch_name=None, commit_time=None):
@@ -265,14 +267,14 @@ class GitRepo(object):
         return False
 
 
-class ProductState(object):
+class ProductState:
     """
         Class for work with list of repositories
     """
 
     repo_states = []
 
-    def __init__(self, sources_list, root_repo_dir, commit_time):
+    def __init__(self, sources_list, root_repo_dir, commit_time=None):
         """
         :param sources_list: dictionary of repositories
         :param root_repo_dir: path to repositories directory
@@ -325,7 +327,7 @@ class ProductState(object):
                     repo.change_repo_state(branch_name=repo.branch_name, commit_time=commit_timestamp)
                 # if parameters '--commit-time', '--changed-repo' and '--repo-states' didn't set
                 # then variable 'commit_timestamp' is 'None' and 'HEAD' revisions be used
-                elif repo.repo_name not in THIRD_PARTY:
+                else:
                     repo.change_repo_state(commit_time=commit_timestamp)
 
     def save_repo_states(self, sources_file, trigger):
@@ -347,7 +349,7 @@ class ProductState(object):
                     'commit_id': state.commit_id,
                     'url': state.url,
                     'commit_time': str(state.repo.commit().committed_datetime.astimezone()),
-                    'trigger': True if trigger == state.repo_name else False
+                    'trigger': trigger == state.repo_name
                 }
                 if state.target_branch:
                     states[state.repo_name]['target_branch'] = state.target_branch
@@ -468,14 +470,14 @@ class ProductState(object):
             :rtype: git.Commit | List
         """
 
-        r = git.Repo(str(repo_path))
+        repo = git.Repo(str(repo_path))
 
         if commit_to:
-            commits = list(r.iter_commits(f'{commit_from}..{commit_to}'))
-            commits.append(r.commit(commit_from))
+            commits = list(repo.iter_commits(f'{commit_from}..{commit_to}'))
+            commits.append(repo.commit(commit_from))
             return commits
 
-        return r.commit(commit_from)
+        return repo.commit(commit_from)
 
     @staticmethod
     def get_commit_number(repo_path):
@@ -496,15 +498,78 @@ class ProductState(object):
         return str(git_repo.rev_list('--count', 'HEAD'))
 
 
-def extract_repo(root_repo_dir, repo_name, url, branch='master', commit_id='HEAD'):
+@Proxy.with_proxies
+def extract_repo(root_dir, repo_name, url=None, branch='master', commit_id='HEAD', commit_time=None, proxy=False):
     """
-    Clone or update a repository to the specified state
+    Prepare repository
 
-    :return: None
+    :param root_dir: Directory where repositories will clone
+    :param repo_name: Name of repository
+    :param url: Url to repository
+    :param branch: Branch of repository
+    :param commit_id: Revision of commit
+    :param commit_time: Time for getting slice of commits of repositories
+    :param proxy: Proxy enabling
+
+    :return: None | Exception
     """
-    repo = GitRepo(root_repo_dir=root_repo_dir, repo_name=repo_name, branch=branch, url=url,
-                   commit_id=commit_id)
-    repo.prepare_repo()
-    repo.change_repo_state()
+
+    log = logging.getLogger('ProductState.extract_repo')
+
+    if url is None:
+        url = MediaSdkDirectories.get_repo_url_by_name(repo_name)
+
+    root_dir = pathlib.Path(root_dir)
+    root_dir.mkdir(parents=True, exist_ok=True)
+
+    if commit_time and not isinstance(commit_time, float):
+        commit_time = datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S').timestamp()
+
+    if not commit_time and not commit_id:
+        log.info('Commit id and timestamp not specified, clone HEAD of repository')
+
+    try:
+        repo = GitRepo(root_repo_dir=root_dir, repo_name=repo_name,
+                       branch=branch, url=url, commit_id=commit_id)
+        repo.prepare_repo()
+
+        repo.change_repo_state(commit_time=commit_time)
+
+    except Exception:
+        log.exception('Exception occurred')
+        log.info("EXTRACTING FAILED")
+        exit(ErrorCode.CRITICAL.value)
+    log.info("EXTRACTING COMPLETED")
 
 
+def main():
+    """
+    Command line API for extracting repo
+    """
+
+    parser = argparse.ArgumentParser(prog="git_worker.py",
+                                     formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument("--root-dir", metavar="PATH", default='.',
+                        help=f"Path where repository will be stored, by default it is current directory")
+    parser.add_argument("--repo-name", metavar="PATH", required=True,
+                        help=f"Path where repository will be stored, by default it is current directory")
+    parser.add_argument("--url", metavar="String", default=None,
+                        help='Url link to repository')
+    parser.add_argument("--branch", metavar="String", default='master',
+                        help='Branch name, by default "master" branch')
+    parser.add_argument("--commit-id", metavar="String",
+                        default='HEAD', help='SHA of commit')
+    parser.add_argument("--commit-time", metavar="String",
+                        default=None, help='Will switch to the commit before specified time')
+    parser.add_argument("--proxy", metavar="String",
+                        default=False, help='Will switch to the commit before specified time')
+
+    args = parser.parse_args()
+
+    configure_logger()
+    extract_repo(**vars(args))
+
+
+if __name__ == '__main__':
+    main()

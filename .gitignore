@@ -1,3 +1,6 @@
+# IDE
+.idea
+
 # Specific files
 secrets.py
 msdk_secrets.py
