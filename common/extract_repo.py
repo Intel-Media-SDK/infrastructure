@@ -52,7 +52,7 @@ def exit_script(error_code=None):
         log.info("EXTRACTING COMPLETED")
 
 
-@Proxy.with_proxies()
+@Proxy.with_proxies
 def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=None, proxy=False):
     log = logging.getLogger('extract_repo.extract_repo')
 
