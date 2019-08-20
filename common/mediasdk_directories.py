@@ -103,28 +103,21 @@ class Proxy:
             os.environ[proxy_name] = url
 
     @classmethod
-    def with_proxies(cls, proxy=False):
+    def with_proxies(cls, func):
         """
-        Check the 'proxy' argument in the called and this functions and set proxies if it == True
-        To use as decorator, add in definition of function 'proxy' argument or set decorator as
-        @with_proxies(True)
-
-        :param proxy: Set to call the function with proxies every time
-        :type proxy: Boolean
+        Check 'proxy' argument in called function and set proxy if it == True
+        To use as decorator, add in definition of function 'proxy' argument
         """
-        def call_with_proxies(func):
 
-            def wrapper(*args, **kwargs):
-                if kwargs.get('proxy') or proxy:
-                    cls.set_proxy()
-                    return_value = func(*args, **kwargs)
-                    cls.unset_proxy()
-                else:
-                    return_value = func(*args, **kwargs)
-                return return_value
+        def wrapper(*args, **kwargs):
+            if kwargs.get('proxy'):
+                cls.set_proxy()
+                func(*args, **kwargs)
+                cls.unset_proxy()
+            else:
+                func(*args, **kwargs)
 
-            return wrapper
-        return call_with_proxies
+        return wrapper
 
 
 class MediaSdkDirectories(object):
