@@ -33,7 +33,7 @@ import argparse
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
 from test_scripts.components_installer import install_components
-from common.helper import TestStage, ErrorCode, Product_type, Build_type
+from common.helper import TestStage, ErrorCode, Product_type, Build_type, rotate_dir
 from common.logger_conf import configure_logger
 from common.manifest_manager import Manifest, get_test_dir, get_test_url
 
@@ -146,6 +146,7 @@ class TestRunner(ConfigGenerator):
             self._component.build_info.set_product_type(self._product_type)
         artifacts_dir = get_test_dir(self._manifest, self._component.name)
         artifacts_url = get_test_url(self._manifest, self._component.name)
+        rotate_dir(artifacts_dir)
 
         if self._artifacts_layout:
             _orig_copystat = shutil.copystat
