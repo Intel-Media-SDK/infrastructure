@@ -29,6 +29,7 @@ import requests
 import json
 import git
 
+from datetime import datetime
 from common.logger_conf import configure_logger
 from common.helper import ErrorCode, remove_directory, cmd_exec
 from common.extract_repo import extract_repo
@@ -38,7 +39,8 @@ from common.msdk_secrets import GITHUB_TOKEN
 
 class ComponentUpdater(object):
 
-    def __init__(self, tmp_dir, repo_name, component_name, manifest_file, branch, revision, log):
+    def __init__(self, tmp_dir, repo_name, component_name, manifest_file, branch, revision,
+                 commit_time, log):
         """
         :param tmp_dir: Temporary directory for repository extracting
         :param repo_name: Repository name
@@ -56,6 +58,8 @@ class ComponentUpdater(object):
         self._manifest_path = tmp_dir / repo_name / manifest_file
         self._branch = branch
         self._revision = revision
+        self._commit_time = datetime.strptime(commit_time, '%Y-%m-%d %H:%M:%S') \
+            if commit_time else None
         self._log = log
 
     def _clean(self):
@@ -96,8 +100,8 @@ class ComponentUpdater(object):
 
             tmp_repo = component.get_repository(self._component_name)
             repository = Repository(tmp_repo.name, tmp_repo.url, self._branch,
-                                    tmp_repo.target_branch, self._revision, tmp_repo.type,
-                                    tmp_repo.is_trigger)
+                                    tmp_repo.target_branch, self._revision, self._commit_time,
+                                    tmp_repo.source_type)
             component.add_repository(repository, replace=True)
             manifest.save_manifest(self._manifest_path)
 
@@ -132,12 +136,15 @@ class ComponentUpdater(object):
             self._log.info('Started checking for commit existence')
             g = git.Git(self._tmp_dir / self._repo_name)
             log_info = g.log('--pretty=format:%s')
-            if self._commit_message not in log_info:
-                return True
-            return False
+            if self._commit_message in log_info:
+                self._log.warning(f'Pull request was failed because commit with branch '
+                                  f'{self._branch} and revision {self._revision} already exists')
+                return False
         except:
             self._log.exception("Check was failed")
             return False
+
+        return True
 
     def _git_pull_request(self):
         self._log.info('Started creating a pull request')
@@ -155,24 +162,23 @@ class ComponentUpdater(object):
             self._log.info(f'POST: {r}')
         except Exception as e:
             self._log.exception('Creating pull request failed: %s', e)
+            return False
+
+        return True
 
     def update(self):
         actions = [
             self._clean,
             self._extract_repo,
+            self._check_commit,
             self._change_manifest_file,
-            self._git_commit
+            self._git_commit,
+            self._git_pull_request
         ]
 
         for action in actions:
             if not action():
                 return False
-
-        if self._check_commit():
-            self._git_pull_request()
-        else:
-            self._log.warning(f'Pull request was failed because commit with branch '
-                              f'{self._branch} and revision {self._revision} already exists')
 
         return True
 
@@ -184,8 +190,10 @@ def main():
                         help='Branch name that will be replaced in the manifest file')
     parser.add_argument('-r', '--revision', metavar='String', required=True,
                         help='SHA sum of commit that will be replaced in the manifest file')
-    parser.add_argument('-n', '--component-name', required=True, help='Component name which will '
-                                                                      'be updated information')
+    parser.add_argument('-t', "--commit-time", metavar="String",
+                        help='Will switch to the commit before specified time')
+    parser.add_argument('-n', '--component-name', required=True,
+                        help='Component name which will be updated information')
     args = parser.parse_args()
 
     configure_logger()
@@ -203,6 +211,7 @@ def main():
         manifest_file=manifest_file,
         branch=args.branch,
         revision=args.revision,
+        commit_time=args.commit_time,
         log=log
     )
 
