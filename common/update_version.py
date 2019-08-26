@@ -36,7 +36,6 @@ from common.extract_repo import extract_repo
 from common.manifest_manager import Manifest, Repository
 from common.msdk_secrets import GITHUB_TOKEN
 
-
 class ComponentUpdater(object):
 
     def __init__(self, tmp_dir, repo_name, component_name, manifest_file, branch, revision,
@@ -101,7 +100,7 @@ class ComponentUpdater(object):
             tmp_repo = component.get_repository(self._component_name)
             repository = Repository(tmp_repo.name, tmp_repo.url, self._branch,
                                     tmp_repo.target_branch, self._revision, self._commit_time,
-                                    tmp_repo.source_type)
+                                    tmp_repo.type)
             component.add_repository(repository, replace=True)
             manifest.save_manifest(self._manifest_path)
 
