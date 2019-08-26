@@ -136,8 +136,8 @@ class ComponentUpdater(object):
             g = git.Git(self._tmp_dir / self._repo_name)
             log_info = g.log('--pretty=format:%s')
             if self._commit_message in log_info:
-                self._log.warning(f'Pull request was failed because commit with branch '
-                                  f'{self._branch} and revision {self._revision} already exists')
+                self._log.warning(f'Skip manifest changing. Branch {self._branch} and revision '
+                                  f'{self._revision} already exists')
                 return False
         except:
             self._log.exception("Check was failed")
