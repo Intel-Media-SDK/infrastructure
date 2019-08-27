@@ -177,12 +177,13 @@ def get_copyright_year_or_range(tested_string):
 class CopyrightChecker:
     """ This class checks copyright of the repository C/C++/Python files"""
 
-    def __init__(self, repo_path, commit_id, report_path):
+    def __init__(self, repo_path, commit_id, report_path, commit_count):
         self.repo_path = pathlib.Path(repo_path)
         self.commit_id = commit_id
         self.report_path = pathlib.Path(report_path)
         self.details = []
         self.src_file = ""
+        self.commit_count = commit_count
 
     def get_changed_files(self):
         """
@@ -195,7 +196,8 @@ class CopyrightChecker:
         """
         repo = git.Repo(self.repo_path)
         # Get full diff without deleted(d) files
-        files = repo.git.diff(self.commit_id + "~1", name_only=True, diff_filter='d')
+        files = repo.git.diff(self.commit_id + f"~{self.commit_count}", name_only=True,
+                              diff_filter='d')
         files = files.splitlines() # List of changed files
 
         file_paths = []
@@ -341,9 +343,12 @@ def main():
     parser.add_argument("-p", "--report-path", metavar="String",
                         help="Path to the json where should be stored pre-commit check results \
 (prefered name is 'pre_commit_checks.json').")
+    parser.add_argument("-t", "--commit-count", metavar="String", default='1',
+                        help="Count of commits for checking copyright")
     args = parser.parse_args()
 
-    copyright_checker = CopyrightChecker(args.repo_path, args.commit_id, args.report_path)
+    copyright_checker = CopyrightChecker(args.repo_path, args.commit_id, args.report_path,
+                                         args.commit_count)
     copyright_checker.check_copyright()
 
 if __name__ == '__main__':
