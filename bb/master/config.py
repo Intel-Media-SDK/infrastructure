@@ -375,6 +375,18 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
+    "build-windows": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_windows_public.py",
+        "product_type": Product_type.PUBLIC_WINDOWS.value,
+        "build_type": Build_type.RELEASE.value,
+        "worker": "windows",
+        "dependency_name": 'mediasdk',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: branch == 'master'}]
+    },
+
     "test": {
         "factory": FACTORIES.init_test_factory,
         "product_type": Product_type.PUBLIC_LINUX.value,
@@ -417,6 +429,7 @@ WORKERS = {
 
     "centos": {
         "b-1-10": {"os": OsType.linux},
+        "b-1-14": {"os": OsType.linux},
         "b-1-22": {"os": OsType.linux}
     },
     "centos_defconfig": {
@@ -438,15 +451,14 @@ PORT = "5000"
 WORKER_PORT = "9000"
 BUILDBOT_NET_USAGE_DATA = None  # "None" disables the sending of usage analysis info to buildbot.net
 BUILDBOT_TREE_STABLE_TIMER = None  # Value "None" means that a separate build will be started immediately for each Change.
-BUILDBOT_TITLE = "Intel® Media SDK"
+BUILDBOT_TITLE = "Intel® Media CI"
 
 # Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
 # and new api requests will not be performed
-POLL_INTERVAL = 40  # Poll Github for new changes (in seconds)
+POLL_INTERVAL = 60  # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
-DATABASE_PASSWORD = msdk_secrets.DATABASE_PASSWORD
-DATABASE_URL = f"postgresql://buildbot:{DATABASE_PASSWORD}@localhost/buildbot"
+DATABASE_URL = f"postgresql://buildbot:{msdk_secrets.DATABASE_PASSWORD}@localhost/buildbot"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 
 TRIGGER = 'trigger'
