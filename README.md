@@ -17,7 +17,7 @@ Dependencies:
 - git
 
 ```bash
-sudo pip3 install buildbot==1.1.2 buildbot-console-view==1.1.2 buildbot-www==1.1.2
+sudo pip3 install buildbot==1.8.0 buildbot-console-view==1.8.0 buildbot-www==1.8.0
 ```
 Hint:  
 It can work with default DB (sqlite) for that it needs to change next value in `bb/master/config.py`:
@@ -29,22 +29,16 @@ Deploy:
 ```bash
 git clone https://github.com/Intel-Media-SDK/infrastructure.git
 cd ./infrastructure/bb/
-mv ./master ./tmp_master
 
-buildbot create-master master
-
-cp ./tmp_master/* ./master/
-rm -rf ./tmp_master/
+buildbot upgrade-master master
 
 #Configure Github`s webhook in your repository in settings-webhooks and create Github`s token after that do:
-cd master
+cd ../common
 cp ./msdk_secrets.py.example ./msdk_secrets.py
 nano msdk_secrets.py #add your real values
 
-nano buildbot.tac #edit `umask` with the value `umask=0o2`
-
 #Start Master Buildbot
-buildbot start .
+buildbot start bb/master
 ```
 ### Deploy build box Worker Buildbot
 Prerequisites:
@@ -57,7 +51,7 @@ To set up environment for MediaSDK and install all dependencies do:
 
 Install packages for Buildbot:
 ```bash
-sudo pip3 install buildbot-worker==1.1.2
+sudo pip3 install buildbot-worker==1.8.0
 sudo pip3 install gitpython==2.1.5 tenacity==4.5.0 txrequests txgithub service_identity
 ```
 If you want the environment with X11, install:
@@ -68,10 +62,11 @@ sudo yum install libX11 libXext libXfixes libGL libGL-devel libX11-devel
 
 Deploy:
 ```bash
+git clone https://github.com/Intel-Media-SDK/infrastructure.git
+
 buildbot-worker create-worker --umask=0o2 "worker" "<buildbot_master_IP>:9000" "<your_worker_name>" "pass"
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrastructure
-git clone https://github.com/Intel-Media-SDK/product-configs.git ./worker/product-configs
+cp infrastructure/common worker/common -R
 
 #Start Worker Buildbot
 buildbot-worker start worker
@@ -82,9 +77,6 @@ Dependencies:
 - CentOS v7.3
 - python v3.6.x
 - git
-- Driver `iHD_drv_video.so` and MDF (install it from https://github.com/intel/media-driver)
-    - `lib64` folder should be in the `/opt/intel/msdk_driver`!
-    - `/opt/intel/mediasdk` should be empty
 - Change permissions on: `cd /opt/intel/ && chown <user_who_will_start_the_infrastructure_scripts>:<user_who_will_start_the_infrastructure_scripts> .` This change needs for auto-copy of build artifacts to the mediasdk folder (mediasdk folder will be deleted and created again).
 
 ```bash
@@ -104,9 +96,11 @@ sudo apt-get install git-lfs
 
 Deploy:
 ```bash
-buildbot-worker create-worker --umask=0o2 "worker" "<your_IP>:9000" "<your_worker_name>" "pass"
+git clone https://github.com/Intel-Media-SDK/infrastructure.git
 
-git clone https://github.com/Intel-Media-SDK/infrastructure.git ./worker/infrastructure
+buildbot-worker create-worker --umask=0o2 "worker" "<buildbot_master_IP>:9000" "<your_worker_name>" "pass"
+
+cp infrastructure/common worker/common -R
 
 #Start Worker Buildbot
 buildbot-worker start worker
@@ -160,10 +154,11 @@ cd infrastructure/build_scripts
 - You can copy the build string from Buildbot ([example](http://mediasdk.intel.com/buildbot/#/builders/3/builds/122/steps/3/logs/stdio)) or write with your own and execute it. Note to change parameters: 
     - `build-config` - how to build product (you can specify your own config)
     - `root-dir` - where should be stored binaries after the build and logs
-    - `stage` - specifies which stage will be executed now (available stages `clean`, `extract`, `build`, `install`, `pack`, `copy`)
+    - `manifest` - path to `manifest.yml` file where specified revisions of media components ([example](https://github.com/Intel-Media-SDK/product-configs/blob/master/manifest.yml))
+    - `stage` - specifies which stage will be executed now (available stages `clean`, `extract`, `build`, `install`, `test`, `pack`, `copy`)
 Example:
 ```
-python3.6 build_runner.py --build-config /localdisk/bb/worker/build-master-branch/../product-configs/conf_open_source.py --root-dir /localdisk/bb/worker/build-master-branch/build_dir --changed-repo MediaSDK:master:3b368450b49cde7be325988275ea8684d159df61 --build-type release --build-event commit --product-type linux --repo-url https://github.com/Intel-Media-SDK/MediaSDK.git --stage install
+python3 build_runner.py --build-config /localdisk/bb/worker/build-mediasdk/product-configs/conf_linux_public.py --root-dir /localdisk/bb/worker/build-mediasdk/build_dir --manifest /media/builds/manifest/master/commit/0f3fec8c459eab9d16cbe99a1a76cc236be2226d/manifest.yml --component mediasdk --build-type release --product-type public_linux compiler=gcc compiler_version=6.3.1 compiler=gcc compiler_version=6.3.1 --stage clean
 ```
 
 # How Buildbot knows about new commits (mechanism of Polling)
