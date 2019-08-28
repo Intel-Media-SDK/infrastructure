@@ -110,6 +110,7 @@ class Product_type(Enum):
     CLOSED_ANDROID_OPEN_SOURCE = 'closed_android_open_source'
 
     CLOSED_ANDROID = 'closed_android'
+    CLOSED_ANDROID_NEWEST = 'closed_android_newest'
     CLOSED_WINDOWS_TITAN = 'closed_windows_titan'
     CLOSED_PERL_TEST_PKG = 'closed_perl_test_pkg'
 
