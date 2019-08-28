@@ -53,7 +53,9 @@ GMMLIB_REPO = 'gmmlib'
 
 # We haven't CI for these repositories, but we update its revisions in manifest automatically.
 # This feature should work for master branch only.
-AUTO_UPDATED_REPOSITORIES = [LIBVA_REPO, GMMLIB_REPO]
+
+# Temporary disabled, need to update manifest behavior
+AUTO_UPDATED_REPOSITORIES = [] #[LIBVA_REPO, GMMLIB_REPO]
 
 PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO, DRIVER_REPO]
 
@@ -289,7 +291,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-gcc-9.1.0": {
+    "build-gcc-9.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
@@ -297,7 +299,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
-        "compiler_version": "9.1.0",
+        "compiler_version": "9.2.0",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
         'triggers': [{'repositories': PRODUCTION_REPOS,
@@ -343,7 +345,7 @@ BUILDERS = {
                       'builders': ['build-libva']}]
     },
 
-    "build-fastboot-gcc-9.1.0": {
+    "build-fastboot-gcc-9.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
@@ -351,7 +353,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
-        "compiler_version": "9.1.0",
+        "compiler_version": "9.2.0",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
         'triggers': [{'repositories': PRODUCTION_REPOS,
