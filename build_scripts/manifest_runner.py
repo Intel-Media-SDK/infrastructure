@@ -84,7 +84,11 @@ class ManifestRunner:
         :type commit_time: Time to slice revisions
         """
 
-        self._repo_to_extract = static_data.NON_STATIC_REPOSITORIES
+        self._release_repos = [
+            'product-configs',
+            'MediaSDK',
+            'media-driver'
+        ]
 
         self._root_dir = pathlib.Path(root_dir)
         self._repo = repo
@@ -117,7 +121,7 @@ class ManifestRunner:
         if MediaSdkDirectories.is_release_branch(branch_to_check):
             sdk_br, driver_br = convert_branch(branch_to_check)
 
-            for repo_name in self._repo_to_extract:
+            for repo_name in self._release_repos:
                 if repo_name == 'media-driver':
                     self._release_branch[repo_name] = driver_br
                 else:
@@ -142,13 +146,13 @@ class ManifestRunner:
                         'url': repo.url
                     }
                 else:
-                    if repo.name not in self._repo_to_extract:
+                    if repo.revision is not None:
                         continue
 
                     sources_list[repo.name] = {
                         'branch': self._release_branch.get(repo.name, repo.branch),
                         'target_branch': repo.target_branch,
-                        'commit_id': None,
+                        'commit_id': repo.revision,
                         'is_trigger': False,
                         'url': repo.url
                     }
