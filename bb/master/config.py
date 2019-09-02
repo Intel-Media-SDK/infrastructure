@@ -243,22 +243,22 @@ BUILDERS = {
                       'builders': ['build-libva', 'build-gmmlib']}]
     },
 
-    "build-driver-clang-8.0": {
-        "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "conf_media_driver.py",
-        "product_type": Product_type.PUBLIC_LINUX_DRIVER_CLANG.value,
-        "build_type": Build_type.RELEASE.value,
-        "api_latest": False,
-        "fastboot": False,
-        "compiler": "clang",
-        "compiler_version": "8",
-        "worker": "ubuntu",
-        "dependency_name": 'media-driver',
-        # Builder is enabled for all branches
-        'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: True,
-                      'builders': ['build-libva', 'build-gmmlib']}]
-    },
+    # "build-driver-clang-8.0": {
+    #     "factory": FACTORIES.init_build_factory,
+    #     "product_conf_file": "conf_media_driver.py",
+    #     "product_type": Product_type.PUBLIC_LINUX_DRIVER_CLANG.value,
+    #     "build_type": Build_type.RELEASE.value,
+    #     "api_latest": False,
+    #     "fastboot": False,
+    #     "compiler": "clang",
+    #     "compiler_version": "8",
+    #     "worker": "ubuntu",
+    #     "dependency_name": 'media-driver',
+    #     # Builder is enabled for all branches
+    #     'triggers': [{'repositories': PRODUCTION_REPOS,
+    #                   'branches': lambda branch: True,
+    #                   'builders': ['build-libva', 'build-gmmlib']}]
+    # },
 
     "build-driver-debug": {
         "factory": FACTORIES.init_build_factory,
