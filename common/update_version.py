@@ -22,6 +22,7 @@
 Module updating libva/gmmlib versions in the manifest file
 """
 
+import sys
 import logging
 import argparse
 import pathlib
@@ -29,12 +30,14 @@ import requests
 import json
 import git
 
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from datetime import datetime
 from common.logger_conf import configure_logger
 from common.helper import ErrorCode, remove_directory, cmd_exec
 from common.extract_repo import extract_repo
 from common.manifest_manager import Manifest, Repository
 from common.msdk_secrets import GITHUB_TOKEN
+
 
 class ComponentUpdater(object):
 
