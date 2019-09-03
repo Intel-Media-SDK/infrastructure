@@ -120,7 +120,7 @@ class Product_type(Enum):
     PRIVATE_LINUX_NEXT_GEN = 'private_linux_next_gen'
     PRIVATE_LINUX_NEXT_GEN_API_NEXT = 'private_linux_next_gen_api_next'
 
-    # public
+    # public MediaSDK
     PUBLIC_WINDOWS = 'public_windows'
     PUBLIC_LINUX = 'public_linux'
     PUBLIC_LINUX_CLANG = 'public_linux_clang_8.0'
@@ -130,15 +130,18 @@ class Product_type(Enum):
     # DEFCONFIG means that "enabled all" is not set and
     # build environment doesn't include X11 and Wayland
     PUBLIC_LINUX_API_NEXT_DEFCONFIG = 'public_linux_api_next_defconfig'
-
     PUBLIC_LINUX_FASTBOOT = 'public_linux_fastboot'
     PUBLIC_LINUX_FASTBOOT_GCC_LATEST = 'public_linux_fastboot_gcc_9.2'
+
+    # public Media-Driver
+    PUBLIC_LINUX_DRIVER = 'public_linux_driver'
+    PUBLIC_LINUX_DRIVER_CLANG = 'public_linux_driver_clang_8.0'
+    PUBLIC_LINUX_DRIVER_GCC_LATEST = 'public_linux_driver_gcc_9.2'
 
     # Components
     PUBLIC_LINUX_LIBVA = 'public_linux_libva'
     PUBLIC_LINUX_LIBVA_UTILS = 'public_linux_libva_utils'
     PUBLIC_LINUX_GMMLIB = 'public_linux_gmmlib'
-    PUBLIC_LINUX_DRIVER = 'public_linux_driver'
     PUBLIC_LINUX_IGC = 'public_linux_igc'
     PUBLIC_LINUX_OPENCL_RUNTIME = 'public_linux_opencl_runtime'
     PUBLIC_LINUX_FFMPEG = 'public_linux_ffmpeg'
