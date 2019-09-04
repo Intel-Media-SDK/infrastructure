@@ -91,6 +91,25 @@ class TestRunner(ConfigGenerator):
         if 'ARTIFACTS_LAYOUT' in self._config_variables:
             self._artifacts_layout = self._config_variables['ARTIFACTS_LAYOUT']
 
+    def _run_build_config_actions(self, stage):
+        """
+        Run actions of selected stage
+
+        :param stage: Stage name
+        :type stage: String
+
+        :return: Boolean
+        """
+
+        is_passed = True
+
+        for action in self._actions[stage]:
+            error_code = action.run(self._options)
+            if error_code:
+                is_passed = False
+
+        return is_passed
+
     def _clean(self):
         """
         Clean build directories
