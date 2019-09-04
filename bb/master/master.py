@@ -153,7 +153,7 @@ for repo in config.AUTO_UPDATED_REPOSITORIES:
     c["change_source"].append(GitPoller(
         repourl=repo_url,
         workdir=f"gitpoller-{repo}",
-        branches='refs/heasds/master',
+        branches='refs/heads/master',
         category="auto_update",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
