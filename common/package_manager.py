@@ -30,8 +30,8 @@ from common.helper import cmd_exec
 
 _CMD_PATTERN = {
     "INSTALL": {
-        "ubuntu": "sudo dpkg -i {pkg_path}",
-        "centos": "sudo yum -y install {pkg_path}"
+        "ubuntu": "sudo dpkg -i --force-all {pkg_path}",
+        "centos": "sudo rpm -i --force {pkg_path}"
     },
     "UNINSTALL": {
         "ubuntu": "sudo aptitude -y remove {pkg_name}",
