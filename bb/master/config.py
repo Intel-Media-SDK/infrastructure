@@ -54,8 +54,7 @@ GMMLIB_REPO = 'gmmlib'
 # We haven't CI for these repositories, but we update its revisions in manifest automatically.
 # This feature should work for master branch only.
 
-# Temporary disabled, need to update manifest behavior
-AUTO_UPDATED_REPOSITORIES = [] #[LIBVA_REPO, GMMLIB_REPO]
+AUTO_UPDATED_REPOSITORIES = [LIBVA_REPO, GMMLIB_REPO]
 
 PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO, DRIVER_REPO]
 
