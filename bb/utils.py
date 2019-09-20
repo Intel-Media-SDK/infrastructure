@@ -246,3 +246,30 @@ def get_repository_name_by_url(repo_url):
     """
 
     return repo_url.split('/')[-1][:-4]
+
+
+class GithubCommitFilter:
+    """
+    Class for encapsulating behavior of builder triggers
+    """
+    def __init__(self, repositories, branches):
+        self.repositories = repositories
+        self.branches = branches
+
+    def check_commit(self, step):
+        """
+        Function for checking commit information before running build
+
+        :param step: BuildStep instance
+        :return: True or False
+        """
+        repository = get_repository_name_by_url(step.build.properties.getProperty('repository'))
+        branch = step.build.properties.getProperty('branch')
+        target_branch = step.build.properties.getProperty('target_branch')
+
+        try:
+            if self.branches(branch, target_branch) and repository in self.repositories:
+                return True
+        except Exception as exc:
+            print(f'Exception occurred while filtering commits: {exc}')
+        return False
