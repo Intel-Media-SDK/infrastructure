@@ -100,6 +100,7 @@ class Product_type(Enum):
     CLOSED_WINDOWS_MFTS = 'closed_windows_mfts'
     CLOSED_WINDOWS_UWP = 'closed_windows_uwp'
     CLOSED_LINUX = 'closed_linux'
+    CLOSED_LINUX_TOOLS = 'closed_linux_tools'
     CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
     CLOSED_EMBEDDED = 'closed_embedded'
     CLOSED_LINUX_UBUNTU = 'closed_linux_ubuntu'
