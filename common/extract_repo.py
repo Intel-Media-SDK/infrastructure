@@ -35,6 +35,7 @@ from common import git_worker
 from common.mediasdk_directories import MediaSdkDirectories, Proxy
 from common.helper import ErrorCode, remove_directory
 from common.logger_conf import configure_logger
+from common.branch_converter import convert_branch
 from common.manifest_manager import Manifest
 
 OPEN_SOURCE_KEY = 'OPEN_SOURCE_INFRA'
@@ -69,6 +70,7 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
                                       branch='master', url=repo_url)
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
+                branch, _ = convert_branch(branch)
                 if not repo.is_branch_exist(branch):
                     raise git_worker.BranchDoesNotExistException(
                         f'Release branch {branch} does not exist in the repo {repo.repo_name}')
@@ -85,6 +87,7 @@ def extract_repo(root_repo_dir, repo_name, branch, commit_id=None, commit_time=N
 
             repo.prepare_repo()
             if MediaSdkDirectories.is_release_branch(branch):
+                branch, _ = convert_branch(branch)
                 if not repo.is_branch_exist(branch):
                     raise git_worker.BranchDoesNotExistException(
                         f'Release branch {branch} does not exist in the repo {repo.repo_name}')
