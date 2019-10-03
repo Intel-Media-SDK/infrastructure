@@ -471,10 +471,6 @@ class BuildGenerator(ConfigGenerator):
         if not self._run_build_config_actions(Stage.BUILD.value):
             return False
 
-        if self._options['STRIP_BINARIES']:
-            if not self._strip_bins():
-                return False
-
         return True
 
     def _test(self):
@@ -532,6 +528,10 @@ class BuildGenerator(ConfigGenerator):
         self._options['PACK_DIR'].mkdir(parents=True, exist_ok=True)
 
         no_errors = True
+
+        if self._options['STRIP_BINARIES']:
+            if not self._strip_bins():
+                return False
 
         if not self._run_build_config_actions(Stage.PACK.value):
             no_errors = False
