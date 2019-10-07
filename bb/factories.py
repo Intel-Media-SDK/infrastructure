@@ -189,10 +189,6 @@ class StepsGenerator(steps.BuildStep):
         if step.build.results != buildbot_utils.BuildStatus.PASSED.value:
             defer.returnValue(False)
         build_id = step.build.buildid
-        project = bb.utils.get_repository_name_by_url(
-            step.build.properties.getProperty('repository'))
-        branch = step.build.properties.getProperty('target_branch') or \
-                 step.build.properties.getProperty('branch')
 
         builder_names_for_triggering = []
 
@@ -200,7 +196,7 @@ class StepsGenerator(steps.BuildStep):
         builder_names_for_triggering_after_check = {}
         for builder, triggers in self.build_specification['next_builders'].items():
             for trigger in triggers:
-                if project in trigger.get('repositories', []) and trigger.get('branches')(branch):
+                if trigger['filter'].check_commit(step):
                     builder_names_for_triggering_after_check[builder] = trigger
                     break
 
