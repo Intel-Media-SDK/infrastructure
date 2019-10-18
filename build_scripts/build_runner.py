@@ -591,18 +591,17 @@ class BuildGenerator(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("COPYING")
 
+        build_state = {'status': "PASS"}
         if self._build_state_file.exists():
             with self._build_state_file.open() as state:
                 build_state = json.load(state)
-        else:
-            build_state = {'status': "PASS"}
-
-        build_dir = get_build_dir(self._manifest, self._component.name)
-        build_url = get_build_url(self._manifest, self._component.name)
 
         if build_state['status'] == "FAIL":
-            build_dir = pathlib.Path(f'{build_dir}_bad')
-            build_url = f'{build_url}_bad'
+            build_dir = get_build_dir(self._manifest, self._component.name, is_failed=True)
+            build_url = get_build_url(self._manifest, self._component.name, is_failed=True)
+        else:
+            build_dir = get_build_dir(self._manifest, self._component.name)
+            build_url = get_build_url(self._manifest, self._component.name)
 
         build_root_dir = get_build_dir(self._manifest, self._component.name, link_type='root')
         rotate_dir(build_dir)
