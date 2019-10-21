@@ -169,6 +169,7 @@ class Build_event(Enum):
     NIGHTLY = 'nightly'
     WEEKLY = 'weekly'
     KLOCWORK = 'klocwork'
+    COVERAGE = 'coverage'
     CUSTOM_BUILD = 'custom_build'
 
 
