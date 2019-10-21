@@ -591,8 +591,18 @@ class BuildGenerator(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("COPYING")
 
-        build_dir = get_build_dir(self._manifest, self._component.name)
-        build_url = get_build_url(self._manifest, self._component.name)
+        build_state = {'status': "PASS"}
+        if self._build_state_file.exists():
+            with self._build_state_file.open() as state:
+                build_state = json.load(state)
+
+        if build_state['status'] == "FAIL":
+            build_dir = get_build_dir(self._manifest, self._component.name, is_failed=True)
+            build_url = get_build_url(self._manifest, self._component.name, is_failed=True)
+        else:
+            build_dir = get_build_dir(self._manifest, self._component.name)
+            build_url = get_build_url(self._manifest, self._component.name)
+
         build_root_dir = get_build_dir(self._manifest, self._component.name, link_type='root')
         rotate_dir(build_dir)
 
@@ -609,14 +619,10 @@ class BuildGenerator(ConfigGenerator):
         if not self._run_build_config_actions(Stage.COPY.value):
             return False
 
-        if self._build_state_file.exists():
-            with self._build_state_file.open() as state:
-                build_state = json.load(state)
-
-                if build_state['status'] == "PASS":
-                    last_build_path = build_dir.relative_to(build_root_dir)
-                    last_build_file = build_dir.parent.parent / f'last_build_{self._component.build_info.product_type}'
-                    last_build_file.write_text(str(last_build_path))
+        if build_state['status'] == "PASS":
+            last_build_path = build_dir.relative_to(build_root_dir)
+            last_build_file = build_dir.parent.parent / f'last_build_{self._component.build_info.product_type}'
+            last_build_file.write_text(str(last_build_path))
 
         return True
 

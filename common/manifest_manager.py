@@ -738,7 +738,7 @@ def _get_root_url(product_type, url_type='build'):
     return urljoin(root_url, build_root_dir)
 
 
-def get_build_dir(manifest, component, os_type=None, link_type='build'):
+def get_build_dir(manifest, component, os_type=None, link_type='build', is_failed=False):
     """
     Get build directory
 
@@ -754,8 +754,8 @@ def get_build_dir(manifest, component, os_type=None, link_type='build'):
     :param link_type: Type of link to return (root|commit|build|manifest)
     :type link_type: String
 
-    :param default_rev: Flag for preparing revision
-    :type default_rev: Boolean
+    :param is_failed: Add "_bad" postfix (only for default link type)
+    :type is_failed: Boolean
 
     :return: Build directory
     :rtype: pathlib.Path
@@ -770,6 +770,8 @@ def get_build_dir(manifest, component, os_type=None, link_type='build'):
         result_path = result_path / 'manifest' / parts['branch'] / parts['build_event'] / parts['revision']
     if link_type == 'build':
         result_path = result_path / f'{parts["product_type"]}_{parts["build_type"]}'
+        if is_failed:
+            result_path = pathlib.Path(f'{result_path}_bad')
 
     return result_path
 
@@ -811,7 +813,7 @@ def get_test_dir(manifest, component, test_platform=None, os_type=None, link_typ
     return result_path
 
 
-def get_build_url(manifest, component, link_type='build'):
+def get_build_url(manifest, component, link_type='build', is_failed=False):
     """
     Get build url
 
@@ -824,8 +826,8 @@ def get_build_url(manifest, component, link_type='build'):
     :param link_type: Type of link to return (root|commit|build)
     :type link_type: String
 
-    :param default_rev: Flag for preparing revision
-    :type default_rev: Boolean
+    :param is_failed: Add "_bad" postfix (only for default link type)
+    :type is_failed: Boolean
 
     :return: Build url
     :rtype: String
@@ -840,6 +842,9 @@ def get_build_url(manifest, component, link_type='build'):
         result_link = '/'.join((result_link, 'manifest', parts['branch'], parts['build_event'], parts['revision']))
     if link_type == 'build':
         result_link = '/'.join((result_link, f'{parts["product_type"]}_{parts["build_type"]}'))
+        if is_failed:
+            result_link = f'{result_link}_bad'
+
     return result_link
 
 
