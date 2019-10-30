@@ -124,14 +124,6 @@ class Action(object):
                     env.update(options['ENV'])
 
             if self.env:
-                if self.env.get('PATH'):
-                    if platform.system() == 'Windows':
-                        separator = ';'
-                    else:
-                        separator = ':'
-
-                    self.env['PATH'] = f'{self.env["PATH"]}{separator}{env["PATH"]}'
-
                 env.update(self.env)
 
             if self.work_dir:
