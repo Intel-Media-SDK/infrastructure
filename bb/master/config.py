@@ -243,22 +243,22 @@ BUILDERS = {
                                                    lambda branch, target_branch: True)}]
     },
 
-    # "build-driver-clang-8.0": {
-    #     "factory": FACTORIES.init_build_factory,
-    #     "product_conf_file": "conf_media_driver.py",
-    #     "product_type": Product_type.PUBLIC_LINUX_DRIVER_CLANG.value,
-    #     "build_type": Build_type.RELEASE.value,
-    #     "api_latest": False,
-    #     "fastboot": False,
-    #     "compiler": "clang",
-    #     "compiler_version": "8",
-    #     "worker": "ubuntu",
-    #     "dependency_name": 'media-driver',
-    #     # Builder is enabled for all branches
-    #     'triggers': [{'repositories': PRODUCTION_REPOS,
-    #                   'branches': lambda branch: True,
-    #                   'builders': ['build-libva', 'build-gmmlib']}]
-    # },
+    "build-driver-clang-9.0": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER_CLANG.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "clang",
+        "compiler_version": "9",
+        "worker": "ubuntu",
+        "dependency_name": 'media-driver',
+        # Builder is enabled for all branches
+        'triggers': [{'repositories': PRODUCTION_REPOS,
+                      'branches': lambda branch: True,
+                      'builders': ['build-libva', 'build-gmmlib']}]
+    },
 
     "build-driver-debug": {
         "factory": FACTORIES.init_build_factory,
@@ -345,7 +345,7 @@ BUILDERS = {
                               target_branch or branch))}]
     },
 
-    "build-clang-8.0": {
+    "build-clang-9.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
@@ -353,7 +353,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "clang",
-        "compiler_version": "8",
+        "compiler_version": "9",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
         'triggers': [{'builders': ['build-libva'],
