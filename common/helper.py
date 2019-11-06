@@ -124,7 +124,7 @@ class Product_type(Enum):
     # public MediaSDK
     PUBLIC_WINDOWS = 'public_windows'
     PUBLIC_LINUX = 'public_linux'
-    PUBLIC_LINUX_CLANG = 'public_linux_clang_8.0'
+    PUBLIC_LINUX_CLANG = 'public_linux_clang_9.0'
     PUBLIC_LINUX_GCC_LATEST = 'public_linux_gcc_9.2'
     PUBLIC_LINUX_API_NEXT = 'public_linux_api_next'
 
@@ -136,7 +136,7 @@ class Product_type(Enum):
 
     # public Media-Driver
     PUBLIC_LINUX_DRIVER = 'public_linux_driver'
-    PUBLIC_LINUX_DRIVER_CLANG = 'public_linux_driver_clang_8.0'
+    PUBLIC_LINUX_DRIVER_CLANG = 'public_linux_driver_clang_9.0'
     PUBLIC_LINUX_DRIVER_GCC_LATEST = 'public_linux_driver_gcc_9.2'
 
     # Components
