@@ -255,9 +255,9 @@ BUILDERS = {
         "worker": "ubuntu",
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
-        'triggers': [{'repositories': PRODUCTION_REPOS,
-                      'branches': lambda branch: True,
-                      'builders': ['build-libva', 'build-gmmlib']}]
+        'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
+                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
+                                                   lambda branch, target_branch: True)}]
     },
 
     "build-driver-debug": {
