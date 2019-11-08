@@ -191,9 +191,8 @@ BUILDERS = {
         "dependency_name": 'ffmpeg',
         # Builder is enabled for all branches
         'triggers': [{'builders': ['build-libva'],
-                      'filter': GithubCommitFilter(
-                          PRODUCTION_REPOS,
-                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
+                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
+                                                   lambda branch, target_branch: True)}]
     },
 
     "build-metrics-calc": {
@@ -206,9 +205,8 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'metrics_calc_lite',
         # Builder is enabled for all branches
-        'triggers': [{'filter': GithubCommitFilter(
-            PRODUCTION_REPOS,
-            lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
+        'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
+                                                   lambda branch, target_branch: True)}]
     },
 
     "build-driver": {
