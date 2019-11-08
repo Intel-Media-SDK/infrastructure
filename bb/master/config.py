@@ -126,8 +126,9 @@ BUILDERS = {
         "dependency_name": 'libva-utils',
         # Builder is enabled for all branches
         'triggers': [{'builders': ["build-libva"],
-                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-gmmlib": {
@@ -191,8 +192,9 @@ BUILDERS = {
         "dependency_name": 'ffmpeg',
         # Builder is enabled for all branches
         'triggers': [{'builders': ['build-libva'],
-                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-metrics-calc": {
@@ -205,8 +207,9 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'metrics_calc_lite',
         # Builder is enabled for all branches
-        'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+        'triggers': [{'filter': GithubCommitFilter(
+            PRODUCTION_REPOS,
+            lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-driver": {
@@ -239,8 +242,9 @@ BUILDERS = {
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
         'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
-                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-driver-clang-9.0": {
@@ -256,8 +260,9 @@ BUILDERS = {
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
         'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
-                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-driver-debug": {
@@ -271,8 +276,9 @@ BUILDERS = {
         "dependency_name": 'media-driver',
         # TODO: create class for triggers
         'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
-                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-driver-release-internal": {
@@ -286,8 +292,9 @@ BUILDERS = {
         "dependency_name": 'media-driver',
         # TODO: create class for triggers
         'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
-                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
     "build-mediasdk": {
