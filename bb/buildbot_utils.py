@@ -50,6 +50,25 @@ class BuildStatus(Enum):
     # In this case buildbot return empty list instead dict with 'result' key
     NOT_STARTED = 99
 
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_finished(self):
+        finished_statuses = [self.PASSED, self.FAILED, self.HAVE_WARNINGS,
+                             self.SKIPPED, self.CANCELLED, self.HAVE_EXEPTION]
+        return self in finished_statuses
+
+    @property
+    def icon(self):
+        icons = {self.PASSED: '\u2705',
+                 self.HAVE_WARNINGS: '\u2705',
+                 self.FAILED: '\u274C',
+                 self.SKIPPED: '\u274C',
+                 self.CANCELLED: '\u274C',
+                 self.HAVE_EXEPTION: '\u274C'}
+        return icons.get(self, '\u2753')
+
 
 @defer.inlineCallbacks
 def get_triggered_builds(build_id, master):
