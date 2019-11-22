@@ -110,6 +110,29 @@ def is_comitter_the_org_member(pull_request, token=None):
     return False
 
 
+def get_data(url, proxy=None, additional_headers=None):
+    """
+    Wrapper for GET request
+    """
+    request = {'url': url, 'method': 'GET',
+               'headers': {'Content-type': 'application/json; charset=UTF-8'}}
+    if additional_headers:
+        request['headers'].update(additional_headers)
+    req = urllib.request.Request(**request)
+    if proxy:
+        req.set_proxy(proxy, 'http')
+    try:
+        response = urllib.request.urlopen(req, context=ssl._create_unverified_context())
+        data = json.loads(response.read().decode('utf8'))
+    except Exception as error:
+        print(f'Can not get info from {url}')
+        print(f'Request json: {request}')
+        print(f'Http proxy: {proxy}')
+        print(f'ERROR: {error}')
+        return None
+    return data
+
+
 def get_pull_request_info(organization, repository, pull_id=None, token=None, proxy=None):
     """
     Gets list of open pull requests. Get one pull request json if pull_id number specified
@@ -122,23 +145,8 @@ def get_pull_request_info(organization, repository, pull_id=None, token=None, pr
     if pull_id:
         pull_request_url += f'/{pull_id}'
 
-    request = {'url': pull_request_url, 'method': 'GET',
-               'headers': {'Content-type': 'application/json; charset=UTF-8'}}
-    if token:
-        request['headers']['Authorization'] = f'token {token}'
-    req = urllib.request.Request(**request)
-    if proxy:
-        req.set_proxy(proxy, 'http')
-
-    try:
-        response = urllib.request.urlopen(req, context=ssl._create_unverified_context())
-    except Exception as error:
-        print(f'Can not get pull info by {pull_request_url}')
-        print(f'Error: {error}')
-        return None
-
-    pull_request = json.loads(response.read().decode('utf8'))
-    return pull_request
+    return get_data(pull_request_url, proxy=proxy,
+                    additional_headers={'Authorization': f'token {token}'} if token else None)
 
 
 class ChangeChecker:
