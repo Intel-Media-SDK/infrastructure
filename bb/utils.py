@@ -42,8 +42,9 @@ class CIService(Enum):
 SKIP_BUILDING_DEPENDENCY_PHRASE = 'REBUILD IS NOT NEEDED'
 SKIP_BUILDING_DEPENDENCY_PROPERTY = 'skip_building_dependency'
 
-# This step name is also used in other buildbot services
-STEP_PACKAGING_NAME = 'packages'
+# This variable is used as step\builder name for displaying links to artifacts
+# Also is used in other buildbot services
+PACKAGES = 'packages'
 
 
 class Mode(Enum):
