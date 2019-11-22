@@ -469,7 +469,15 @@ BUILDERS = {
         'triggers': [{'builders': ['build-mediasdk', 'build-driver', 'build-opencl',
                                    'build-libva-utils'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS, 
-                                                   lambda branch, target_branch: True)}]}
+                                                   lambda branch, target_branch: True)}]},
+
+    "packages": {
+        "factory": FACTORIES.init_package_factory,
+        "worker": "ubuntu",
+        'triggers': [{'builders': ['test-api-next', 'test'],
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) == 'master')}]},
 }
 
 FLOW = factories.Flow(BUILDERS, FACTORIES)
