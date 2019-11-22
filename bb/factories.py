@@ -494,3 +494,17 @@ class Factories:
                                    command=command + [test_stage.value],
                                    workdir=get_path(r"infrastructure/build_scripts")))
         return test_factory
+
+    def init_package_factory(self, factory_params, props):
+        """Displays links to common package for each component"""
+
+        package_factory = self.factory_with_deploying_infrastructure_step(props)
+
+        worker_os = props['os']
+        get_path = bb.utils.get_path_on_os(worker_os)
+
+        steps.ShellCommand(name=bb.utils.STEP_PACKAGING_NAME,
+                           command=[self.run_command[worker_os], 'build_links_summary.py',
+                                    '--manifest', self.get_manifest_path(props)],
+                           workdir=get_path(r"infrastructure/bb"))
+        return package_factory
