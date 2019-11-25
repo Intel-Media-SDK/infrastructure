@@ -504,7 +504,7 @@ class Factories:
         get_path = bb.utils.get_path_on_os(worker_os)
 
         package_factory.append(
-            steps.ShellCommand(name=bb.utils.STEP_PACKAGING_NAME,
+            steps.ShellCommand(name=bb.utils.PACKAGES,
                                command=[self.run_command[worker_os], 'build_links_summary.py',
                                         '--manifest', self.get_manifest_path(props)],
                                workdir=get_path(r"infrastructure/bb")))

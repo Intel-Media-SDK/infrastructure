@@ -21,7 +21,7 @@
 import sys
 
 from bb import factories
-from bb.utils import Mode, CIService, GithubCommitFilter
+from bb.utils import Mode, CIService, GithubCommitFilter, PACKAGES
 
 from common import msdk_secrets
 from common.helper import Product_type, Build_type
@@ -471,7 +471,7 @@ BUILDERS = {
                       'filter': GithubCommitFilter(PRODUCTION_REPOS, 
                                                    lambda branch, target_branch: True)}]},
 
-    "packages": {
+    PACKAGES: {
         "factory": FACTORIES.init_package_factory,
         "worker": "ubuntu",
         'triggers': [{'builders': ['test-api-next', 'test'],
