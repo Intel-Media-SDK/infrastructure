@@ -38,7 +38,8 @@ COMPONENTS_LIST = [
     'libva-utils',
     'gmmlib',
     'ffmpeg',
-    'metrics_calc_lite'
+    'metrics_calc_lite',
+    'opencl_runtime'
 ]
 
 
