@@ -160,7 +160,8 @@ for repo in config.AUTO_UPDATED_REPOSITORIES:
 
 # Web Interface
 c["www"] = dict(port=int(config.PORT),
-                plugins={"console_view": True})
+                plugins={"console_view": True,
+                         "grid_view": True})
 
 # Database
 c["db"] = {"db_url": config.DATABASE_URL}
