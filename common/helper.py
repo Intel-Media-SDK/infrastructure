@@ -309,7 +309,7 @@ def extract_archive(archive_path, extract_to, exclude=None):
         package = tarfile.open(str(archive_path), 'r')
     elif archive_path.suffix == '.gz':
         package = tarfile.open(str(archive_path), 'r:gz')
-    elif archive_path.suffix == '.zip':
+    elif archive_path.suffix == '.zip' or archive_path.suffix == '.appx':
         package = ZipFile(str(archive_path))
     else:
         raise UnsupportedArchiveError(
