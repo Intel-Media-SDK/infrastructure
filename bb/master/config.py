@@ -95,7 +95,7 @@ BUILDERS = {
               # Triggerable is not needed
               "add_triggerable_sheduler": False},
 
-    "build-libva": {
+    "libva": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_libva.py",
         "product_type": Product_type.PUBLIC_LINUX_LIBVA.value,
@@ -112,7 +112,7 @@ BUILDERS = {
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-libva-utils": {
+    "libva-utils": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_libva_utils.py",
         "product_type": Product_type.PUBLIC_LINUX_LIBVA_UTILS.value,
@@ -125,12 +125,12 @@ BUILDERS = {
         # TODO: rename to component_name
         "dependency_name": 'libva-utils',
         # Builder is enabled for all branches
-        'triggers': [{'builders': ["build-libva"],
+        'triggers': [{'builders': ["libva"],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-gmmlib": {
+    "gmmlib": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_gmmlib.py",
         "product_type": Product_type.PUBLIC_LINUX_GMMLIB.value,
@@ -146,7 +146,7 @@ BUILDERS = {
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-igc": {
+    "igc": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_igc.py",
         "product_type": Product_type.PUBLIC_LINUX_IGC.value,
@@ -163,7 +163,7 @@ BUILDERS = {
             lambda branch, target_branch: (target_branch or branch) in ['master', 'intel-mediasdk-19.1'])}]
     },
 
-    "build-opencl": {
+    "opencl": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_opencl.py",
         "product_type": Product_type.PUBLIC_LINUX_OPENCL_RUNTIME.value,
@@ -174,13 +174,13 @@ BUILDERS = {
         "compiler_version": "6.3.1",
         "worker": "centos",
         "dependency_name": 'opencl_runtime',
-        # Builder is enabled for master and intel-mediasdk-19.1, see build-igc
-        'triggers': [{'builders': ['build-igc', 'build-gmmlib'],
+        # Builder is enabled for master and intel-mediasdk-19.1, see igc
+        'triggers': [{'builders': ['igc', 'gmmlib'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-ffmpeg": {
+    "ffmpeg": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_ffmpeg.py",
         "product_type": Product_type.PUBLIC_LINUX_FFMPEG.value,
@@ -190,12 +190,12 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'ffmpeg',
         # Builder is enabled for all branches
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-metrics-calc": {
+    "metrics-calc": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_metrics_calc.py",
         "product_type": Product_type.PUBLIC_LINUX_METRICS_CALC.value,
@@ -209,7 +209,7 @@ BUILDERS = {
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-driver": {
+    "driver": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
@@ -221,12 +221,12 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
-        'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
+        'triggers': [{'builders': ['libva', 'gmmlib'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-driver-gcc-9.2.0": {
+    "driver-gcc-9.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER_GCC_LATEST.value,
@@ -238,13 +238,13 @@ BUILDERS = {
         "worker": "ubuntu",
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
-        'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
+        'triggers': [{'builders': ['libva', 'gmmlib'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
-    "build-driver-clang-9.0": {
+    "driver-clang-9.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER_CLANG.value,
@@ -256,13 +256,13 @@ BUILDERS = {
         "worker": "ubuntu",
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
-        'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
+        'triggers': [{'builders': ['libva', 'gmmlib'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
-    "build-driver-debug": {
+    "driver-debug": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
@@ -272,13 +272,13 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'media-driver',
         # TODO: create class for triggers
-        'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
+        'triggers': [{'builders': ['libva', 'gmmlib'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
-    "build-driver-release-internal": {
+    "driver-release-internal": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER.value,
@@ -288,13 +288,13 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'media-driver',
         # TODO: create class for triggers
-        'triggers': [{'builders': ['build-libva', 'build-gmmlib'],
+        'triggers': [{'builders': ['libva', 'gmmlib'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
-    "build-mediasdk": {
+    "mediasdk": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX.value,
@@ -307,12 +307,12 @@ BUILDERS = {
         "dependency_name": 'mediasdk',
         # Builder is enabled for all branches
         # TODO: create class for triggers
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
 
-    "build-mediasdk-api-next": {
+    "mediasdk-api-next": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT.value,
@@ -324,14 +324,14 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'mediasdk',
         # Builder is enabled for not release branches
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
                               target_branch or branch))}]
     },
 
-    "build-gcc-9.2.0": {
+    "mediasdk-gcc-9.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
@@ -342,14 +342,14 @@ BUILDERS = {
         "compiler_version": "9.2.0",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
                               target_branch or branch))}]
     },
 
-    "build-clang-9.0": {
+    "mediasdk-clang-9.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
@@ -360,7 +360,7 @@ BUILDERS = {
         "compiler_version": "9",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
@@ -372,7 +372,7 @@ BUILDERS = {
     # (needed by embedded systems)
     # see method of building it in product-config
 
-    "build-fastboot": {
+    "mediasdk-fastboot": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT.value,
@@ -384,13 +384,13 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'mediasdk',
         # mss2018_r2 branch not supported building fastboot configuration
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
-    "build-fastboot-gcc-9.2.0": {
+    "mediasdk-fastboot-gcc-9.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
@@ -401,14 +401,14 @@ BUILDERS = {
         "compiler_version": "9.2.0",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
                               target_branch or branch))}]
     },
 
-    "build-mediasdk-api-next-defconfig": {
+    "mediasdk-api-next-defconfig": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_API_NEXT_DEFCONFIG.value,
@@ -419,14 +419,14 @@ BUILDERS = {
         "compiler_version": "6.3.1",
         "worker": "centos_defconfig",
         "dependency_name": 'mediasdk',
-        'triggers': [{'builders': ['build-libva'],
+        'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
                               target_branch or branch))}]
     },
 
-    "build-windows": {
+    "mediasdk-windows": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_windows_public.py",
         "product_type": Product_type.PUBLIC_WINDOWS.value,
@@ -445,15 +445,14 @@ BUILDERS = {
         "product_conf_file": "conf_media_test.py",
         "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX.value}",
         "worker": "centos_test",
-        # build-opencl is dependecy only for master and intel-mediasdk-19.1 branches,
+        # opencl is dependecy only for master and intel-mediasdk-19.1 branches,
         # because for other branches that build doesn't run
-        'triggers': [{'builders': ['build-mediasdk', 'build-driver'],
+        'triggers': [{'builders': ['mediasdk', 'driver'],
                       'filter': GithubCommitFilter(
             PRODUCTION_REPOS,
             lambda branch, target_branch: (target_branch or branch) not in ['master', 'intel-mediasdk-19.1'])},
                      
-                     {'builders': ['build-mediasdk', 'build-driver', 'build-opencl',
-                                   'build-libva-utils'],
+                     {'builders': ['mediasdk', 'driver', 'opencl', 'libva-utils'],
                       'filter': GithubCommitFilter(
             PRODUCTION_REPOS,
             lambda branch, target_branch: (target_branch or branch) in ['master', 'intel-mediasdk-19.1'])}]
@@ -466,8 +465,7 @@ BUILDERS = {
         "product_conf_file": "conf_media_test.py",
         "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX_API_NEXT.value}",
         "worker": "centos_test",
-        'triggers': [{'builders': ['build-mediasdk-api-next', 'build-driver', 'build-opencl',
-                                   'build-libva-utils'],
+        'triggers': [{'builders': ['mediasdk-api-next', 'driver', 'opencl', 'libva-utils'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS, 
                                                    lambda branch, target_branch: True)}]},
 
