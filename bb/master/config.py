@@ -466,7 +466,7 @@ BUILDERS = {
         "product_conf_file": "conf_media_test.py",
         "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX_API_NEXT.value}",
         "worker": "centos_test",
-        'triggers': [{'builders': ['build-mediasdk', 'build-driver', 'build-opencl',
+        'triggers': [{'builders': ['build-mediasdk-api-next', 'build-driver', 'build-opencl',
                                    'build-libva-utils'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS, 
                                                    lambda branch, target_branch: True)}]},
