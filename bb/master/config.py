@@ -372,24 +372,6 @@ BUILDERS = {
     # (needed by embedded systems)
     # see method of building it in product-config
 
-    "mediasdk-fastboot": {
-        "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "conf_linux_public.py",
-        "product_type": Product_type.PUBLIC_LINUX_FASTBOOT.value,
-        "build_type": Build_type.RELEASE.value,
-        "api_latest": False,
-        "fastboot": True,
-        "compiler": "gcc",
-        "compiler_version": "6.3.1",
-        "worker": "centos",
-        "dependency_name": 'mediasdk',
-        # mss2018_r2 branch not supported building fastboot configuration
-        'triggers': [{'builders': ['libva'],
-                      'filter': GithubCommitFilter(
-                          PRODUCTION_REPOS,
-                          lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
-    },
-
     "mediasdk-fastboot-gcc-9.2.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
