@@ -56,19 +56,19 @@ class TestRunner:
     def run_test_case(self, test_case_object, case_id):
 
         err_code = test_case_object.run(case_id)
+        log_string = test_case_object.get_details()
 
         if err_code:
             self.failed += 1
             string_err = 'Fail'
+            print(f'     {string_err}\n{log_string}', end='')
         else:
             self.passed += 1
             string_err = 'OK'
+            print(f'     {string_err}', end='')
 
-        print(f'     {string_err}', end='')
-
-        test_case_object.write_details()
         separator = '='*100
-        log_string = f' \n{string_err}\n{separator}'
+        log_string = f'{log_string} \n{string_err}\n{separator}'
         cfg.LOG.append_text(log_string)
 
 
@@ -104,18 +104,19 @@ class TestCase:
                 return self.err_code
         return self.err_code
 
-    def write_details(self):
+    def get_details(self):
+        log_string = ''
         for stage in self.stages:
             lines = [
                 f'cmd: {stage.path_to_bin} {stage.params}\n\n',
                 stage.log_content,
                 ]
-            log_string = '\n'.join(lines)
-            cfg.LOG.append_text(log_string)
+            log_string += '\n'.join(lines)
             if stage.return_code != 0:
                 log_string_err = f'\nERROR: app failed with return code: {stage.return_code}'
-                cfg.LOG.append_text(log_string_err)
+                log_string += log_string_err
                 break
+        return log_string
 
 
 class TestCaseBitExact(TestCase):
@@ -129,16 +130,16 @@ class TestCaseBitExact(TestCase):
                                         cfg.PATH_TO_IO / f'{case_id:04}.cmp')
         return not self.is_bit_exact
 
-    def write_details(self):
-        TestCase.write_details(self)
+    def get_details(self):
+        log_string = TestCase.get_details(self)
         if not self.err_code:
             log_lines = [
                 'PASS' if self.is_bit_exact else 'FAILED',
                 '---------VERIFICATION---------',
                 'Bit to bit comparing:',
                 ]
-            log_string = '\n'.join(log_lines)
-            cfg.LOG.append_text(log_string)
+            log_string += '\n'.join(log_lines)
+        return log_string
 
 
 class TestCaseErr(TestCase):
@@ -151,8 +152,8 @@ class TestCaseErr(TestCase):
         TestCase.run(self, case_id)
         return self.err_code
 
-    def write_details(self):
-        cfg.LOG.append_text(f'\n{self.err_msg}')
+    def get_details(self):
+        return f'\n{self.err_msg}'
 
 
 class RunnableBinary:
