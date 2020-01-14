@@ -36,7 +36,7 @@ import git
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 from common import helper
 
-YEAR = 2019  # Year of copyright
+YEAR = 2020  # Year of copyright
 FILES_TO_CHECK = ('.h', '.hpp', '.cxx', '.cpp', '.c', '.py') # only file extensions can be added
 SUBSTRING_IS_NOT_FOUND = -1
 
