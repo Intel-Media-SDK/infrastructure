@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2019 Intel Corporation
+# Copyright (c) 2017-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -496,6 +496,25 @@ class ProductState:
 
         git_repo = git.Git(str(repo_path))
         return str(git_repo.rev_list('--count', 'HEAD'))
+
+    @staticmethod
+    def get_revisions_list(repo_path):
+        """
+            Get list of all revisions from current branch
+
+            :param repo_path: Path to a repository
+            :type repo_path: pathlib.Path | String
+
+            :return: Revisions
+            :rtype: List
+        """
+
+        if not repo_path.exists():
+            return []
+
+        git_repo = git.Git(str(repo_path))
+
+        return git_repo.log('--pretty=format:%H').split('\n')
 
 
 @Proxy.with_proxies

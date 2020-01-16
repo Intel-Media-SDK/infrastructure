@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -609,6 +609,10 @@ class BuildGenerator(ConfigGenerator):
         self._log.info('Copy to %s', build_dir)
         self._log.info('Artifacts are available by: %s', build_url)
 
+        last_build_path = build_dir.relative_to(build_root_dir)
+        last_build_file = build_dir.parent.parent / f'last_build_{self._component.build_info.product_type}'
+        is_latest_build = self._is_latest_revision(last_build_file)
+
         # Workaround for copying to samba share on Linux
         # to avoid exceptions while setting Linux permissions.
         _orig_copystat = shutil.copystat
@@ -619,12 +623,33 @@ class BuildGenerator(ConfigGenerator):
         if not self._run_build_config_actions(Stage.COPY.value):
             return False
 
-        if build_state['status'] == "PASS":
-            last_build_path = build_dir.relative_to(build_root_dir)
-            last_build_file = build_dir.parent.parent / f'last_build_{self._component.build_info.product_type}'
+        if build_state['status'] == "PASS" and is_latest_build:
             last_build_file.write_text(str(last_build_path))
 
         return True
+
+    def _is_latest_revision(self, last_build_file):
+        """
+            Check that current revision is latest
+
+            :param last_build_file: Path to last_build_* file
+            :type last_build_file: pathlib.Path
+        """
+
+        try:
+            with last_build_file.open('r') as last_build_path:
+                manifest = Manifest(last_build_file.parents[3] / last_build_path.read() / 'manifest.yml')
+        except Exception:
+            # Create last_build_* file
+            return True
+
+        # Current revision is the latest if revision from last_build_* file exists in local repository
+        repo_path = self._options['REPOS_DIR'] / manifest.event_repo.name
+        rev_list = ProductState.get_revisions_list(repo_path)
+        if manifest.event_repo.revision in rev_list:
+            return True
+
+        return False
 
     def _strip_bins(self):
         """
