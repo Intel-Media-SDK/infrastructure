@@ -132,6 +132,8 @@ class Test(object):
                 self.remove_generated(results, self.results)
             else:
                 print(" - FAIL")
+                with log.fn.open('r') as f:
+                    print(f.read())
                 res['status'] = 'FAIL'
                 log.log('FAIL')
 
