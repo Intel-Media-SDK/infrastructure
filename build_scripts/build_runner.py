@@ -639,14 +639,16 @@ class BuildGenerator(ConfigGenerator):
         try:
             with last_build_file.open('r') as last_build_path:
                 manifest = Manifest(last_build_file.parents[3] / last_build_path.read() / 'manifest.yml')
+                last_repo = manifest.get_component(self._manifest.event_component.name).get_repository(
+                    self._manifest.event_repo.name)
         except Exception:
             # Create last_build_* file
             return True
 
         # Current revision is the latest if revision from last_build_* file exists in local repository
-        repo_path = self._options['REPOS_DIR'] / manifest.event_repo.name
+        repo_path = self._options['REPOS_DIR'] / last_repo.name
         rev_list = ProductState.get_revisions_list(repo_path)
-        if manifest.event_repo.revision in rev_list:
+        if last_repo.revision in rev_list[1:]:
             return True
 
         return False
