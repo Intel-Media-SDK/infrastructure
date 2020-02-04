@@ -509,3 +509,21 @@ class Factories:
                                         '--manifest', self.get_manifest_path(props)],
                                workdir=get_path(r"infrastructure/bb")))
         return package_factory
+
+    def init_updater_factory(self, factory_params, props):
+        """Updates manifest for repos in config.AUTO_UPDATED_REPOSITORIES list"""
+
+        updater_factory = self.factory_with_deploying_infrastructure_step(props)
+
+        worker_os = props['os']
+        get_path = bb.utils.get_path_on_os(worker_os)
+
+        updater_factory.append(
+            steps.ShellCommand(name="update manifest",
+                               command=[self.run_command[worker_os], 'update_version.py',
+                                        '--branch', props['branch'],
+                                        '--revision', props['revision'],
+                                        '--component-name',
+                                        bb.utils.get_repository_name_by_url(props['repository'])],
+                               workdir=get_path(r"infrastructure/bb")))
+        return updater_factory

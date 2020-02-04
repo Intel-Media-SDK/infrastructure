@@ -153,8 +153,9 @@ for repo in config.AUTO_UPDATED_REPOSITORIES:
     c["change_source"].append(GitPoller(
         repourl=repo_url,
         workdir=f"gitpoller-{repo}",
-        branches='refs/heads/master',
+        branches=['master'],
         category="auto_update",
+        change_filter=MediasdkChangeChecker(),
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
 
