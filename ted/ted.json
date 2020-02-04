@@ -1,6 +1,4 @@
 {
-  "libmfx_folder": "$MFX_HOME/lib64",
-
   "streams": [
     {
       "path": "test_stream_176x96.yuv",

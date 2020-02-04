@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,12 +31,9 @@ from smoke_test import hevc_fei_smoke_test
 # constants
 PATH_DIR_NAME = Path(__file__).resolve().parent
 
-MEDIASDK_FOLDER = Path('/opt/intel/mediasdk')
-MEDIASDK_SHARE = MEDIASDK_FOLDER / 'share' / 'mfx'
-
+MEDIASDK_FOLDER = Path('/usr')
 POSSIBLE_SAMPLES_FOLDER = [
-    MEDIASDK_SHARE / 'samples',
-    MEDIASDK_FOLDER / 'samples',
+    MEDIASDK_FOLDER / 'share' / 'mfx' / 'samples',
 ]
 
 MEDIASDK_TOOLS_DIR = MEDIASDK_FOLDER / 'bin'

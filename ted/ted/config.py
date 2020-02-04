@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,11 @@
 
 import pathlib
 
-MEDIASDK_FOLDER = pathlib.Path('/opt/intel/mediasdk')
+MEDIASDK_FOLDER = pathlib.Path('/usr')
 POSSIBLE_SAMPLES_FOLDER = [
     MEDIASDK_FOLDER / 'share' / 'mfx' / 'samples',
-    MEDIASDK_FOLDER / 'samples',
 ]
+
 
 def get_samples_folder():
     for samples_folder in POSSIBLE_SAMPLES_FOLDER:
@@ -36,5 +36,5 @@ def get_samples_folder():
 
     print(f"Samples were not found.")
     print(f"Put samples to the one of the following locations and restart ted:")
-    print(config.POSSIBLE_SAMPLES_FOLDER)
+    print(POSSIBLE_SAMPLES_FOLDER)
     exit(1)
