@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -153,8 +153,9 @@ for repo in config.AUTO_UPDATED_REPOSITORIES:
     c["change_source"].append(GitPoller(
         repourl=repo_url,
         workdir=f"gitpoller-{repo}",
-        branches='refs/heads/master',
+        branches=['master'],
         category="auto_update",
+        change_filter=MediasdkChangeChecker(),
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
 

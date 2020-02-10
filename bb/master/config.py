@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -457,6 +457,13 @@ BUILDERS = {
         'triggers': [{'builders': ['test-api-next', 'test'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) == 'master')}]},
+    
+    "manifest-updater": {
+        "factory": FACTORIES.init_updater_factory,
+        "worker": "ubuntu",
+        'triggers': [{'filter': GithubCommitFilter(
+                          AUTO_UPDATED_REPOSITORIES,
                           lambda branch, target_branch: (target_branch or branch) == 'master')}]},
 }
 
