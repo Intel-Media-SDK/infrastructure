@@ -459,7 +459,7 @@ BUILDERS = {
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) == 'master')}]},
     
-    "manifest-updater": {
+    "update-manifest": {
         "factory": FACTORIES.init_updater_factory,
         "worker": "ubuntu",
         'triggers': [{'filter': GithubCommitFilter(
