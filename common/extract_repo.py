@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -174,6 +174,8 @@ def extract_closed_source_infrastructure(root_dir, branch, commit_id, commit_tim
 
 
 def extract_open_source_infrastructure(root_dir, branch, commit_id, commit_time, manifest):
+    log = logging.getLogger('extract_repo.extract_open_source_infrastructure')
+
     repos = MediaSdkDirectories()
     open_source_product_configs_repo = repos.open_source_product_configs_repo
     open_source_infra_repo = repos.open_source_infrastructure_repo
@@ -196,6 +198,15 @@ def extract_open_source_infrastructure(root_dir, branch, commit_id, commit_time,
     extract_repo(root_repo_dir=root_dir, repo_name=open_source_infra.name,
                  branch=open_source_infra.branch,
                  commit_id=open_source_infra.revision)
+
+    try:
+        log.info(f"Copy secrets")
+        shutil.copyfile(str(pathlib.Path('msdk_secrets.py').absolute()),
+                        str(root_dir/ open_source_infra_repo / 'common' / 'msdk_secrets.py'))
+    except Exception:
+        log.exception('Can not create infrastructure package')
+        # TODO: An exit from script should be in main()
+        exit_script(ErrorCode.CRITICAL)
 
 
 def extract_private_infrastructure(root_dir, branch, commit_id, commit_time, manifest):
