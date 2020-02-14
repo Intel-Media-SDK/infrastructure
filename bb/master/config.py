@@ -458,13 +458,6 @@ BUILDERS = {
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: (target_branch or branch) == 'master')}]},
-    
-    "update-manifest": {
-        "factory": FACTORIES.init_updater_factory,
-        "worker": "ubuntu",
-        'triggers': [{'filter': GithubCommitFilter(
-                          AUTO_UPDATED_REPOSITORIES,
-                          lambda branch, target_branch: (target_branch or branch) == 'master')}]},
 }
 
 FLOW = factories.Flow(BUILDERS, FACTORIES)
