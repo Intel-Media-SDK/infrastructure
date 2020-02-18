@@ -138,6 +138,8 @@ class Product_type(Enum):
     PUBLIC_LINUX_DRIVER = 'public_linux_driver'
     PUBLIC_LINUX_DRIVER_CLANG = 'public_linux_driver_clang_9.0'
     PUBLIC_LINUX_DRIVER_GCC_LATEST = 'public_linux_driver_gcc_9.2'
+    PUBLIC_LINUX_DRIVER_KERNELS_OFF = 'public_linux_driver_kernels_off'
+    PUBLIC_LINUX_DRIVER_NONFREE_KERNELS_OFF = 'public_linux_driver_nonfree_kernels_off'
 
     # Components
     PUBLIC_LINUX_LIBVA = 'public_linux_libva'

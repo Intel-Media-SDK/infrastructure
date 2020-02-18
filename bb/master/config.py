@@ -262,6 +262,42 @@ BUILDERS = {
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
+    # TODO: enable for 20.1+ branches
+    "driver-kernels-off": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER_KERNELS_OFF.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'media-driver',
+        'triggers': [{'builders': ['libva', 'gmmlib'],
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) == 'master')}]
+    },
+
+    # TODO: enable for 20.1+ branches
+    "driver-nonfree-kernels-off": {
+        "factory": FACTORIES.init_build_factory,
+        "product_conf_file": "conf_media_driver.py",
+        "product_type": Product_type.PUBLIC_LINUX_DRIVER_NONFREE_KERNELS_OFF.value,
+        "build_type": Build_type.RELEASE.value,
+        "api_latest": False,
+        "fastboot": False,
+        "compiler": "gcc",
+        "compiler_version": "6.3.1",
+        "worker": "centos",
+        "dependency_name": 'media-driver',
+        'triggers': [{'builders': ['libva', 'gmmlib'],
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: (target_branch or branch) == 'master')}]
+    },
+
     "driver-debug": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
