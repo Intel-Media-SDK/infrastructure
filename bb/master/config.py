@@ -226,7 +226,7 @@ BUILDERS = {
                                                    lambda branch, target_branch: True)}]
     },
 
-    "driver-gcc-9.2.0": {
+    "driver-gcc-9.2.1": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER_GCC_LATEST.value,
@@ -234,7 +234,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
-        "compiler_version": "9.2.0",
+        "compiler_version": "9.2.1",
         "worker": "ubuntu",
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
@@ -367,7 +367,7 @@ BUILDERS = {
                               target_branch or branch))}]
     },
 
-    "mediasdk-gcc-9.2.0": {
+    "mediasdk-gcc-9.2.1": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_GCC_LATEST.value,
@@ -375,7 +375,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "gcc",
-        "compiler_version": "9.2.0",
+        "compiler_version": "9.2.1",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
         'triggers': [{'builders': ['libva'],
@@ -408,7 +408,7 @@ BUILDERS = {
     # (needed by embedded systems)
     # see method of building it in product-config
 
-    "mediasdk-fastboot-gcc-9.2.0": {
+    "mediasdk-fastboot-gcc-9.2.1": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_FASTBOOT_GCC_LATEST.value,
@@ -416,7 +416,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": True,
         "compiler": "gcc",
-        "compiler_version": "9.2.0",
+        "compiler_version": "9.2.1",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
         'triggers': [{'builders': ['libva'],
