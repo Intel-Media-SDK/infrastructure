@@ -158,9 +158,8 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'intel-graphics-compiler',
         # Builder is enabled for master and intel-mediasdk-19.1
-        'triggers': [{'filter': GithubCommitFilter(
-            PRODUCTION_REPOS,
-            lambda branch, target_branch: (target_branch or branch) in ['master', 'intel-mediasdk-19.1'])}]
+        'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
+                                                   lambda branch, target_branch: True)}]
     },
 
     "opencl": {
@@ -468,12 +467,13 @@ BUILDERS = {
         'triggers': [{'builders': ['mediasdk', 'driver'],
                       'filter': GithubCommitFilter(
             PRODUCTION_REPOS,
-            lambda branch, target_branch: (target_branch or branch) not in ['master', 'intel-mediasdk-19.1'])},
+            lambda branch, target_branch: (target_branch or branch) in ['mss2018_r2'])},
                      
                      {'builders': ['mediasdk', 'driver', 'opencl', 'libva-utils'],
                       'filter': GithubCommitFilter(
             PRODUCTION_REPOS,
-            lambda branch, target_branch: (target_branch or branch) in ['master', 'intel-mediasdk-19.1'])}]
+            lambda branch, target_branch: MediaSdkDirectories.is_release_branch(
+                              target_branch or branch) or ((target_branch or branch) == 'master'))}]
     },
 
     "test-api-next": {
@@ -493,7 +493,12 @@ BUILDERS = {
         'triggers': [{'builders': ['test-api-next', 'test'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
-                          lambda branch, target_branch: (target_branch or branch) == 'master')}]},
+                          lambda branch, target_branch: (target_branch or branch) == 'master')},
+                     {'builders': ['test'],
+                      'filter': GithubCommitFilter(
+                          PRODUCTION_REPOS,
+                          lambda branch, target_branch: MediaSdkDirectories.is_release_branch(
+                              target_branch or branch))}]}
 }
 
 FLOW = factories.Flow(BUILDERS, FACTORIES)
