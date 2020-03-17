@@ -537,7 +537,7 @@ BUILDBOT_TITLE = "Intel® Media CI"
 
 # Don't decrease the POLL_INTERVAL, because Github rate limit can be reached
 # and new api requests will not be performed
-POLL_INTERVAL = 60  # Poll Github for new changes (in seconds)
+POLL_INTERVAL = 120  # Poll Github for new changes (in seconds)
 
 WORKER_PASS = msdk_secrets.WORKER_PASS
 DATABASE_URL = f"postgresql://buildbot:{msdk_secrets.DATABASE_PASSWORD}@localhost/buildbot"
