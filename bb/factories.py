@@ -371,28 +371,30 @@ class Factories:
                          '--build-event', props['event_type'],
                          '--commit-time', buildbot_utils.get_event_creation_time] +
                         (['--target-branch', props['target_branch']] if props.hasProperty('target_branch') else []),
-                workdir=get_path(r'infrastructure/build_scripts')),
+                workdir=get_path(r'infrastructure/build_scripts'))])
 
-            steps.ShellCommand(
-                name='check author name and email',
-                command=[self.run_command[worker_os], 'check_author.py',
-                         '--repo-path',
-                         util.Interpolate(
-                             get_path(rf'%(prop:builddir)s/repositories/{repository_name}')),
-                         '--revision', util.Interpolate('%(prop:revision)s')],
-                workdir=get_path(r'infrastructure/pre_commit_checks')),
+        if props['event_type'] == 'pre_commit':
+            trigger_factory.extend([
+                steps.ShellCommand(
+                    name='check author name and email',
+                    command=[self.run_command[worker_os], 'check_author.py',
+                             '--repo-path',
+                             util.Interpolate(
+                                 get_path(rf'%(prop:builddir)s/repositories/{repository_name}')),
+                             '--revision', util.Interpolate('%(prop:revision)s')],
+                    workdir=get_path(r'infrastructure/pre_commit_checks')),
 
-            steps.ShellCommand(
-                name='check copyright',
-                command=[self.run_command[worker_os], 'check_copyright.py',
-                         '--repo-path',
-                         util.Interpolate(
-                             get_path(f'%(prop:builddir)s/repositories/{repository_name}')),
-                         '--commit-id', util.Interpolate(r'%(prop:revision)s'),
-                         '--report-path',
-                         util.Interpolate(
-                             get_path(r'%(prop:builddir)s/checks/pre_commit_checks.json'))],
-                workdir=get_path(r'infrastructure/pre_commit_checks/check_copyright'))])
+                steps.ShellCommand(
+                    name='check copyright',
+                    command=[self.run_command[worker_os], 'check_copyright.py',
+                             '--repo-path',
+                             util.Interpolate(
+                                 get_path(f'%(prop:builddir)s/repositories/{repository_name}')),
+                             '--commit-id', util.Interpolate(r'%(prop:revision)s'),
+                             '--report-path',
+                             util.Interpolate(
+                                 get_path(r'%(prop:builddir)s/checks/pre_commit_checks.json'))],
+                    workdir=get_path(r'infrastructure/pre_commit_checks/check_copyright'))])
 
         files = props.build.allFiles()
         for file_name in files:
