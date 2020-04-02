@@ -108,7 +108,11 @@ BUILDERS = {
         # TODO: rename to component_name
         "dependency_name": 'libva',
         # Builder is enabled for all branches
-        'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
+        # TODO: remove gmmlib as dependency
+        # This is workaround to mitigate the problem with build chains scheduling, when some build
+        # may not be triggered if they have 2 or more dependent builds which finished together.
+        'triggers': [{'builders': ["gmmlib"],
+                      'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
 
