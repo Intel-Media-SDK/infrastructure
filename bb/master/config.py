@@ -516,16 +516,24 @@ WORKERS = {
     "centos": {
         "b-1-10": {"os": OsType.linux},
         "b-1-14": {"os": OsType.linux},
-        "b-1-22": {"os": OsType.linux}
+        "b-1-22": {"os": OsType.linux},
+        "CentOS-7.4-bbx-1": {"os": OsType.linux},
+        "CentOS-7.4-bbx-2": {"os": OsType.linux},
+        "CentOS-7.4-bbx-3": {"os": OsType.linux},
     },
     "centos_defconfig": {
         # Workaroud for running 'trigger' builder in parallel with build
         "b-1-23": {"os": OsType.linux, 'max_builds': 2},
+        "CentOS-7.4-defconfig-bbx": {"os": OsType.linux, 'max_builds': 2},
     },
     "ubuntu": {
         "b-1-18": {"os": OsType.linux},
         "b-1-18aux": {"os": OsType.linux},
-        "b-1-24": {"os": OsType.linux}
+        "b-1-24": {"os": OsType.linux},
+        "Ubuntu-18.04-bbx-1": {"os": OsType.linux},
+        "Ubuntu-18.04-bbx-2": {"os": OsType.linux},
+        "Ubuntu-18.04-bbx-3": {"os": OsType.linux},
+
     },
     "centos_test": {
         "t-1-17": {"os": OsType.linux},
