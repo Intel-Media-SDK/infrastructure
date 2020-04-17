@@ -99,6 +99,7 @@ class Product_type(Enum):
     CLOSED_WINDOWS_SW_LIB = 'closed_windows_sw_lib'
     CLOSED_WINDOWS_MFTS = 'closed_windows_mfts'
     CLOSED_WINDOWS_UWP = 'closed_windows_uwp'
+    CLOSED_WINDOWS_VA = 'closed_windows_va'
     CLOSED_LINUX = 'closed_linux'
     CLOSED_LINUX_TOOLS = 'closed_linux_tools'
     CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
