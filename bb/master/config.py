@@ -150,21 +150,21 @@ BUILDERS = {
                                                    lambda branch, target_branch: True)}]
     },
 
-    "igc": {
-        "factory": FACTORIES.init_build_factory,
-        "product_conf_file": "conf_igc.py",
-        "product_type": Product_type.PUBLIC_LINUX_IGC.value,
-        "build_type": Build_type.RELEASE.value,
-        "api_latest": False,
-        "fastboot": False,
-        "compiler": "gcc",
-        "compiler_version": "6.3.1",
-        "worker": "centos",
-        "dependency_name": 'intel-graphics-compiler',
-        # Builder is enabled for master and intel-mediasdk-19.1
-        'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
-                                                   lambda branch, target_branch: True)}]
-    },
+    # "igc": {
+    #     "factory": FACTORIES.init_build_factory,
+    #     "product_conf_file": "conf_igc.py",
+    #     "product_type": Product_type.PUBLIC_LINUX_IGC.value,
+    #     "build_type": Build_type.RELEASE.value,
+    #     "api_latest": False,
+    #     "fastboot": False,
+    #     "compiler": "gcc",
+    #     "compiler_version": "6.3.1",
+    #     "worker": "centos",
+    #     "dependency_name": 'intel-graphics-compiler',
+    #     # Builder is enabled for master and intel-mediasdk-19.1
+    #     'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
+    #                                                lambda branch, target_branch: True)}]
+    # },
 
     "opencl": {
         "factory": FACTORIES.init_build_factory,
@@ -178,7 +178,7 @@ BUILDERS = {
         "worker": "centos",
         "dependency_name": 'opencl_runtime',
         # Builder is enabled for master and intel-mediasdk-19.1, see igc
-        'triggers': [{'builders': ['igc', 'gmmlib'],
+        'triggers': [{'builders': ['gmmlib'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
     },
