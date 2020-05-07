@@ -105,6 +105,7 @@ class Product_type(Enum):
     CLOSED_LINUX_OPEN_SOURCE = 'closed_linux_open_source'
     CLOSED_EMBEDDED = 'closed_embedded'
     CLOSED_LINUX_UBUNTU = 'closed_linux_ubuntu'
+    CLOSED_LINUX_VA = 'closed_linux_va'
 
     # Product configuration for this product type is the same as for PRIVATE_ANDROID
     # The duplicate is needed for getting correct link for build artifacts, because
