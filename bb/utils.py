@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,10 @@ SKIP_BUILDING_DEPENDENCY_PROPERTY = 'skip_building_dependency'
 # Also is used in other buildbot services
 PACKAGES = 'packages'
 
+# This variables is used to limit the number of commits to build
+MAX_NUM_COMMITS = 20
+MAX_NUM_COMMITS_RELEASE_BRANCH = 10
+
 
 class Mode(Enum):
     PRODUCTION_MODE = "production_mode"
@@ -86,6 +90,24 @@ def get_root_build_id(build_id, master):
     if parent_build_id is not None:
         build_id = yield get_root_build_id(parent_build_id, master)
     defer.returnValue(build_id)
+
+
+def is_limited_number_of_commits(pull_request, token=None):
+    """
+    Checks if number of commits does not exceed the specified value
+    """
+    github_commits_url = pull_request['commits_url']
+
+    data = get_data(github_commits_url,
+                    additional_headers={'Authorization': f'token {token}'} if token else None)
+    number_of_commits = len(data)
+    branch = pull_request['base']['ref']
+    if number_of_commits > MAX_NUM_COMMITS:
+        return False
+    if number_of_commits > MAX_NUM_COMMITS_RELEASE_BRANCH and \
+            (MediaSdkDirectories.is_release_branch(branch) or branch == 'master'):
+        return False
+    return True
 
 
 def is_comitter_the_org_member(pull_request, token=None):
@@ -188,11 +210,12 @@ class ChangeChecker:
     def pull_request_filter(self, pull_request, files):
         """
         Special entry point for filtration pull requests.
-        By default checks membership of committer in organization.
+        By default checks membership of committer in organization and number of commits.
         :return None if change is not needed or dict with properties otherwise
         """
 
-        is_request_needed = is_comitter_the_org_member(pull_request, self.token)
+        is_request_needed = is_comitter_the_org_member(pull_request, self.token) and \
+                            is_limited_number_of_commits(pull_request, self.token)
         if is_request_needed:
             return self.default_properties
         return None
