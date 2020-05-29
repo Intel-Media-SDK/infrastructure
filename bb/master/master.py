@@ -103,25 +103,28 @@ c["change_source"] = []
 
 class MediasdkChangeChecker(bb.utils.ChangeChecker):
     def pull_request_filter(self, pull_request, files):
-        return self.default_properties
+        is_request_needed = bb.utils.is_limited_number_of_commits(pull_request, self.token)
+        if is_request_needed:
+            return self.default_properties
+        return None
 
 
 CI_REPOSITORIES = [
     {'name': config.MEDIASDK_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
-     # All changes
+     # All changes with limited number of commits
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.DRIVER_REPO,
      'organization': config.INTEL_ORGANIZATION,
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.PRODUCT_CONFIGS_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
-     # Pull requests only for members of Intel-Media-SDK organization
+     # Pull requests only for members of Intel-Media-SDK organization with limited number of commits
      # This filter is needed for security, because via product configs can do everything
      'change_filter': bb.utils.ChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.INFRASTRUCTURE_REPO,
      'organization': config.MEDIASDK_ORGANIZATION,
-     # All changes
+     # All changes with limited number of commits
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
 ]
 
