@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import sys
+import re
 
 from bb import factories
 from bb.utils import Mode, CIService, GithubCommitFilter, PACKAGES
@@ -381,11 +382,12 @@ BUILDERS = {
         "compiler_version": "10",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
+        # Enabled for all non release branches and for release branches staring from intel-mediasdk-20.*
         'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
-                              target_branch or branch))}]
+                              target_branch or branch) or re.match('^intel-media(sdk)?-2\d+\.\w', (target_branch or branch)))}]
     },
 
     "mediasdk-clang-10.0": {
@@ -399,11 +401,12 @@ BUILDERS = {
         "compiler_version": "10",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
+        # Enabled for all non release branches and for release branches staring from intel-mediasdk-20.*
         'triggers': [{'builders': ['libva'],
                       'filter': GithubCommitFilter(
                           PRODUCTION_REPOS,
                           lambda branch, target_branch: not MediaSdkDirectories.is_release_branch(
-                              target_branch or branch))}]
+                              target_branch or branch) or re.match('^intel-media(sdk)?-2\d+\.\w', (target_branch or branch)))}]
     },
 
     # Fastboot is a special configuration of MediaSDK, when we 
