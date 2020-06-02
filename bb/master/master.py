@@ -82,9 +82,13 @@ class GitHubStatusPushFilter(reporters.GitHubStatusPush):
         repository = bb.utils.get_repository_name_by_url(build['properties']['repository'][0])
         # Status for AUTO_UPDATED_REPOSITORIES will not sent to not affect review requests
         # in these repositories
-        if repository not in config.AUTO_UPDATED_REPOSITORIES:
+        # TODO: remove workaround for libva notifications
+        if repository not in config.AUTO_UPDATED_REPOSITORIES and repository != config.LIBVA_REPO:
             if self.builders is not None:
                 return build['builder']['name'] in self.builders
+            return True
+        # Enabled libva builder notifications for libva repository only
+        if repository == config.LIBVA_REPO and build['builder']['name'] == config.LIBVA_REPO:
             return True
         return False
 
@@ -115,6 +119,9 @@ CI_REPOSITORIES = [
      # All changes with limited number of commits
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.DRIVER_REPO,
+     'organization': config.INTEL_ORGANIZATION,
+     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+    {'name': config.LIBVA_REPO,
      'organization': config.INTEL_ORGANIZATION,
      'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
     {'name': config.PRODUCT_CONFIGS_REPO,
@@ -150,6 +157,9 @@ for repo in CI_REPOSITORIES:
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
 
+
+# TODO: All repos should be declared in cycle above, but need to improve filtration changes
+#        to avoid affecting efficiency
 for repo in config.AUTO_UPDATED_REPOSITORIES:
     repo_url = f"https://github.com/{config.INTEL_ORGANIZATION}/{repo}.git"
 

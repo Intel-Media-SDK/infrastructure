@@ -55,7 +55,7 @@ GMMLIB_REPO = 'gmmlib'
 # We haven't CI for these repositories, but we update its revisions in manifest automatically.
 # This feature should work for master branch only.
 
-AUTO_UPDATED_REPOSITORIES = [LIBVA_REPO, GMMLIB_REPO]
+AUTO_UPDATED_REPOSITORIES = [GMMLIB_REPO]
 
 PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO, DRIVER_REPO]
 
@@ -114,7 +114,16 @@ BUILDERS = {
         # may not be triggered if they have 2 or more dependent builds which finished together.
         'triggers': [{'builders': ["gmmlib"],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS,
+                                                   lambda branch, target_branch: True)},
+                     {'filter': GithubCommitFilter([LIBVA_REPO],
                                                    lambda branch, target_branch: True)}]
+    },
+
+    'update-manifest': {
+        "factory": FACTORIES.auto_update_manifest_factory,
+        "worker": "centos",
+        "triggers": [{'filter': GithubCommitFilter(AUTO_UPDATED_REPOSITORIES + [LIBVA_REPO],
+                                                   lambda branch, target_branch: branch == 'master')}]
     },
 
     "libva-utils": {
