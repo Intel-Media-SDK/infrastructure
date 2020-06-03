@@ -67,7 +67,7 @@ TRIGGER = 'trigger'
 DEPLOYING_INFRASTRUCTURE = True
 
 FACTORIES = factories.Factories(CURRENT_MODE, DEPLOYING_INFRASTRUCTURE,
-                                PYTHON_EXECUTABLE, CI_SERVICE, AUTO_UPDATED_REPOSITORIES)
+                                PYTHON_EXECUTABLE, CI_SERVICE)
 
 """
 Specification of BUILDERS:
