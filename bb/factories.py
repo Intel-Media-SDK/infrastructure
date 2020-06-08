@@ -361,7 +361,9 @@ class Factories:
                         (['--target-branch', props['target_branch']] if props.hasProperty('target_branch') else []),
                 workdir=get_path(r'infrastructure/build_scripts'))])
 
-        if props['event_type'] == 'pre_commit':
+        # TODO: List of repos should be imported from config
+        if props['event_type'] == 'pre_commit' and repository_name in ['MediaSDK', 'infrastructure',
+                                                                       'product-configs']:
             trigger_factory.extend([
                 steps.ShellCommand(
                     name='check author name and email',
