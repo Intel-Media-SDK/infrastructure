@@ -253,12 +253,11 @@ class Factories:
     Implemented as class for sharing common parameters between all factories.
     """
 
-    def __init__(self, mode, deploying_infrastructure, run_command, ci_service, auto_updated_repos):
+    def __init__(self, mode, deploying_infrastructure, run_command, ci_service):
         self.mode = mode
         self.deploying_infrastructure = deploying_infrastructure
         self.run_command = run_command
         self.ci_service = ci_service
-        self.auto_updated_repos = auto_updated_repos
 
     def dynamic_factory(self, default_factory, build_specification):
         """
@@ -348,17 +347,6 @@ class Factories:
 
         repository_name = bb.utils.get_repository_name_by_url(props['repository'])
 
-        # Additional checks for for auto-uptdated repositories are not needed.
-        if repository_name in self.auto_updated_repos:
-            trigger_factory.append(steps.ShellCommand(
-                name=f'update manifest',
-                command=[self.run_command[worker_os], 'update_version.py',
-                         '--branch', util.Interpolate('%(prop:branch)s'),
-                         '--revision', util.Interpolate('%(prop:revision)s'),
-                         '--component-name', repository_name],
-                workdir=get_path(r'infrastructure/common')))
-            return trigger_factory
-        
         trigger_factory.extend([
             steps.ShellCommand(
                 name='create manifest',
@@ -373,7 +361,9 @@ class Factories:
                         (['--target-branch', props['target_branch']] if props.hasProperty('target_branch') else []),
                 workdir=get_path(r'infrastructure/build_scripts'))])
 
-        if props['event_type'] == 'pre_commit':
+        # TODO: List of repos should be imported from config
+        if props['event_type'] == 'pre_commit' and repository_name in ['MediaSDK', 'infrastructure',
+                                                                       'product-configs']:
             trigger_factory.extend([
                 steps.ShellCommand(
                     name='check author name and email',
@@ -407,6 +397,23 @@ class Factories:
                                        command=['pylint', file_name, '--exit-zero'],
                                        workdir=get_path(f'repositories/{repository_name}')))
         return trigger_factory
+
+    def auto_update_manifest_factory(self, build_specification, props):
+        updater_factory = self.factory_with_deploying_infrastructure_step(props)
+        worker_os = props['os']
+        get_path = bb.utils.get_path_on_os(worker_os)
+
+        repository_name = bb.utils.get_repository_name_by_url(props['repository'])
+
+        # Additional checks for for auto-uptdated repositories are not needed.
+        updater_factory.append(steps.ShellCommand(
+            name=f'update manifest',
+            command=[self.run_command[worker_os], 'update_version.py',
+                     '--branch', util.Interpolate('%(prop:branch)s'),
+                     '--revision', util.Interpolate('%(prop:revision)s'),
+                     '--component-name', repository_name],
+            workdir=get_path(r'infrastructure/common')))
+        return updater_factory
 
     def init_build_factory(self, build_specification, props):
         conf_file = build_specification["product_conf_file"]
