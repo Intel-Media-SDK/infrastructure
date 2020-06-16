@@ -104,7 +104,6 @@ TEST_CASES_DICT = {
                                  f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
                                  f'-mv_thres 70 -split_thres 70'}
                         ],
-
                     'EMVP_multiRef ME=quarter-pixel cu_size32':
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
@@ -144,7 +143,6 @@ TEST_CASES_DICT = {
                                  f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
                                  f'-mv_thres 70 -split_thres 70'}
                         ],
-
                     'EMVP_singleRef ME=quarter-pixel cu_size16':
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
@@ -185,7 +183,6 @@ TEST_CASES_DICT = {
                                  f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
                                  f'-mv_thres 70 -split_thres 70'}
                         ],
-
                     'EMVP_multiRef ME=quarter-pixel cu_size16':
                         [
                             {'case type': hevc_fei_smoke_test.TestCase},
@@ -229,170 +226,166 @@ TEST_CASES_DICT = {
                 },
             'gpb:off':
                 {
-                    #TODO: Remove comments when https://jira01.devtools.intel.com/browse/MDP-50559 will be fixed
-                    # 'EMVP_singleRef ME=quarter-pixel cu_size32':
-                    #     [
-                    #         {'case type': hevc_fei_smoke_test.TestCase},
-                    #         {'ASG':
-                    #              f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-i {PATH_TEST_STREAM} '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-o {{path_to_io}}.prmvmvp '
-                    #              f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
-                    #              f'-min_log2_cu_size 5 -sub_pel_mode 3 '
-                    #              f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-                    #         {'SAMPLE_FEI':
-                    #              f'-i {{path_to_io}}.prmvmvp '
-                    #              f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-f 25 -qp 2 -g 2 '
-                    #              f'-GopRefDist 1 -gpb:off -NumRefFrame 1 -NumRefActiveP 1 '
-                    #              f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
-                    #              f'-mvpin {{path_to_io}}_mvmvp.mvin'},
-                    #         {'FEI_EXTRACTOR':
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'{{path_to_io}}_mvmvp.ctustat '
-                    #              f'{{path_to_io}}_mvmvp.custat'},
-                    #         {'ASG':
-                    #              f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
-                    #              f'-min_log2_cu_size 5 -sub_pel_mode 3 '
-                    #              f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
-                    #              f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
-                    #              f'-mv_thres 70 -split_thres 70'}
-                    #     ],
-                    #
-                    # 'EMVP_multiRef ME=quarter-pixel cu_size32':
-                    #     [
-                    #         {'case type': hevc_fei_smoke_test.TestCase},
-                    #         {'ASG':
-                    #              f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-i {PATH_TEST_STREAM} '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-o {{path_to_io}}.prmvmvp '
-                    #              f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
-                    #              f'-min_log2_cu_size 5 -sub_pel_mode 3 '
-                    #              f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-                    #         {'SAMPLE_FEI':
-                    #              f'-i {{path_to_io}}.prmvmvp '
-                    #              f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
-                    #              f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
-                    #              f'-NumPredictorsL1 4 -EncodedOrder -encode '
-                    #              f'-mvpin {{path_to_io}}_mvmvp.mvin'},
-                    #         {'FEI_EXTRACTOR':
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'{{path_to_io}}_mvmvp.ctustat '
-                    #              f'{{path_to_io}}_mvmvp.custat'},
-                    #         {'ASG':
-                    #              f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
-                    #              f'-min_log2_cu_size 5 -sub_pel_mode 3 '
-                    #              f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
-                    #              f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
-                    #              f'-mv_thres 70 -split_thres 70'}
-                    #     ],
-                    #
-                    # 'EMVP_singleRef ME=quarter-pixel cu_size16':
-                    #     [
-                    #         {'case type': hevc_fei_smoke_test.TestCase},
-                    #         {'ASG':
-                    #              f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-i {PATH_TEST_STREAM} '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-o {{path_to_io}}.prmvmvp '
-                    #              f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
-                    #              f'-min_log2_cu_size 4 -sub_pel_mode 3 '
-                    #              f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-                    #         {'SAMPLE_FEI':
-                    #              f'-i {{path_to_io}}.prmvmvp '
-                    #              f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-f 25 -qp 2 -g 2 -GopRefDist 1 -gpb:off '
-                    #              f'-NumRefFrame 1 -NumRefActiveP 1 -NumPredictorsL0 4 '
-                    #              f'-NumPredictorsL1 4 -EncodedOrder -encode '
-                    #              f'-mvpin {{path_to_io}}_mvmvp.mvin'},
-                    #         {'FEI_EXTRACTOR':
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'{{path_to_io}}_mvmvp.ctustat '
-                    #              f'{{path_to_io}}_mvmvp.custat'},
-                    #         {'ASG':
-                    #              f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
-                    #              f'-min_log2_cu_size 4 -sub_pel_mode 3 '
-                    #              f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
-                    #              f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
-                    #              f'-mv_thres 70 -split_thres 70'}
-                    #     ],
-                    #
-                    # 'EMVP_multiRef ME=quarter-pixel cu_size16':
-                    #     [
-                    #         {'case type': hevc_fei_smoke_test.TestCase},
-                    #         {'ASG':
-                    #              f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-i {PATH_TEST_STREAM} '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-o {{path_to_io}}.prmvmvp '
-                    #              f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
-                    #              f'-min_log2_cu_size 4 -sub_pel_mode 3 '
-                    #              f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-                    #         {'SAMPLE_FEI':
-                    #              f'-i {{path_to_io}}.prmvmvp '
-                    #              f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
-                    #              f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
-                    #              f'-NumPredictorsL1 4 -EncodedOrder -encode '
-                    #              f'-mvpin {{path_to_io}}_mvmvp.mvin'},
-                    #         {'FEI_EXTRACTOR':
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'{{path_to_io}}_mvmvp.ctustat '
-                    #              f'{{path_to_io}}_mvmvp.custat'},
-                    #         {'ASG':
-                    #              f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
-                    #              f'-min_log2_cu_size 4 -sub_pel_mode 3 '
-                    #              f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
-                    #              f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
-                    #              f'-mv_thres 70 -split_thres 70'}
-                    #     ]
+                    'EMVP_singleRef ME=quarter-pixel cu_size32':
+                        [
+                            {'case type': hevc_fei_smoke_test.TestCase},
+                            {'ASG':
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
+                            {'SAMPLE_FEI':
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 2 '
+                                 f'-GopRefDist 1 -gpb:off -NumRefFrame 1 -NumRefActiveP 1 '
+                                 f'-NumPredictorsL0 4 -NumPredictorsL1 4 -EncodedOrder -encode '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
+                            {'FEI_EXTRACTOR':
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}_mvmvp.custat'},
+                            {'ASG':
+                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 3 '
+                                 f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
+                                 f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
+                                 f'-mv_thres 70 -split_thres 70'}
+                        ],
+                    'EMVP_multiRef ME=quarter-pixel cu_size32':
+                        [
+                            {'case type': hevc_fei_smoke_test.TestCase},
+                            {'ASG':
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
+                            {'SAMPLE_FEI':
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
+                                 f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
+                                 f'-NumPredictorsL1 4 -EncodedOrder -encode '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
+                            {'FEI_EXTRACTOR':
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}_mvmvp.custat'},
+                            {'ASG':
+                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 3 '
+                                 f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
+                                 f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
+                                 f'-mv_thres 70 -split_thres 70'}
+                        ],
+                    'EMVP_singleRef ME=quarter-pixel cu_size16':
+                        [
+                            {'case type': hevc_fei_smoke_test.TestCase},
+                            {'ASG':
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
+                            {'SAMPLE_FEI':
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 2 -GopRefDist 1 -gpb:off '
+                                 f'-NumRefFrame 1 -NumRefActiveP 1 -NumPredictorsL0 4 '
+                                 f'-NumPredictorsL1 4 -EncodedOrder -encode '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
+                            {'FEI_EXTRACTOR':
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}_mvmvp.custat'},
+                            {'ASG':
+                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 2 -x 1 -num_active_P 1 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
+                                 f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
+                                 f'-mv_thres 70 -split_thres 70'}
+                        ],
+                    'EMVP_multiRef ME=quarter-pixel cu_size16':
+                        [
+                            {'case type': hevc_fei_smoke_test.TestCase},
+                            {'ASG':
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
+                            {'SAMPLE_FEI':
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
+                                 f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
+                                 f'-NumPredictorsL1 4 -EncodedOrder -encode '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
+                            {'FEI_EXTRACTOR':
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}_mvmvp.custat'},
+                            {'ASG':
+                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -sub_pel_mode 3 '
+                                 f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
+                                 f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
+                                 f'-mv_thres 70 -split_thres 70'}
+                        ]
                 }
         },
         'B frames': {
@@ -439,46 +432,46 @@ TEST_CASES_DICT = {
                                  f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
                                  f'-mv_thres 50 -split_thres 50 -numpredictors 4'}
                         ],
-                    # 'EMVP_multiRef ME=integer cu_size32':
-                    #     [
-                    #         {'case type': hevc_fei_smoke_test.TestCase},
-                    #         {'ASG':
-                    #              f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-i {PATH_TEST_STREAM} '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-o {{path_to_io}}.prmvmvp '
-                    #              f'-g 32 -x 3 -num_active_P 1 -num_active_BL0 2 '
-                    #              f'-num_active_BL1 1 -r 4 -log2_ctu_size 5 -no_cu_to_pu_split '
-                    #              f'-max_log2_cu_size 5 -min_log2_cu_size 5 -sub_pel_mode 0 '
-                    #              f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-                    #         {'SAMPLE_FEI':
-                    #              f'-i {{path_to_io}}.prmvmvp '
-                    #              f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-f 25 -qp 2 -g 32 -GopRefDist 4 -gpb:on '
-                    #              f'-NumRefFrame 3 -NumRefActiveP 1 -NumRefActiveBL0 2 '
-                    #              f'-NumRefActiveBL1 1 -NumPredictorsL0 4 -NumPredictorsL1 4'
-                    #              f' -EncodedOrder -encode -mvpin {{path_to_io}}_mvmvp.mvin'},
-                    #         {'FEI_EXTRACTOR':
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'{{path_to_io}}_mvmvp.ctustat '
-                    #              f'{{path_to_io}}_mvmvp.custat'},
-                    #         {'ASG':
-                    #              f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-g 32 -x 3 -num_active_P 1 -num_active_BL0 2 -num_active_BL1 1 '
-                    #              f'-r 4 -log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
-                    #              f'-min_log2_cu_size 5 -sub_pel_mode 0 '
-                    #              f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
-                    #              f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
-                    #              f'-mv_thres 50 -split_thres 50 -numpredictors 4'}
-                    #     ]
+                    'EMVP_multiRef ME=integer cu_size32':
+                        [
+                            {'case type': hevc_fei_smoke_test.TestCase},
+                            {'ASG':
+                                 f'-generate -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 32 -x 3 -num_active_P 1 -num_active_BL0 2 '
+                                 f'-num_active_BL1 1 -r 4 -log2_ctu_size 5 -no_cu_to_pu_split '
+                                 f'-max_log2_cu_size 5 -min_log2_cu_size 5 -sub_pel_mode 0 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
+                            {'SAMPLE_FEI':
+                                 f'-i {{path_to_io}}.prmvmvp '
+                                 f'-o {{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 32 -GopRefDist 4 -gpb:on '
+                                 f'-NumRefFrame 3 -NumRefActiveP 1 -NumRefActiveBL0 2 '
+                                 f'-NumRefActiveBL1 1 -NumPredictorsL0 4 -NumPredictorsL1 4'
+                                 f' -EncodedOrder -encode -mvpin {{path_to_io}}_mvmvp.mvin'},
+                            {'FEI_EXTRACTOR':
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}_mvmvp.custat'},
+                            {'ASG':
+                                 f'-verify -gen_inter -gen_mv -gen_pred -gen_split '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 32 -x 3 -num_active_P 1 -num_active_BL0 2 -num_active_BL1 1 '
+                                 f'-r 4 -log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 5 '
+                                 f'-min_log2_cu_size 5 -sub_pel_mode 0 '
+                                 f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
+                                 f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
+                                 f'-mv_thres 50 -split_thres 50 -numpredictors 4'}
+                        ]
                 }
         },
         'P frames \tIntra_inter_mix': {
@@ -527,46 +520,46 @@ TEST_CASES_DICT = {
                 },
             'gpb:off':
                 {
-                    # 'EMVP_singleRef ME=integer cu_size16':
-                    #     [
-                    #         {'case type': hevc_fei_smoke_test.TestCase},
-                    #         {'ASG':
-                    #              f'-generate -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
-                    #              f'-i {PATH_TEST_STREAM} '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-o {{path_to_io}}.prmvmvp '
-                    #              f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 -gpb_off '
-                    #              f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
-                    #              f'-mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
-                    #              f'-pred_file {{path_to_io}}_mvmvp.mvin'},
-                    #         {'SAMPLE_FEI':
-                    #              f'-i {{path_to_io}}.prmvmvp -o '
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
-                    #              f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
-                    #              f'-NumPredictorsL1 4 -encode -EncodedOrder '
-                    #              f'-mvpin {{path_to_io}}_mvmvp.mvin'},
-                    #         {'FEI_EXTRACTOR':
-                    #              f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
-                    #              f'{{path_to_io}}_mvmvp.ctustat '
-                    #              f'{{path_to_io}}_mvmvp.custat'},
-                    #         {'ASG':
-                    #              f'-verify -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
-                    #              f'-n {TEST_STREAM.frames} '
-                    #              f'-w {TEST_STREAM.w} '
-                    #              f'-h {TEST_STREAM.h} '
-                    #              f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
-                    #              f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
-                    #              f'-min_log2_cu_size 4 -mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
-                    #              f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
-                    #              f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
-                    #              f'-mv_thres 80 -split_thres 80 -numpredictors 4'}
-                    #     ]
+                    'EMVP_singleRef ME=integer cu_size16':
+                        [
+                            {'case type': hevc_fei_smoke_test.TestCase},
+                            {'ASG':
+                                 f'-generate -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
+                                 f'-i {PATH_TEST_STREAM} '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-o {{path_to_io}}.prmvmvp '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -log2_ctu_size 5 -gpb_off '
+                                 f'-no_cu_to_pu_split -max_log2_cu_size 4 -min_log2_cu_size 4 '
+                                 f'-mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
+                                 f'-pred_file {{path_to_io}}_mvmvp.mvin'},
+                            {'SAMPLE_FEI':
+                                 f'-i {{path_to_io}}.prmvmvp -o '
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-f 25 -qp 2 -g 3 -GopRefDist 1 -gpb:off '
+                                 f'-NumRefFrame 2 -NumRefActiveP 2 -NumPredictorsL0 4 '
+                                 f'-NumPredictorsL1 4 -encode -EncodedOrder '
+                                 f'-mvpin {{path_to_io}}_mvmvp.mvin'},
+                            {'FEI_EXTRACTOR':
+                                 f'{{path_to_io}}.prmvmvp.mvmvp.hevc '
+                                 f'{{path_to_io}}_mvmvp.ctustat '
+                                 f'{{path_to_io}}_mvmvp.custat'},
+                            {'ASG':
+                                 f'-verify -gen_inter -gen_intra -gen_mv -gen_pred -gen_split '
+                                 f'-n {TEST_STREAM.frames} '
+                                 f'-w {TEST_STREAM.w} '
+                                 f'-h {TEST_STREAM.h} '
+                                 f'-g 3 -x 2 -num_active_P 2 -r 1 -gpb_off '
+                                 f'-log2_ctu_size 5 -no_cu_to_pu_split -max_log2_cu_size 4 '
+                                 f'-min_log2_cu_size 4 -mvp_block_size 1 -gpb_off -sub_pel_mode 0 '
+                                 f'-pak_ctu_file {{path_to_io}}_mvmvp.ctustat '
+                                 f'-pak_cu_file {{path_to_io}}_mvmvp.custat '
+                                 f'-mv_thres 80 -split_thres 80 -numpredictors 4'}
+                        ]
                 }
         }
     },
