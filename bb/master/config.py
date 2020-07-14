@@ -477,7 +477,7 @@ BUILDERS = {
         "build_type": Build_type.RELEASE.value,
         "product_conf_file": "conf_media_test.py",
         "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX.value}",
-        "worker": "centos_test",
+        "worker": "ubuntu_test",
         # opencl is dependecy only for master and intel-mediasdk-19.1 branches,
         # because for other branches that build doesn't run
         'triggers': [{'builders': ['mediasdk', 'driver'],
@@ -498,7 +498,7 @@ BUILDERS = {
         "build_type": Build_type.RELEASE.value,
         "product_conf_file": "conf_media_test.py",
         "custom_types": f"mediasdk:{Product_type.PUBLIC_LINUX_API_NEXT.value}",
-        "worker": "centos_test",
+        "worker": "ubuntu_test",
         'triggers': [{'builders': ['mediasdk-api-next', 'driver', 'opencl', 'libva-utils'],
                       'filter': GithubCommitFilter(PRODUCTION_REPOS, 
                                                    lambda branch, target_branch: True)}]},
@@ -540,9 +540,11 @@ WORKERS = {
         "Ubuntu-18_04-bbx-3": {"os": OsType.linux},
 
     },
-    "centos_test": {
+    "ubuntu_test": {
         "t-1-17": {"os": OsType.linux},
-        "t-1-16": {"os": OsType.linux}
+        "t-1-16": {"os": OsType.linux},
+        "os-tst-skl01": {"os": OsType.linux},
+        "os-tst-skl02": {"os": OsType.linux}
     },
 }
 
