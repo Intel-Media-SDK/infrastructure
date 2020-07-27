@@ -216,7 +216,7 @@ BUILDERS = {
         "compiler": "gcc",
         "compiler_version": "6.3.1",
         "worker": "centos",
-        "dependency_name": 'metrics_calc_lite',
+        "dependency_name": 'metrics-calc-lite',
         # Builder is enabled for all branches
         'triggers': [{'filter': GithubCommitFilter(PRODUCTION_REPOS,
                                                    lambda branch, target_branch: True)}]
