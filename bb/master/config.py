@@ -544,7 +544,8 @@ WORKERS = {
         "t-1-17": {"os": OsType.linux},
         "t-1-16": {"os": OsType.linux},
         "os-tst-skl01": {"os": OsType.linux},
-        "os-tst-skl02": {"os": OsType.linux}
+        "os-tst-skl02": {"os": OsType.linux},
+        "os-tst-skl03": {"os": OsType.linux},
     },
 }
 
