@@ -31,16 +31,16 @@ from common.manifest_manager import Manifest, get_build_url
 from common.helper import ErrorCode
 
 
-COMPONENTS_LIST = [
-    'mediasdk',
-    'media-driver',
-    'libva',
-    'libva-utils',
-    'gmmlib',
-    'ffmpeg',
-    'metrics-calc-lite',
-    'opencl_runtime'
-]
+COMPONENTS = {
+    'mediasdk': ['public_linux', 'public_linux_api_next'],
+    'media-driver': ['public_linux_driver'],
+    'libva': ['public_linux_libva'],
+    'libva-utils': ['public_linux_libva_utils'],
+    'gmmlib': ['public_linux_gmmlib'],
+    'ffmpeg': ['public_linux_ffmpeg'],
+    'metrics-calc-lite': ['public_linux_metrics_calc'],
+    'opencl_runtime': ['public_linux_opencl_runtime'],
+}
 
 
 def generate_build_links(manifest):
@@ -57,8 +57,11 @@ def generate_build_links(manifest):
         manifest = Manifest(manifest)
 
         print('*' * 50)
-        for component in COMPONENTS_LIST:
-            print(f'{component}: {get_build_url(manifest, component)}')
+        for component, product_types in COMPONENTS.items():
+            component_info = manifest.get_component(component)
+            for product_type in product_types:
+                component_info.build_info.set_product_type(product_type)
+                print(f'{product_type}: {get_build_url(manifest, component)}')
         print('*' * 50)
     except Exception:
         return False
