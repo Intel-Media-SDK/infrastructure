@@ -227,6 +227,7 @@ class ChangeChecker:
         """
         return self.default_properties
 
+    @defer.inlineCallbacks
     def __call__(self, repository, branch, revision, files, category):
         """
         Redefine __call__ to implement closure api
@@ -239,10 +240,10 @@ class ChangeChecker:
             pull_request = self.get_pull_request(repository, branch)
             self.set_pull_request_default_properties(pull_request, files)
             if pull_request:
-                return self.pull_request_filter(pull_request, files)
-            return None
+                defer.returnValue(self.pull_request_filter(pull_request, files))
+            defer.returnValue(None)
         self.set_commit_default_properties(repository, branch, revision, files, category)
-        return self.commit_filter(repository, branch, revision, files, category)
+        defer.returnValue(self.commit_filter(repository, branch, revision, files, category))
 
 
 def get_open_pull_request_branches(organization, repository, token):
@@ -252,10 +253,11 @@ def get_open_pull_request_branches(organization, repository, token):
     Implemented as closure for specifying information about repository from buildbot configuration
     """
 
+    @defer.inlineCallbacks
     def checker():
         all_pull_requests = get_pull_request_info(organization, repository, token=token)
         branches_for_pull_requests = [f'refs/pull/{pr["number"]}/head' for pr in all_pull_requests]
-        return branches_for_pull_requests
+        defer.returnValue(branches_for_pull_requests)
 
     return checker
 

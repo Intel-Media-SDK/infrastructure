@@ -24,7 +24,7 @@
              branches = sorted(list(set(branches) & set(remote_branches)))
  
 +        if self.pull_request_branches and callable(self.pull_request_branches):
-+            branches += self.pull_request_branches()
++            branches += yield self.pull_request_branches()
 +
          refspecs = [
              u'+{}:{}'.format(self._removeHeads(branch), self._trackerBranch(branch))
@@ -39,7 +39,7 @@
 +
 +            change_props = {}
 +            if self.change_filter and callable(self.change_filter):
-+                props = self.change_filter(repository, branch_name, revision, files, self.category)
++                props = yield self.change_filter(repository, branch_name, revision, files, self.category)
 +                if type(props) == dict:
 +                    change_props = props
 +                else:
