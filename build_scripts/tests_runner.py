@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,15 @@ import shutil
 import logging
 import pathlib
 import argparse
+import collections
+import os
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from build_scripts.common_runner import ConfigGenerator, RunnerException
 from test_scripts.components_installer import install_components
 from common.helper import TestStage, ErrorCode, Product_type, Build_type, rotate_dir
 from common.logger_conf import configure_logger
+from common.git_worker import ProductState
 from common.manifest_manager import Manifest, get_test_dir, get_test_url
 
 
@@ -81,10 +84,13 @@ class TestRunner(ConfigGenerator):
 
         super().__init__(root_dir, test_config, current_stage)
 
+        self._options.update({"REPOS_DIR": root_dir / "repos"})
+
     def _update_global_vars(self):
         self._global_vars.update({
             'stage': TestStage,
-            'infra_path': self._infrastructure_path
+            'infra_path': self._infrastructure_path,
+            'PATH': os.environ["PATH"]
         })
 
     def _get_config_vars(self):
@@ -131,6 +137,36 @@ class TestRunner(ConfigGenerator):
         self._options["LOGS_DIR"].mkdir(parents=True, exist_ok=True)
 
         if not self._run_build_config_actions(TestStage.CLEAN.value):
+            return False
+
+        return True
+
+    def _extract(self):
+        """
+        Get and prepare build repositories
+        Uses git_worker.py module
+
+        :return: None | Exception
+        """
+
+        self._log.info('-' * 50)
+        self._log.info("EXTRACTING")
+
+        self._options['REPOS_DIR'].mkdir(parents=True, exist_ok=True)
+
+        repo_states = collections.defaultdict(dict)
+        for repo in self._component.repositories:
+            repo_states[repo.name]['target_branch'] = repo.target_branch
+            repo_states[repo.name]['branch'] = repo.branch
+            repo_states[repo.name]['commit_id'] = repo.revision
+            repo_states[repo.name]['url'] = repo.url
+            repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
+
+        product_state = ProductState(repo_states, self._options["REPOS_DIR"])
+
+        product_state.extract_all_repos()
+
+        if not self._run_build_config_actions(TestStage.EXTRACT.value):
             return False
 
         return True
