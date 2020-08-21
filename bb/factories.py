@@ -386,16 +386,6 @@ class Factories:
                                  get_path(r'%(prop:builddir)s/checks/pre_commit_checks.json'))],
                     workdir=get_path(r'infrastructure/pre_commit_checks/check_copyright'))])
 
-        files = props.build.allFiles()
-        for file_name in files:
-            if file_name.endswith('.py'):
-                # Length of step name must not be longer 50 symbols
-                step_name = ('..' + file_name[-35:]) if len(file_name) > 35 else file_name
-                trigger_factory.append(
-                    steps.ShellCommand(name=f'pylint: {step_name}',
-                                       # pylint checks always passed
-                                       command=['pylint', file_name, '--exit-zero'],
-                                       workdir=get_path(f'repositories/{repository_name}')))
         return trigger_factory
 
     def auto_update_manifest_factory(self, build_specification, props):
