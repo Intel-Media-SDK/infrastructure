@@ -82,6 +82,7 @@ class TestStage(Enum):
     Constants for defining stage of test
     """
     CLEAN = "clean"
+    EXTRACT = "extract"
     INSTALL = "install"
     TEST = "test"
     COPY = "copy"
