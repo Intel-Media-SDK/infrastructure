@@ -85,6 +85,7 @@ class TestRunner(ConfigGenerator):
         super().__init__(root_dir, test_config, current_stage)
 
         self._options.update({"REPOS_DIR": root_dir / "repos"})
+        self._product_repos = []
 
     def _update_global_vars(self):
         self._global_vars.update({
@@ -96,6 +97,9 @@ class TestRunner(ConfigGenerator):
     def _get_config_vars(self):
         if 'ARTIFACTS_LAYOUT' in self._config_variables:
             self._artifacts_layout = self._config_variables['ARTIFACTS_LAYOUT']
+        if 'PRODUCT_REPOS' in self._config_variables:
+            for repo in self._config_variables['PRODUCT_REPOS']:
+                self._product_repos.append(repo['name'])
 
     def _run_build_config_actions(self, stage):
         """
@@ -126,7 +130,7 @@ class TestRunner(ConfigGenerator):
         self._log.info('-' * 50)
         self._log.info("CLEANING")
 
-        remove_dirs = {'ROOT_DIR'}
+        remove_dirs = {'LOGS_DIR'}
 
         for directory in remove_dirs:
             dir_path = self._options.get(directory)
@@ -156,11 +160,12 @@ class TestRunner(ConfigGenerator):
 
         repo_states = collections.defaultdict(dict)
         for repo in self._component.repositories:
-            repo_states[repo.name]['target_branch'] = repo.target_branch
-            repo_states[repo.name]['branch'] = repo.branch
-            repo_states[repo.name]['commit_id'] = repo.revision
-            repo_states[repo.name]['url'] = repo.url
-            repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
+            if not self._product_repos or repo.name in self._product_repos:
+                repo_states[repo.name]['target_branch'] = repo.target_branch
+                repo_states[repo.name]['branch'] = repo.branch
+                repo_states[repo.name]['commit_id'] = repo.revision
+                repo_states[repo.name]['url'] = repo.url
+                repo_states[repo.name]['trigger'] = repo.name == self._component.build_info.trigger
 
         product_state = ProductState(repo_states, self._options["REPOS_DIR"])
 
