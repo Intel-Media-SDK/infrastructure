@@ -59,8 +59,8 @@ AUTO_UPDATED_REPOSITORIES = [GMMLIB_REPO]
 
 PRODUCTION_REPOS = [PRODUCT_CONFIGS_REPO, MEDIASDK_REPO, DRIVER_REPO]
 
-PYTHON_EXECUTABLE = {OsType.linux: r'python3',
-                     OsType.windows: r'py'}
+PYTHON_EXECUTABLE = {OsType.linux: r'echo',
+                     OsType.windows: r'echo'}
 TRIGGER = 'trigger'
 
 # Give possibility to enable/disable auto deploying infrastructure on workers
@@ -559,8 +559,9 @@ BUILDBOT_TITLE = "Intel® Media CI"
 # and new api requests will not be performed
 POLL_INTERVAL = 300  # Poll Github for new changes (in seconds)
 
-WORKER_PASS = msdk_secrets.WORKER_PASS
-DATABASE_URL = f"postgresql://buildbot:{msdk_secrets.DATABASE_PASSWORD}@localhost/buildbot"
+#WORKER_PASS = msdk_secrets.WORKER_PASS
+#DATABASE_URL = f"postgresql://buildbot:{msdk_secrets.DATABASE_PASSWORD}@localhost/buildbot"
+DATBASE_URL = "sqlite:///state.sqlite"
 GITHUB_TOKEN = msdk_secrets.GITHUB_TOKEN
 
 TRIGGER = 'trigger'

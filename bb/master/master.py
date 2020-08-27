@@ -21,7 +21,8 @@
 import sys
 import pathlib
 
-from buildbot.changes.gitpoller import GitPoller
+from buildbot.www.hooks.github import GitHubEventHandler, _HEADER_EVENT, bytes2unicode, log, logging
+from twisted.internet import defer
 from buildbot.plugins import schedulers, util, worker, reporters
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
@@ -73,6 +74,27 @@ for builder_name, properties in config.FLOW.get_prepared_builders().items():
                                             factory=properties['factory']))
 
 
+class MockedGitHubEventHandler(GitHubEventHandler):
+    @defer.inlineCallbacks
+    def process(self, request):
+        payload = self._get_payload(request)
+
+        event_type = request.getHeader(_HEADER_EVENT)
+        event_type = bytes2unicode(event_type)
+        log.msg("X-GitHub-Event: {}".format(
+            event_type), logLevel=logging.DEBUG)
+
+        handler = getattr(self, 'handle_{}'.format(event_type), None)
+
+        if handler is None:
+            raise ValueError('Unknown event: {}'.format(event_type))
+
+        result = yield defer.maybeDeferred(lambda: handler(payload, event_type))
+        for i in result:
+            print(i)
+        defer.returnValue(([], 'git'))
+
+
 class GitHubStatusPushFilter(reporters.GitHubStatusPush):
     """
     This class extend filtering options for reporters.GitHubStatusPush
@@ -101,81 +123,12 @@ c["services"] = [
                            endDescription="Done",
                            verbose=True)]
 
-# Get changes
-c["change_source"] = []
-
-
-class MediasdkChangeChecker(bb.utils.ChangeChecker):
-    def pull_request_filter(self, pull_request, files):
-        is_request_needed = bb.utils.is_limited_number_of_commits(pull_request, self.token)
-        if is_request_needed:
-            return self.default_properties
-        return None
-
-
-CI_REPOSITORIES = [
-    {'name': config.MEDIASDK_REPO,
-     'organization': config.MEDIASDK_ORGANIZATION,
-     # All changes with limited number of commits
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
-    {'name': config.DRIVER_REPO,
-     'organization': config.INTEL_ORGANIZATION,
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
-    {'name': config.LIBVA_REPO,
-     'organization': config.INTEL_ORGANIZATION,
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
-    {'name': config.PRODUCT_CONFIGS_REPO,
-     'organization': config.MEDIASDK_ORGANIZATION,
-     # Pull requests only for members of Intel-Media-SDK organization with limited number of commits
-     # This filter is needed for security, because via product configs can do everything
-     'change_filter': bb.utils.ChangeChecker(config.GITHUB_TOKEN)},
-    {'name': config.INFRASTRUCTURE_REPO,
-     'organization': config.MEDIASDK_ORGANIZATION,
-     # All changes with limited number of commits
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
-]
-
-for repo in CI_REPOSITORIES:
-    repo_url = f"https://github.com/{repo['organization']}/{repo['name']}.git"
-
-    c["change_source"].append(GitPoller(
-        repourl=repo_url,
-        # Dir for the output of git remote-ls command
-        workdir=f"gitpoller-{repo['name']}",
-        # Poll master, release branches and open pull request branches
-        # Filters performs in following order:
-        # branches (discard all not release branches)
-        # pull_request (add branches of open pull request)
-        # *fetch branches*
-        # change_filter (checking changes)
-        branches=lambda branch: bb.utils.is_release_branch(branch),
-        pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
-                                                                      repo['name'],
-                                                                      token=config.GITHUB_TOKEN),
-        change_filter=repo['change_filter'],
-        category="media",
-        pollInterval=config.POLL_INTERVAL,
-        pollAtLaunch=True))
-
-
-# TODO: All repos should be declared in cycle above, but need to improve filtration changes
-#        to avoid affecting efficiency
-for repo in config.AUTO_UPDATED_REPOSITORIES:
-    repo_url = f"https://github.com/{config.INTEL_ORGANIZATION}/{repo}.git"
-
-    c["change_source"].append(GitPoller(
-        repourl=repo_url,
-        workdir=f"gitpoller-{repo}",
-        branches=['master'],
-        category="auto_update",
-        change_filter=MediasdkChangeChecker(),
-        pollInterval=config.POLL_INTERVAL,
-        pollAtLaunch=True))
 
 # Web Interface
 c["www"] = dict(port=int(config.PORT),
                 plugins={"console_view": True,
-                         "grid_view": True})
+                         "grid_view": True},
+                change_hook_dialects={'github': {'class': MockedGitHubEventHandler}})
 
 # Database
 c["db"] = {"db_url": config.DATABASE_URL}
