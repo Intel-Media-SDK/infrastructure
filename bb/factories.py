@@ -471,14 +471,12 @@ class Factories:
         get_path = bb.utils.get_path_on_os(worker_os)
 
         repository_name = bb.utils.get_repository_name_by_url(props['repository'])
-        # TODO: define component mapper in config
-        component_by_repository = {'product-configs': 'mediasdk',
-                                   'MediaSDK': 'mediasdk',
-                                   'media-driver': 'media-driver'}
+        # FIXME: Tests will work correctly only when ALL components use the same (mediasdk) repository
+        # for extracting
 
         command = [self.run_command[worker_os], "tests_runner.py",
                    '--manifest', self.get_manifest_path(props),
-                   '--component', component_by_repository[repository_name],
+                   '--component', 'mediasdk',
                    '--test-config', util.Interpolate(
                               get_path(rf"%(prop:builddir)s/product-configs/{conf_file}")),
                    '--root-dir', util.Interpolate('%(prop:builddir)s/test_dir'),
