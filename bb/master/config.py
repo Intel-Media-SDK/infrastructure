@@ -257,7 +257,7 @@ BUILDERS = {
                           lambda branch, target_branch: (target_branch or branch) != 'mss2018_r2')}]
     },
 
-    "driver-clang-10.0": {
+    "driver-clang-11.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_media_driver.py",
         "product_type": Product_type.PUBLIC_LINUX_DRIVER_CLANG.value,
@@ -265,7 +265,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "clang",
-        "compiler_version": "10",
+        "compiler_version": "11",
         "worker": "ubuntu",
         "dependency_name": 'media-driver',
         # Builder is enabled for all branches
@@ -399,7 +399,7 @@ BUILDERS = {
                               target_branch or branch) or re.match('^intel-media(sdk)?-2\d+\.\w', (target_branch or branch)))}]
     },
 
-    "mediasdk-clang-10.0": {
+    "mediasdk-clang-11.0": {
         "factory": FACTORIES.init_build_factory,
         "product_conf_file": "conf_linux_public.py",
         "product_type": Product_type.PUBLIC_LINUX_CLANG.value,
@@ -407,7 +407,7 @@ BUILDERS = {
         "api_latest": False,
         "fastboot": False,
         "compiler": "clang",
-        "compiler_version": "10",
+        "compiler_version": "11",
         "worker": "ubuntu",
         "dependency_name": 'mediasdk',
         # Enabled for all non release branches and for release branches staring from intel-mediasdk-20.*
