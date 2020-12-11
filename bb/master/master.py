@@ -115,24 +115,15 @@ class MediasdkChangeChecker(bb.utils.ChangeChecker):
 
 CI_REPOSITORIES = [
     {'name': config.MEDIASDK_REPO,
-     'organization': config.MEDIASDK_ORGANIZATION,
-     # All changes with limited number of commits
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+     'organization': config.MEDIASDK_ORGANIZATION},
     {'name': config.DRIVER_REPO,
-     'organization': config.INTEL_ORGANIZATION,
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+     'organization': config.INTEL_ORGANIZATION},
     {'name': config.LIBVA_REPO,
-     'organization': config.INTEL_ORGANIZATION,
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)},
+     'organization': config.INTEL_ORGANIZATION},
     {'name': config.PRODUCT_CONFIGS_REPO,
-     'organization': config.MEDIASDK_ORGANIZATION,
-     # Pull requests only for members of Intel-Media-SDK organization with limited number of commits
-     # This filter is needed for security, because via product configs can do everything
-     'change_filter': bb.utils.ChangeChecker(config.GITHUB_TOKEN)},
+     'organization': config.MEDIASDK_ORGANIZATION},
     {'name': config.INFRASTRUCTURE_REPO,
-     'organization': config.MEDIASDK_ORGANIZATION,
-     # All changes with limited number of commits
-     'change_filter': MediasdkChangeChecker(config.GITHUB_TOKEN)}
+     'organization': config.MEDIASDK_ORGANIZATION}
 ]
 
 for repo in CI_REPOSITORIES:
@@ -152,7 +143,7 @@ for repo in CI_REPOSITORIES:
         pull_request_branches=bb.utils.get_open_pull_request_branches(repo['organization'],
                                                                       repo['name'],
                                                                       token=config.GITHUB_TOKEN),
-        change_filter=repo['change_filter'],
+        change_filter=MediasdkChangeChecker(config.GITHUB_TOKEN),
         category="media",
         pollInterval=config.POLL_INTERVAL,
         pollAtLaunch=True))
