@@ -372,19 +372,7 @@ class Factories:
                              util.Interpolate(
                                  get_path(rf'%(prop:builddir)s/repositories/{repository_name}')),
                              '--revision', util.Interpolate('%(prop:revision)s')],
-                    workdir=get_path(r'infrastructure/pre_commit_checks')),
-
-                steps.ShellCommand(
-                    name='check copyright',
-                    command=[self.run_command[worker_os], 'check_copyright.py',
-                             '--repo-path',
-                             util.Interpolate(
-                                 get_path(f'%(prop:builddir)s/repositories/{repository_name}')),
-                             '--commit-id', util.Interpolate(r'%(prop:revision)s'),
-                             '--report-path',
-                             util.Interpolate(
-                                 get_path(r'%(prop:builddir)s/checks/pre_commit_checks.json'))],
-                    workdir=get_path(r'infrastructure/pre_commit_checks/check_copyright'))])
+                    workdir=get_path(r'infrastructure/pre_commit_checks'))])
 
         return trigger_factory
 
