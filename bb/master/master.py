@@ -97,8 +97,6 @@ class GitHubStatusPushFilter(reporters.GitHubStatusPush):
 c["services"] = [
     GitHubStatusPushFilter(token=config.GITHUB_TOKEN,
                            context=util.Interpolate("buildbot/%(prop:buildername)s"),
-                           startDescription="Started",
-                           endDescription="Done",
                            verbose=True)]
 
 # Get changes
